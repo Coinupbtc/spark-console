@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DGX Spark Performance Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+<style>
+:root{--bg:#0a0f14;--card:#141e28;--accent:#00d4aa;--accent2:#4fc3f7;--dim:#6b8a9a;--green:#66bb6a;--amber:#ffa726;--red:#ef5350;--text:#e8eef2;--border:rgba(0,212,170,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:linear-gradient(135deg,#0a1620,#122a35);padding:18px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--accent);flex-wrap:wrap;gap:12px}
+header h1{font-size:1.5rem;color:var(--accent);letter-spacing:.5px}
+.subtitle{color:var(--dim);font-size:.82rem;margin-top:3px}
+#last-update{font-size:.82rem;color:var(--dim)}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;margin-left:8px}
+.badge-ok{background:rgba(102,187,106,.2);color:var(--green)}
+.badge-warn{background:rgba(255,167,38,.2);color:var(--amber)}
+.badge-crit{background:rgba(239,83,80,.2);color:var(--red)}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;padding:20px 28px;max-width:1500px;margin:0 auto}
+.stat-card{background:var(--card);border-radius:10px;padding:16px;text-align:center;border:1px solid var(--border)}
+.stat-value{font-size:1.8rem;font-weight:700;margin-bottom:2px}
+.stat-label{color:var(--dim);font-size:.78rem;text-transform:uppercase;letter-spacing:.8px}
+.stat-sub{font-size:.72rem;color:var(--dim);margin-top:4px}
+
+.alerts-bar{max-width:1500px;margin:0 auto;padding:0 28px 12px}
+.alert{display:flex;gap:12px;padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:.85rem;align-items:flex-start}
+.alert-critical{background:rgba(239,83,80,.12);border-left:3px solid var(--red)}
+.alert-warning{background:rgba(255,167,38,.1);border-left:3px solid var(--amber)}
+.alert-info{background:rgba(79,195,247,.08);border-left:3px solid var(--accent2)}
+.alert-msg{flex:1}
+.alert-action{color:var(--dim);font-size:.78rem;margin-top:2px}
+
+.time-bar{padding:0 28px 8px;max-width:1500px;margin:0 auto;display:flex;gap:6px;flex-wrap:wrap}
+.time-btn{background:var(--card);color:var(--dim);border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.8rem}
+.time-btn:hover,.time-btn.active{color:var(--accent);border-color:var(--accent)}
+
+.charts-wrap{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:0 28px 20px;max-width:1500px;margin:0 auto}
+@media(max-width:960px){.charts-wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:10px;padding:20px;border:1px solid var(--border)}
+.card h2{color:var(--accent);margin-bottom:12px;font-size:1rem}
+
+.gpu-bars{display:flex;flex-direction:column;gap:10px}
+.gpu-card{background:rgba(0,212,170,.04);border-radius:8px;border-left:3px solid var(--accent);overflow:hidden}
+.gpu-header{display:flex;justify-content:space-between;padding:8px 12px;font-size:.85rem;font-weight:600}
+.gpu-meta{font-size:.8rem;color:var(--dim)}
+.bar-wrap{height:24px;background:rgba(0,0,0,.3);margin:4px 12px 10px;border-radius:5px}
+.bar-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding-left:8px;font-size:.72rem;color:#fff;font-weight:600;transition:width .4s}
+.bar-low{background:linear-gradient(90deg,rgba(102,187,106,.8),rgba(102,187,106,.4))}
+.bar-med{background:linear-gradient(90deg,rgba(255,167,38,.8),rgba(255,167,38,.4))}
+.bar-high{background:linear-gradient(90deg,rgba(239,83,80,.8),rgba(239,83,80,.4))}
+
+.list{max-height:320px;overflow-y:auto;font-size:.83rem}
+.list-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center}
+.list-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-val{color:var(--accent2);font-weight:600;font-size:.78rem}
+.model-stuck{color:var(--red)}
+
+.detail-wrap{max-width:1500px;padding:0 28px 28px;margin:0 auto}
+table.detail{width:100%;border-collapse:collapse;font-size:.82rem}
+table.detail th{background:rgba(0,212,170,.08);color:var(--accent);text-align:left;padding:8px 12px}
+table.detail td{padding:7px 12px;border-top:1px solid var(--border)}
+
+#refresh-cnt{text-align:center;padding:8px;color:var(--dim);font-size:.75rem}
+.empty{color:var(--dim);text-align:center;padding:30px;font-size:.85rem}
+.msg{text-align:center;padding:40px;color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>⚡ DGX Spark Performance</h1>
+    <div class="subtitle" id="hostname">sparkmax-10ef • GB10 • 121 GiB RAM</div>
+  </div>
+  <div id="last-update">Loading…</div>
+</header>
+
+<div class="alerts-bar" id="alerts"></div>
+<div class="stats-grid" id="stats"></div>
+
+<div class="time-bar" id="timeBtns">
+  <button class="time-btn active" data-hr="1">1h</button>
+  <button class="time-btn" data-hr="6">6h</button>
+  <button class="time-btn" data-hr="24">24h</button>
+  <button class="time-btn" data-hr="168">7d</button>
+  <button class="time-btn" data-hr="0">All</button>
+</div>
+
+<div class="charts-wrap">
+  <div class="card" style="grid-row:span 2">
+    <h2>📈 Utilization Timeline</h2>
+    <div id="chartMain" style="width:100%;height:500px"></div>
+  </div>
+  <div class="card">
+    <h2>🧠 Memory & CPU</h2>
+    <div id="chartMem" style="width:100%;height:220px"></div>
+  </div>
+  <div class="card">
+    <h2>🤖 Ollama Models</h2>
+    <div id="ollamaList" class="list"></div>
+  </div>
+</div>
+
+<div style="max-width:1500px;padding:4px 28px 12px;margin:0 auto">
+  <h2 style="color:var(--accent);font-size:.95rem;margin-bottom:10px">🖥️ GPU Detail</h2>
+  <div id="gpuBars" class="gpu-bars"></div>
+</div>
+
+<div class="charts-wrap" style="padding-top:0">
+  <div class="card">
+    <h2>⚡ Power Draw</h2>
+    <div id="chartPower" style="width:100%;height:240px"></div>
+  </div>
+  <div class="card">
+    <h2>⚙️ GPU Processes</h2>
+    <div id="procList" class="list"></div>
+  </div>
+</div>
+
+<div class="detail-wrap">
+  <div class="card"><h2>📊 System Snapshot</h2>
+    <table class="detail" id="detailTbl"></table></div>
+</div>
+
+<div id="refresh-cnt"></div>
+
+<script>
+const CFG={displaylogo:false,responsive:true,displayModeBar:false};
+const PLOT_LAYOUT={paper_bgcolor:'#141e28',plot_bgcolor:'#141e28',font:{color:'#e8eef2',size:11},
+  margin:{l:45,r:15,t:10,b:35},xaxis:{gridcolor:'rgba(255,255,255,.06)',tickfont:{size:10}},
+  yaxis:{gridcolor:'rgba(255,255,255,.06)',tickfont:{size:10}}};
+let csvRows=[], currentHr=1, refreshTimer=null;
+
+function uc(p){return p<40?'var(--green)':p<75?'var(--amber)':'var(--red)'}
+function ucl(p){return p<40?'bar-low':p<75?'bar-med':'bar-high'}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':(s||'—')}
+
+document.querySelectorAll('.time-btn').forEach(btn=>{
+  btn.onclick=function(){
+    document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');currentHr=+this.dataset.hr;loadAll()}
+});
+
+async function loadAll(){
+  try{
+    const hrs=currentHr||24;
+    const [snapR,histR]=await Promise.all([
+      fetch('/api/latest'),
+      fetch('/api/history?hours='+(hrs===0?8760:hrs)).catch(()=>({ok:false}))
+    ]);
+    if(!snapR.ok)throw new Error('API unreachable — is the server running?');
+    const snap=await snapR.json();
+    if(histR.ok){
+      const hist=await histR.json();
+      csvRows=hist.rows||[];
+    }
+    renderAll(snap);
+    loadTimeline();
+    document.getElementById('last-update').innerHTML=
+      'Updated: '+(snap.iso_ts||'?').replace('T',' ').slice(0,19)+' UTC'+
+      (snap.alert_count&&snap.alert_count.critical>0?'<span class="badge badge-crit">'+snap.alert_count.critical+' critical</span>':'')+
+      (snap.alert_count&&snap.alert_count.warning>0?'<span class="badge badge-warn">'+snap.alert_count.warning+' warn</span>':'');
+  }catch(e){
+    document.getElementById('stats').innerHTML='<div class="msg">⚠️ '+e.message+'</div>';
+  }
+}
+
+function renderAll(s){
+  const sys=s.system||{};
+  document.getElementById('hostname').textContent=
+    (s.hostname||'sparkmax')+' • '+(s.gpus&&s.gpus[0]?s.gpus[0].name:'GB10')+' • '+sys.mem_total_gb+' GiB RAM';
+
+  const rows=[
+    [Math.round(s.avg_util_pct||0),'%','GPU Util',uc(s.avg_util_pct)],
+    [sys.mem_pct!=null?Math.round(sys.mem_pct):'?','%','RAM Used',uc(sys.mem_pct)],
+    [sys.mem_avail_gb!=null?sys.mem_avail_gb:'?',' GB free','Memory',sys.mem_pct<70?'var(--green)':'var(--amber)'],
+    [sys.cpu_pct!=null?Math.round(sys.cpu_pct):'?','%','CPU',uc(sys.cpu_pct)],
+    [s.total_power_watts!=null?Math.round(s.total_power_watts):'?','W','GPU Power','var(--accent2)'],
+    [s.avg_temp_c!=null?Math.round(s.avg_temp_c)+'°':'—','','GPU Temp',(s.avg_temp_c||0)>80?'var(--red)':'var(--green)'],
+    [sys.swap_used_gb!=null?sys.swap_used_gb:'0',' GB','Swap',sys.swap_used_gb>1?'var(--amber)':'var(--green)'],
+    [sys.disk_used_pct!=null?Math.round(sys.disk_used_pct):'?','%','Disk',uc(sys.disk_used_pct)],
+    [sys.load_1!=null?sys.load_1:'—','','Load 1m','var(--accent2)'],
+    [(s.ollama||[]).length,'','Ollama Loaded','var(--accent)'],
+    [(s.processes||[]).length,'','GPU Procs','var(--accent2)'],
+    [s.hermes&&s.hermes.orchestrator==='active'?'✓':'✗','','Hermes','var(--green)']
+  ];
+  document.getElementById('stats').innerHTML=rows.map(([v,u,l,c])=>
+    `<div class="stat-card"><div class="stat-value" style="color:${c}">${v}<span style="font-size:.75rem">${u}</span></div><div class="stat-label">${l}</div></div>`).join('');
+
+  renderAlerts(s.alerts||[]);
+  renderBars(s.gpus||[]);
+  renderProcs(s.processes||[]);
+  renderOllama(s.ollama||[]);
+  renderDetail(s);
+}
+
+function renderAlerts(alerts){
+  const el=document.getElementById('alerts');
+  if(!alerts.length){el.innerHTML='';return}
+  el.innerHTML=alerts.map(a=>
+    `<div class="alert alert-${a.level}"><div class="alert-msg"><strong>${a.category}</strong>: ${a.message}
+    <div class="alert-action">→ ${a.action}</div></div></div>`).join('');
+}
+
+function renderBars(gpus){
+  const d=document.getElementById('gpuBars');
+  if(!gpus.length){d.innerHTML='<div class="empty">No GPUs detected</div>';return}
+  d.innerHTML=gpus.map(g=>{
+    const pct=g.util_gpu||0;
+    return `<div class="gpu-card"><div class="gpu-header">
+      <span>GPU ${g.index}: ${g.name}</span>
+      <span class="gpu-meta"><strong>${pct}%</strong> · ${g.power_w||'?'}W · ${g.temp_c||'?'}°C · fan ${g.fan_pct||'?'}%</span></div>
+      <div class="bar-wrap"><div class="bar-fill ${ucl(pct)}" style="width:${Math.min(pct,100)}%">${pct}%</div></div></div>`}).join('');
+}
+
+function renderProcs(procs){
+  const t=document.getElementById('procList');
+  if(!procs.length){t.innerHTML='<div class="empty">No active compute processes</div>';return}
+  t.innerHTML=procs.map(p=>{
+    const nn=p.name.includes('/')?p.name.split('/').pop():p.name;
+    return `<div class="list-row"><span class="list-name" title="${p.name}">${trunc(nn,40)}</span>
+      <span class="list-val">${p.mem_mb||'?'} MB</span></div>`}).join('');
+}
+
+function renderOllama(models){
+  const t=document.getElementById('ollamaList');
+  if(!models.length){t.innerHTML='<div class="empty">No models loaded</div>';return}
+  t.innerHTML=models.map(m=>
+    `<div class="list-row"><span class="list-name ${m.stuck?'model-stuck':''}">${m.name}${m.stuck?' (STUCK)':''}</span>
+      <span class="list-val">${m.size} · ${m.processor||'?'}</span></div>`).join('');
+}
+
+function renderDetail(s){
+  const sys=s.system||{};
+  const rows=[
+    ['Hostname',s.hostname||'—'],['Uptime zone','UTC'],['CPU %',sys.cpu_pct+'%'],
+    ['Load avg',`${sys.load_1} / ${sys.load_5} / ${sys.load_15}`],
+    ['RAM',`${sys.mem_used_gb} / ${sys.mem_total_gb} GB (${sys.mem_pct}%)`],
+    ['Swap',`${sys.swap_used_gb} / ${sys.swap_total_gb} GB`],
+    ['Disk free',sys.disk_free_tb+' TB'],['GPUs',s.num_gpus||0],
+    ['Hermes orchestrator',s.hermes?s.hermes.orchestrator:'—'],
+    ['Hermes light',s.hermes?s.hermes.light:'—'],
+  ];
+  document.getElementById('detailTbl').innerHTML=
+    '<tr>'+rows.map(([k,v])=>`<th>${k}</th><td>${v}</td>`).join('</tr><tr>')+'</tr>';
+}
+
+function loadTimeline(){
+  const rows=csvRows;
+  if(!rows.length){
+    Plotly.newPlot('chartMain',{data:[],layout:{...PLOT_LAYOUT,title:{text:'No history yet — collector runs every 5 min',font:{size:12,color:'#6b8a9a'}}}},CFG);
+    return;
+  }
+  const ts=rows.map(r=>r.iso_ts||r.timestamp_utc);
+  Plotly.newPlot('chartMain',[
+    {x:ts,y:rows.map(r=>+r.gpu_util||0),name:'GPU %',line:{color:'#00d4aa',width:2},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.cpu_pct||0),name:'CPU %',line:{color:'#4fc3f7',width:1.5},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.mem_pct||0),name:'RAM %',line:{color:'#ab47bc',width:1.5},type:'scatter'},
+  ],{...PLOT_LAYOUT,yaxis:{...PLOT_LAYOUT.yaxis,title:'%',range:[0,100]},legend:{orientation:'h',y:1.08}},CFG);
+
+  Plotly.newPlot('chartMem',[
+    {x:ts,y:rows.map(r=>+r.mem_avail_gb||0),name:'RAM free GB',fill:'tozeroy',line:{color:'#66bb6a'},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.swap_used_gb||0),name:'Swap GB',line:{color:'#ffa726'},type:'scatter'},
+  ],{...PLOT_LAYOUT,showlegend:true,legend:{orientation:'h',y:1.15}},CFG);
+
+  Plotly.newPlot('chartPower',[
+    {x:ts,y:rows.map(r=>+r.gpu_power_w||0),name:'Power W',fill:'tozeroy',line:{color:'#ffa726',width:2},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.gpu_temp_c||0),name:'Temp °C',yaxis:'y2',line:{color:'#ef5350',width:1.5},type:'scatter'},
+  ],{...PLOT_LAYOUT,yaxis2:{overlaying:'y',side:'right',gridcolor:'transparent',title:'°C'}},CFG);
+}
+
+let tick=0;
+function scheduleRefresh(){
+  loadAll();
+  tick++;
+  document.getElementById('refresh-cnt').textContent='Auto-refresh 30s • refresh #'+tick;
+  refreshTimer=setTimeout(scheduleRefresh,30000);
+}
+
+scheduleRefresh();
+</script>
+</body>
+</html>

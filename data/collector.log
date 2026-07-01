@@ -1,0 +1,85 @@
+[2026-07-01 13:55:01] sparkmax performance snapshot
+  CPU 5.9% | RAM 74.9% (30.59G free) | GPU 96.0% 85.02W
+  Ollama: qwen3.5:122b 87
+  [WARNING] RAM at 74.9% — 30.59 GB available
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:00:01] sparkmax performance snapshot
+  CPU 5.6% | RAM 67.3% (39.83G free) | GPU 19.0% 14.28W
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:05:01] sparkmax performance snapshot
+  CPU 0.3% | RAM 3.1% (117.88G free) | GPU 2.0% 13.0W
+  [INFO] gnome-remote-desktop using 176 MB VRAM
+[2026-07-01 14:10:01] sparkmax performance snapshot
+  CPU 6.2% | RAM 4.7% (115.94G free) | GPU 22.0% 16.88W
+  [INFO] gnome-remote-desktop using 675 MB VRAM
+[2026-07-01 14:15:01] sparkmax performance snapshot
+  CPU 5.2% | RAM 5.4% (115.11G free) | GPU 19.0% 14.81W
+  [INFO] gnome-remote-desktop using 687 MB VRAM
+[2026-07-01 14:20:01] sparkmax performance snapshot
+  CPU 3.5% | RAM 6.8% (113.38G free) | GPU 19.0% 13.98W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  [INFO] gnome-remote-desktop using 687 MB VRAM
+[2026-07-01 14:25:02] sparkmax performance snapshot
+  CPU 6.8% | RAM 6.8% (113.37G free) | GPU 18.0% 14.96W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:30:01] sparkmax performance snapshot
+  CPU 6.4% | RAM 6.3% (114.02G free) | GPU 17.0% 14.97W
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:35:01] sparkmax performance snapshot
+  CPU 18.2% | RAM 46.8% (64.7G free) | GPU 95.0% 42.56W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:40:01] sparkmax performance snapshot
+  CPU 3.2% | RAM 50.0% (60.79G free) | GPU 10.0% 13.74W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:45:01] sparkmax performance snapshot
+  CPU 16.2% | RAM 50.2% (60.6G free) | GPU 95.0% 41.92W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  Ollama: gemma4:31b 23 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (23)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:50:01] sparkmax performance snapshot
+  CPU 25.1% | RAM 49.0% (62.0G free) | GPU 94.0% 38.48W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 14:55:01] sparkmax performance snapshot
+  CPU 1.2% | RAM 45.4% (66.41G free) | GPU 1.0% 11.81W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:00:01] sparkmax performance snapshot
+  CPU 4.3% | RAM 9.6% (110.02G free) | GPU 5.0% 13.06W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:02:54] sparkmax performance snapshot
+  CPU 12.0% | RAM 79.7% (24.72G free) | GPU 94.0% 26.36W
+  Ollama: qwen3.5:122b 87
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  [WARNING] RAM at 79.7% — 24.72 GB available
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:05:01] sparkmax performance snapshot
+  CPU 4.6% | RAM 79.9% (24.47G free) | GPU 10.0% 13.9W
+  Ollama: nomic-embed-text-v2-moe:latest 586
+  Ollama: qwen3.5:122b 87
+  [WARNING] RAM at 79.9% — 24.47 GB available
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:10:01] sparkmax performance snapshot
+  CPU 16.0% | RAM 43.6% (68.61G free) | GPU 95.0% 41.06W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:15:01] sparkmax performance snapshot
+  CPU 6.5% | RAM 43.5% (68.79G free) | GPU 20.0% 15.05W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:20:01] sparkmax performance snapshot
+  CPU 22.0% | RAM 43.5% (68.7G free) | GPU 93.0% 40.97W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:25:01] sparkmax performance snapshot
+  CPU 14.0% | RAM 44.6% (67.46G free) | GPU 95.0% 41.64W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM

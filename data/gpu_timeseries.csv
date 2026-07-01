@@ -1,0 +1,4 @@
+timestamp_utc,iso_ts,hour,dow,gpu0_util_gpu,gpu0_power_w,gpu0_temp_c,gpu0_mem_used,gpu0_mem_total,processes_json
+2026-07-01 11:04:47,2026-07-01T11:04:47.249281+00:00,11,2,92.0,37.96,68,0,0,"[{""name"": ""/usr/libexec/gnome-remote-desktop-daemon"", ""mem_mb"": 389}, {""name"": ""/usr/local/lib/ollama/llama-server"", ""mem_mb"": 28415}]"
+2026-07-01 11:13:04,2026-07-01T11:13:04.236729+00:00,11,2,91.0,36.67,64,0,0,"[{""name"": ""/usr/libexec/gnome-remote-desktop-daemon"", ""mem_mb"": 389}, {""name"": ""/usr/local/lib/ollama/llama-server"", ""mem_mb"": 28417}]"
+2026-07-01 13:18:52,2026-07-01T13:18:52.569643+00:00,13,2,94.0,39.32,73,0,0,"[{""name"": ""/usr/libexec/gnome-remote-desktop-daemon"", ""mem_mb"": 389}, {""name"": ""[No data]"", ""mem_mb"": 83585}]"

@@ -1,0 +1,75 @@
+{
+  "timestamp_utc": "2026-07-01 15:25:01",
+  "iso_ts": "2026-07-01T15:25:01.386362+00:00",
+  "hour": 15,
+  "dow": 2,
+  "hostname": "sparkmax-10ef",
+  "system": {
+    "cpu_pct": 14.0,
+    "load_1": 3.75,
+    "load_5": 3.22,
+    "load_15": 2.84,
+    "mem_used_gb": 54.23,
+    "mem_total_gb": 121.69,
+    "mem_avail_gb": 67.46,
+    "mem_pct": 44.6,
+    "swap_used_gb": 0.17,
+    "swap_total_gb": 16.0,
+    "swap_pct": 1.0,
+    "disk_used_pct": 52.0,
+    "disk_free_tb": 1.67
+  },
+  "num_gpus": 1,
+  "avg_util_pct": 95.0,
+  "total_power_watts": 41.64,
+  "avg_temp_c": 67.0,
+  "gpus": [
+    {
+      "index": 0,
+      "name": "NVIDIA GB10",
+      "power_w": 41.64,
+      "temp_c": 67,
+      "util_gpu": 95.0,
+      "mem_used_mb": 0,
+      "mem_total_mb": 0,
+      "fan_pct": 0,
+      "pstate": "P0"
+    }
+  ],
+  "processes": [
+    {
+      "name": "/usr/libexec/gnome-remote-desktop-daemon",
+      "mem_mb": 691
+    },
+    {
+      "name": "/usr/local/lib/ollama/llama-server",
+      "mem_mb": 42667
+    }
+  ],
+  "ollama": [
+    {
+      "name": "gemma4:31b",
+      "size": "23",
+      "processor": "GB",
+      "until": "GPU 262144 4 minutes from now",
+      "stuck": false
+    }
+  ],
+  "hermes": {
+    "orchestrator": "unknown",
+    "light": "unknown"
+  },
+  "alerts": [
+    {
+      "level": "info",
+      "category": "gpu",
+      "message": "gnome-remote-desktop using 691 MB VRAM",
+      "action": "Disable remote desktop if not needed to reclaim VRAM"
+    }
+  ],
+  "alert_count": {
+    "critical": 0,
+    "warning": 0,
+    "info": 1
+  }
+}
