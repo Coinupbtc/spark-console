@@ -83,3 +83,498 @@
   CPU 14.0% | RAM 44.6% (67.46G free) | GPU 95.0% 41.64W
   Ollama: gemma4:31b 23
   [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:30:01] sparkmax performance snapshot
+  CPU 19.9% | RAM 45.4% (66.44G free) | GPU 95.0% 41.74W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:35:01] sparkmax performance snapshot
+  CPU 16.6% | RAM 44.9% (67.08G free) | GPU 93.0% 32.96W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:40:01] sparkmax performance snapshot
+  CPU 23.0% | RAM 72.4% (33.55G free) | GPU 95.0% 40.44W
+  Ollama: gemma4:31b 23
+  Ollama: qwen3.6:35b 29
+  [WARNING] RAM at 72.4% — 33.55 GB available
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:45:01] sparkmax performance snapshot
+  CPU 22.4% | RAM 72.7% (33.26G free) | GPU 95.0% 40.24W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23
+  [WARNING] RAM at 72.7% — 33.26 GB available
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:50:02] sparkmax performance snapshot
+  CPU 17.3% | RAM 72.7% (33.19G free) | GPU 95.0% 41.69W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23 STUCK
+  [WARNING] RAM at 72.7% — 33.19 GB available
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (23)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 15:55:01] sparkmax performance snapshot
+  CPU 15.4% | RAM 46.8% (64.69G free) | GPU 95.0% 41.97W
+  Ollama: gemma4:31b 23
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:00:01] sparkmax performance snapshot
+  CPU 18.6% | RAM 71.8% (34.37G free) | GPU 96.0% 42.81W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23
+  [WARNING] RAM at 71.8% — 34.37 GB available
+  [WARNING] Swap usage 2.63 GB — memory pressure
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:05:01] sparkmax performance snapshot
+  CPU 16.5% | RAM 71.6% (34.5G free) | GPU 94.0% 41.39W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23 STUCK
+  [WARNING] RAM at 71.6% — 34.5 GB available
+  [WARNING] Swap usage 2.43 GB — memory pressure
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (23)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:10:02] sparkmax performance snapshot
+  CPU 14.6% | RAM 39.7% (73.39G free) | GPU 94.0% 71.9W
+  Ollama: gemma4:31b 20 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (20)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:15:01] sparkmax performance snapshot
+  CPU 21.3% | RAM 65.7% (41.75G free) | GPU 95.0% 59.44W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (21)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:20:01] sparkmax performance snapshot
+  CPU 15.5% | RAM 75.2% (30.12G free) | GPU 94.0% 68.41W
+  Ollama: qwen3.5:122b 87 STUCK
+  [WARNING] RAM at 75.2% — 30.12 GB available
+  [CRITICAL] Model qwen3.5:122b stuck in Stopping... (87)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:25:01] sparkmax performance snapshot
+  CPU 22.7% | RAM 68.5% (38.32G free) | GPU 95.0% 40.65W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (23)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:27:14] sparkmax performance snapshot
+  CPU 13.5% | RAM 75.2% (30.16G free) | GPU 19.0% 26.44W
+  Ollama: qwen3.5:122b 87 STUCK
+  [WARNING] RAM at 75.2% — 30.16 GB available
+  [CRITICAL] Model qwen3.5:122b stuck in Stopping... (87)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:30:01] sparkmax performance snapshot
+  CPU 21.0% | RAM 66.0% (41.41G free) | GPU 95.0% 57.72W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (21)
+  [WARNING] GPU 0 hot: 95.0% util, 75°C
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:35:01] sparkmax performance snapshot
+  CPU 23.7% | RAM 66.9% (40.31G free) | GPU 95.0% 40.21W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (21)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:40:01] sparkmax performance snapshot
+  CPU 11.8% | RAM 66.1% (41.24G free) | GPU 95.0% 75.2W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21 STUCK
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (21)
+  [WARNING] GPU 0 hot: 95.0% util, 78°C
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 16:45:01] sparkmax performance snapshot
+  CPU 5.4% | RAM 41.2% (71.53G free) | GPU 96.0% 76.61W
+  Ollama: gemma4:31b 23 STUCK
+  [WARNING] Swap usage 2.32 GB — memory pressure
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (23)
+  [INFO] gnome-remote-desktop using 389 MB VRAM
+[2026-07-01 16:50:01] sparkmax performance snapshot
+  CPU 11.3% | RAM 64.9% (42.74G free) | GPU 96.0% 63.53W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21
+  [WARNING] Swap usage 2.45 GB — memory pressure
+  [INFO] gnome-remote-desktop using 389 MB VRAM
+[2026-07-01 16:55:01] sparkmax performance snapshot
+  CPU 12.2% | RAM 65.9% (41.52G free) | GPU 96.0% 39.4W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21
+  [WARNING] Swap usage 2.4 GB — memory pressure
+  [INFO] gnome-remote-desktop using 389 MB VRAM
+[2026-07-01 17:00:01] sparkmax performance snapshot
+  CPU 22.4% | RAM 66.7% (40.47G free) | GPU 95.0% 54.74W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21
+  [WARNING] Swap usage 2.3 GB — memory pressure
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 17:05:01] sparkmax performance snapshot
+  CPU 19.6% | RAM 70.1% (36.37G free) | GPU 93.0% 42.25W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 21 STUCK
+  [WARNING] RAM at 70.1% — 36.37 GB available
+  [WARNING] Swap usage 2.2 GB — memory pressure
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (21)
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 17:10:01] sparkmax performance snapshot
+  CPU 9.2% | RAM 68.4% (38.45G free) | GPU 24.0% 16.76W
+  [WARNING] Swap usage 2.16 GB — memory pressure
+  [INFO] gnome-remote-desktop using 691 MB VRAM
+[2026-07-01 17:15:01] sparkmax performance snapshot
+  CPU 17.2% | RAM 68.9% (37.89G free) | GPU 94.0% 40.09W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23 STUCK
+  [WARNING] Swap usage 2.2 GB — memory pressure
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (23)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:17:39] sparkmax performance snapshot
+  CPU 15.6% | RAM 75.5% (29.82G free) | GPU 35.0% 26.7W
+  Ollama: qwen3.5:122b 87 STUCK
+  [WARNING] RAM at 75.5% — 29.82 GB available
+  [WARNING] Swap usage 2.19 GB — memory pressure
+  [CRITICAL] Model qwen3.5:122b stuck in Stopping... (87)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:20:02] sparkmax performance snapshot
+  CPU 69.8% | RAM 49.9% (60.98G free) | GPU 94.0% 41.83W
+  Ollama: gpt-oss:20b 13
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] Swap usage 2.19 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:25:01] sparkmax performance snapshot
+  CPU 12.2% | RAM 67.6% (39.46G free) | GPU 25.0% 16.9W
+  [WARNING] Swap usage 2.99 GB — memory pressure
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:30:01] sparkmax performance snapshot
+  CPU 22.6% | RAM 71.0% (35.3G free) | GPU 95.0% 42.03W
+  Ollama: qwen3.6:27b 34
+  Ollama: gemma4:31b 21 STUCK
+  [WARNING] RAM at 71.0% — 35.3 GB available
+  [WARNING] Swap usage 2.47 GB — memory pressure
+  [CRITICAL] Model gemma4:31b stuck in Stopping... (21)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:35:01] sparkmax performance snapshot
+  CPU 11.0% | RAM 35.1% (79.0G free) | GPU 95.0% 43.96W
+  Ollama: qwen3.6:27b 34
+  [WARNING] Swap usage 2.65 GB — memory pressure
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:40:01] sparkmax performance snapshot
+  CPU 24.0% | RAM 70.2% (36.23G free) | GPU 95.0% 57.04W
+  Ollama: gemma4:31b 21
+  Ollama: qwen3.6:27b 34
+  [WARNING] RAM at 70.2% — 36.23 GB available
+  [WARNING] Swap usage 2.76 GB — memory pressure
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:45:01] sparkmax performance snapshot
+  CPU 23.1% | RAM 71.0% (35.35G free) | GPU 95.0% 55.19W
+  Ollama: gemma4:31b 21
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] RAM at 71.0% — 35.35 GB available
+  [WARNING] Swap usage 2.76 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:50:01] sparkmax performance snapshot
+  CPU 11.2% | RAM 73.4% (32.31G free) | GPU 95.0% 42.53W
+  Ollama: qwen3.6:27b 34
+  Ollama: gemma4:31b 21
+  [WARNING] RAM at 73.4% — 32.31 GB available
+  [WARNING] Swap usage 2.74 GB — memory pressure
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 17:55:01] sparkmax performance snapshot
+  CPU 18.4% | RAM 35.2% (78.88G free) | GPU 94.0% 40.79W
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] Swap usage 2.73 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 18:00:01] sparkmax performance snapshot
+  CPU 17.9% | RAM 35.4% (78.62G free) | GPU 94.0% 76.79W
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] Swap usage 2.73 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [WARNING] GPU 0 hot: 94.0% util, 79°C
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 18:05:01] sparkmax performance snapshot
+  CPU 15.5% | RAM 35.0% (79.04G free) | GPU 94.0% 73.38W
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] Swap usage 2.73 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [INFO] gnome-remote-desktop using 695 MB VRAM
+[2026-07-01 18:10:01] sparkmax performance snapshot
+  CPU 8.2% | RAM 74.8% (30.63G free) | GPU 94.0% 77.16W
+  Ollama: qwen3.5:122b 87 STUCK
+  [WARNING] RAM at 74.8% — 30.63 GB available
+  [WARNING] Swap usage 2.64 GB — memory pressure
+  [CRITICAL] Model qwen3.5:122b stuck in Stopping... (87)
+  [INFO] gnome-remote-desktop using 397 MB VRAM
+[2026-07-01 18:15:02] sparkmax performance snapshot
+  CPU 3.8% | RAM 67.4% (39.67G free) | GPU 10.0% 13.63W
+  [WARNING] Swap usage 2.64 GB — memory pressure
+  [INFO] gnome-remote-desktop using 397 MB VRAM
+[2026-07-01 18:20:01] sparkmax performance snapshot
+  CPU 18.1% | RAM 35.2% (78.9G free) | GPU 94.0% 42.32W
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] Swap usage 2.63 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:25:01] sparkmax performance snapshot
+  CPU 16.5% | RAM 35.1% (78.92G free) | GPU 94.0% 41.13W
+  Ollama: qwen3.6:27b 34 STUCK
+  [WARNING] Swap usage 2.63 GB — memory pressure
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:30:01] sparkmax performance snapshot
+  CPU 9.6% | RAM 18.7% (98.95G free) | GPU 22.0% 17.87W
+  [WARNING] Swap usage 2.54 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:35:01] sparkmax performance snapshot
+  CPU 7.8% | RAM 68.1% (38.82G free) | GPU 7.0% 15.12W
+  [WARNING] Swap usage 2.54 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:40:01] sparkmax performance snapshot
+  CPU 24.7% | RAM 87.6% (15.05G free) | GPU 95.0% 43.49W
+  Ollama: gemma4:12b 8.8
+  Ollama: qwen3.5:122b 87
+  [CRITICAL] RAM at 87.6% — only 15.05 GB free
+  [WARNING] Swap usage 2.53 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:45:01] sparkmax performance snapshot
+  CPU 22.3% | RAM 88.2% (14.37G free) | GPU 95.0% 60.8W
+  Ollama: qwen3.5:122b 87
+  Ollama: gemma4:12b 8.8
+  [CRITICAL] RAM at 88.2% — only 14.37 GB free
+  [WARNING] Swap usage 2.52 GB — memory pressure
+  [WARNING] GPU 0 hot: 95.0% util, 76°C
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:50:01] sparkmax performance snapshot
+  CPU 16.3% | RAM 88.6% (13.85G free) | GPU 94.0% 43.88W
+  Ollama: qwen3.5:122b 87
+  Ollama: gemma4:12b 8.8
+  [CRITICAL] RAM at 88.6% — only 13.85 GB free
+  [WARNING] Swap usage 2.52 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 18:55:01] sparkmax performance snapshot
+  CPU 22.3% | RAM 88.2% (14.38G free) | GPU 95.0% 43.86W
+  Ollama: gemma4:12b 8.8
+  Ollama: qwen3.5:122b 87
+  [CRITICAL] RAM at 88.2% — only 14.38 GB free
+  [WARNING] Swap usage 2.53 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:00:01] sparkmax performance snapshot
+  CPU 10.1% | RAM 88.2% (14.32G free) | GPU 95.0% 47.07W
+  Ollama: qwen3.5:122b 87
+  Ollama: gemma4:12b 8.8
+  [CRITICAL] RAM at 88.2% — only 14.32 GB free
+  [WARNING] Swap usage 2.53 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:05:01] sparkmax performance snapshot
+  CPU 19.6% | RAM 60.7% (47.88G free) | GPU 95.0% 62.32W
+  Ollama: gemma4:31b 23
+  [WARNING] Swap usage 2.49 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:10:01] sparkmax performance snapshot
+  CPU 22.3% | RAM 68.9% (37.9G free) | GPU 95.0% 40.25W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23
+  [WARNING] Swap usage 2.48 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:15:01] sparkmax performance snapshot
+  CPU 21.8% | RAM 69.0% (37.73G free) | GPU 93.0% 38.44W
+  Ollama: qwen3.6:35b 29
+  Ollama: gemma4:31b 23
+  [WARNING] Swap usage 2.48 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:20:01] sparkmax performance snapshot
+  CPU 18.7% | RAM 31.8% (83.02G free) | GPU 91.0% 38.25W
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.47 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:25:01] sparkmax performance snapshot
+  CPU 18.7% | RAM 32.6% (81.96G free) | GPU 93.0% 37.19W
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.38 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:30:01] sparkmax performance snapshot
+  CPU 23.2% | RAM 33.1% (81.45G free) | GPU 93.0% 36.42W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.33 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:35:01] sparkmax performance snapshot
+  CPU 15.7% | RAM 32.7% (81.87G free) | GPU 93.0% 36.37W
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.33 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:40:01] sparkmax performance snapshot
+  CPU 25.2% | RAM 49.2% (61.83G free) | GPU 95.0% 69.28W
+  Ollama: gpt-oss:20b 13
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.32 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:45:01] sparkmax performance snapshot
+  CPU 15.1% | RAM 36.0% (77.85G free) | GPU 92.0% 38.14W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.31 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:50:01] sparkmax performance snapshot
+  CPU 18.1% | RAM 39.1% (74.13G free) | GPU 93.0% 40.48W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.31 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 19:55:01] sparkmax performance snapshot
+  CPU 15.9% | RAM 39.6% (73.56G free) | GPU 92.0% 41.0W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.3 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:00:01] sparkmax performance snapshot
+  CPU 60.8% | RAM 38.8% (74.43G free) | GPU 92.0% 41.12W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.28 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [WARNING] GPU 0 hot: 92.0% util, 76°C
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:05:01] sparkmax performance snapshot
+  CPU 23.7% | RAM 39.7% (73.42G free) | GPU 92.0% 37.98W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.26 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:10:01] sparkmax performance snapshot
+  CPU 21.2% | RAM 39.3% (73.88G free) | GPU 91.0% 37.11W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.26 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:15:01] sparkmax performance snapshot
+  CPU 17.1% | RAM 39.8% (73.28G free) | GPU 92.0% 38.73W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.14 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:20:01] sparkmax performance snapshot
+  CPU 20.9% | RAM 51.9% (58.52G free) | GPU 92.0% 27.66W
+  Ollama: gemma4:12b 10.0
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.14 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:25:02] sparkmax performance snapshot
+  CPU 26.1% | RAM 53.3% (56.83G free) | GPU 91.0% 43.7W
+  Ollama: gpt-oss:20b 13
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.14 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:30:01] sparkmax performance snapshot
+  CPU 21.3% | RAM 39.7% (73.34G free) | GPU 33.0% 34.74W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.14 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:35:01] sparkmax performance snapshot
+  CPU 17.2% | RAM 39.9% (73.14G free) | GPU 94.0% 68.92W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.14 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:40:01] sparkmax performance snapshot
+  CPU 19.5% | RAM 40.4% (72.58G free) | GPU 92.0% 38.22W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.14 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:45:01] sparkmax performance snapshot
+  CPU 20.5% | RAM 40.9% (71.91G free) | GPU 91.0% 38.35W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.13 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:50:01] sparkmax performance snapshot
+  CPU 18.3% | RAM 40.5% (72.43G free) | GPU 92.0% 37.44W
+  Ollama: qwen3.6:35b 29 STUCK
+  [WARNING] Swap usage 2.12 GB — memory pressure
+  [CRITICAL] Model qwen3.6:35b stuck in Stopping... (29)
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 20:55:01] sparkmax performance snapshot
+  CPU 17.7% | RAM 54.7% (55.09G free) | GPU 95.0% 65.45W
+  Ollama: gpt-oss:20b 13
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.12 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:00:01] sparkmax performance snapshot
+  CPU 22.2% | RAM 40.2% (72.81G free) | GPU 92.0% 38.57W
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.12 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:05:01] sparkmax performance snapshot
+  CPU 7.6% | RAM 39.8% (73.25G free) | GPU 16.0% 14.69W
+  Ollama: qwen3.6:35b 29
+  [WARNING] Swap usage 2.12 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:10:01] sparkmax performance snapshot
+  CPU 5.2% | RAM 7.3% (112.77G free) | GPU 15.0% 14.47W
+  [WARNING] Swap usage 2.12 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:15:01] sparkmax performance snapshot
+  CPU 6.6% | RAM 7.3% (112.76G free) | GPU 14.0% 14.56W
+  [WARNING] Swap usage 2.12 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:20:01] sparkmax performance snapshot
+  CPU 6.7% | RAM 6.9% (113.29G free) | GPU 9.0% 13.46W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:25:01] sparkmax performance snapshot
+  CPU 1.9% | RAM 6.9% (113.28G free) | GPU 19.0% 13.11W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:30:01] sparkmax performance snapshot
+  CPU 5.2% | RAM 6.9% (113.24G free) | GPU 22.0% 13.37W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:35:01] sparkmax performance snapshot
+  CPU 5.2% | RAM 6.9% (113.29G free) | GPU 21.0% 13.29W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:40:01] sparkmax performance snapshot
+  CPU 1.9% | RAM 6.9% (113.3G free) | GPU 20.0% 13.3W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:45:01] sparkmax performance snapshot
+  CPU 4.9% | RAM 6.9% (113.27G free) | GPU 19.0% 12.78W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:50:01] sparkmax performance snapshot
+  CPU 4.4% | RAM 6.9% (113.32G free) | GPU 21.0% 13.34W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 21:55:01] sparkmax performance snapshot
+  CPU 1.9% | RAM 32.8% (81.8G free) | GPU 6.0% 11.82W
+  Ollama: qwen3.6:35b 29
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:00:01] sparkmax performance snapshot
+  CPU 19.9% | RAM 35.9% (77.96G free) | GPU 94.0% 40.99W
+  Ollama: qwen3.6:27b 34
+  [WARNING] Swap usage 2.0 GB — memory pressure
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:05:01] sparkmax performance snapshot
+  CPU 18.2% | RAM 36.0% (77.88G free) | GPU 95.0% 40.62W
+  Ollama: qwen3.6:27b 34
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:10:01] sparkmax performance snapshot
+  CPU 2.1% | RAM 35.7% (78.25G free) | GPU 7.0% 11.71W
+  Ollama: qwen3.6:27b 34
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:15:01] sparkmax performance snapshot
+  CPU 1.9% | RAM 6.1% (114.31G free) | GPU 0.0% 11.68W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:20:01] sparkmax performance snapshot
+  CPU 2.1% | RAM 6.1% (114.3G free) | GPU 3.0% 11.33W
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:25:01] sparkmax performance snapshot
+  CPU 19.4% | RAM 36.0% (77.83G free) | GPU 94.0% 40.26W
+  Ollama: qwen3.6:27b 34
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:30:01] sparkmax performance snapshot
+  CPU 13.9% | RAM 36.4% (77.34G free) | GPU 95.0% 50.94W
+  Ollama: qwen3.6:27b 34
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:35:01] sparkmax performance snapshot
+  CPU 16.9% | RAM 39.8% (73.31G free) | GPU 94.0% 78.03W
+  Ollama: qwen3.6:27b 34
+  [WARNING] GPU 0 hot: 94.0% util, 81°C
+  [INFO] gnome-remote-desktop using 699 MB VRAM
+[2026-07-01 22:40:01] sparkmax performance snapshot
+  CPU 13.6% | RAM 43.2% (69.07G free) | GPU 95.0% 75.52W
+  Ollama: qwen3.6:27b 34 STUCK
+  [CRITICAL] Model qwen3.6:27b stuck in Stopping... (34)
+  [WARNING] GPU 0 hot: 95.0% util, 75°C
+  [INFO] gnome-remote-desktop using 699 MB VRAM

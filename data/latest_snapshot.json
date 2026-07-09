@@ -1,35 +1,35 @@
 {
-  "timestamp_utc": "2026-07-01 15:25:01",
-  "iso_ts": "2026-07-01T15:25:01.386362+00:00",
+  "timestamp_utc": "2026-07-09 15:23:30",
+  "iso_ts": "2026-07-09T15:23:30.965970+00:00",
   "hour": 15,
-  "dow": 2,
+  "dow": 3,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 14.0,
-    "load_1": 3.75,
-    "load_5": 3.22,
-    "load_15": 2.84,
-    "mem_used_gb": 54.23,
+    "cpu_pct": 1.0,
+    "load_1": 0.22,
+    "load_5": 0.57,
+    "load_15": 0.62,
+    "mem_used_gb": 65.97,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 67.46,
-    "mem_pct": 44.6,
-    "swap_used_gb": 0.17,
+    "mem_avail_gb": 55.72,
+    "mem_pct": 54.2,
+    "swap_used_gb": 6.25,
     "swap_total_gb": 16.0,
-    "swap_pct": 1.0,
-    "disk_used_pct": 52.0,
-    "disk_free_tb": 1.67
+    "swap_pct": 39.0,
+    "disk_used_pct": 21.4,
+    "disk_free_tb": 2.74
   },
   "num_gpus": 1,
-  "avg_util_pct": 95.0,
-  "total_power_watts": 41.64,
-  "avg_temp_c": 67.0,
+  "avg_util_pct": 0.0,
+  "total_power_watts": 10.55,
+  "avg_temp_c": 45.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 41.64,
-      "temp_c": 67,
-      "util_gpu": 95.0,
+      "power_w": 10.55,
+      "temp_c": 45,
+      "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -39,37 +39,131 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 691
+      "mem_mb": 519
     },
     {
-      "name": "/usr/local/lib/ollama/llama-server",
-      "mem_mb": 42667
-    }
-  ],
-  "ollama": [
+      "name": "/home/coinupbtc/comfy/ComfyUI/.venv/bin/python",
+      "mem_mb": 355
+    },
     {
-      "name": "gemma4:31b",
-      "size": "23",
-      "processor": "GB",
-      "until": "GPU 262144 4 minutes from now",
-      "stuck": false
+      "name": "/home/coinupbtc/llama.cpp/build/bin/llama-server",
+      "mem_mb": 40504
+    },
+    {
+      "name": "python3",
+      "mem_mb": 3149
     }
   ],
+  "ollama": [],
   "hermes": {
-    "orchestrator": "unknown",
-    "light": "unknown"
+    "orchestrator": "active",
+    "light": "active",
+    "dashboard": "active"
   },
+  "models": {
+    "bundle_dir": "/home/coinupbtc/models/dgx_bundle",
+    "manifest": "/home/coinupbtc/models/dgx_bundle/manifest.txt",
+    "manifest_mtime": 1783139815.7377481,
+    "models": [
+      {
+        "key": "qwen-nvfp4",
+        "label": "Qwen 3.6 35B NVFP4",
+        "tier": "daily",
+        "size_manifest": "--",
+        "shards": "--",
+        "repo": "",
+        "port": 8001,
+        "single_spark": "--",
+        "installed": false,
+        "size_disk": "--",
+        "status": "missing",
+        "active_model_id": null
+      },
+      {
+        "key": "nemotron-nvfp4",
+        "label": "Nemotron 3 Super NVFP4",
+        "tier": "frontier",
+        "size_manifest": "--",
+        "shards": "--",
+        "repo": "",
+        "port": 8002,
+        "single_spark": "--",
+        "installed": false,
+        "size_disk": "--",
+        "status": "missing",
+        "active_model_id": null
+      },
+      {
+        "key": "gemma-nvfp4",
+        "label": "Gemma 4 26B NVFP4",
+        "tier": "light",
+        "size_manifest": "31G",
+        "shards": "--",
+        "repo": "",
+        "port": 8003,
+        "single_spark": "\u2705",
+        "installed": true,
+        "size_disk": "31G",
+        "status": "installed",
+        "active_model_id": null
+      },
+      {
+        "key": "ornith-35b",
+        "label": "Ornith 1.0 35B",
+        "tier": "agent",
+        "size_manifest": "66G",
+        "shards": "--",
+        "repo": "",
+        "port": 8006,
+        "single_spark": "\u2705",
+        "installed": true,
+        "size_disk": "66G",
+        "status": "installed",
+        "active_model_id": null
+      },
+      {
+        "key": "mistral-nvfp4",
+        "label": "Mistral Medium 3.5 NVFP4",
+        "tier": "frontier",
+        "size_manifest": "--",
+        "shards": "--",
+        "repo": "",
+        "port": 8005,
+        "single_spark": "--",
+        "installed": false,
+        "size_disk": "--",
+        "status": "missing",
+        "active_model_id": null
+      }
+    ],
+    "active_vllm": [],
+    "removed": [
+      "qwen35-nvfp4"
+    ],
+    "hermes": {
+      "orchestrator": "active",
+      "light": "active",
+      "dashboard": "active"
+    }
+  },
+  "vllm": [],
   "alerts": [
+    {
+      "level": "warning",
+      "category": "swap",
+      "message": "Swap usage 6.25 GB \u2014 memory pressure",
+      "action": "Free RAM by stopping large models"
+    },
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 691 MB VRAM",
+      "message": "gnome-remote-desktop using 519 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
   "alert_count": {
     "critical": 0,
-    "warning": 0,
+    "warning": 1,
     "info": 1
   }
 }

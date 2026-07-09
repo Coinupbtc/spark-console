@@ -14,6 +14,8 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
+from model_inventory import query_inventory, sync_manifest_from_disk
+
 try:
     import psutil
 except ImportError:
@@ -123,13 +125,15 @@ def query_hermes() -> dict:
     out = subprocess.run(
         ["systemctl", "--user", "is-active",
          "hermes-gateway-orchestrator.service",
-         "hermes-gateway-light.service"],
+         "hermes-gateway-light.service",
+         "dgx-performance-dashboard.service"],
         capture_output=True, text=True, timeout=5,
     )
     lines = (out.stdout or "").strip().splitlines()
     return {
         "orchestrator": lines[0] if len(lines) > 0 else "unknown",
         "light": lines[1] if len(lines) > 1 else "unknown",
+        "dashboard": lines[2] if len(lines) > 2 else "unknown",
     }
 
 
@@ -155,7 +159,13 @@ def system_metrics() -> dict:
     }
 
 
-def diagnose(sys_m: dict, gpus: list[dict], ollama: list[dict], procs: list[dict]) -> list[dict]:
+def diagnose(
+    sys_m: dict,
+    gpus: list[dict],
+    ollama: list[dict],
+    procs: list[dict],
+    inventory: dict | None = None,
+) -> list[dict]:
     alerts: list[dict] = []
 
     if sys_m["mem_pct"] >= 85:
@@ -163,14 +173,14 @@ def diagnose(sys_m: dict, gpus: list[dict], ollama: list[dict], procs: list[dict
             "level": "critical",
             "category": "memory",
             "message": f"RAM at {sys_m['mem_pct']}% — only {sys_m['mem_avail_gb']} GB free",
-            "action": "Unload unused Ollama models: ollama stop <model>",
+            "action": "Stop vLLM or Ollama: switch-model qwen OR ollama stop <model>",
         })
     elif sys_m["mem_pct"] >= 70:
         alerts.append({
             "level": "warning",
             "category": "memory",
             "message": f"RAM at {sys_m['mem_pct']}% — {sys_m['mem_avail_gb']} GB available",
-            "action": "Review loaded models with `ollama ps`",
+            "action": "Review vLLM (nvfp4-status.sh) and `ollama ps`",
         })
 
     if sys_m["swap_used_gb"] >= 2:
@@ -224,8 +234,34 @@ def diagnose(sys_m: dict, gpus: list[dict], ollama: list[dict], procs: list[dict
             "level": "warning",
             "category": "disk",
             "message": f"Disk {sys_m['disk_used_pct']}% full — {sys_m['disk_free_tb']} TB free",
-            "action": "Review Ollama model cache (~330 GB) for unused models",
+            "action": "Review ~/models/dgx_bundle and Ollama cache for unused models",
         })
+
+    if inventory:
+        hermes_dash = (inventory.get("hermes") or {}).get("dashboard")
+        if hermes_dash == "inactive":
+            alerts.append({
+                "level": "warning",
+                "category": "dashboard",
+                "message": "Performance dashboard service is not running",
+                "action": "systemctl --user restart dgx-performance-dashboard.service",
+            })
+        active = inventory.get("active_vllm") or []
+        if len(active) > 1:
+            alerts.append({
+                "level": "critical",
+                "category": "vllm",
+                "message": f"Multiple vLLM servers active ({len(active)}) — OOM risk on 121GB Spark",
+                "action": "switch-model stop  # then start one model only",
+            })
+        for m in inventory.get("models") or []:
+            if m.get("status") == "loading":
+                alerts.append({
+                    "level": "info",
+                    "category": "vllm",
+                    "message": f"vLLM loading {m.get('label')} on :{m.get('port')}",
+                    "action": f"tail -f ~/models/dgx_bundle/vllm-{m.get('key', '').replace('-nvfp4', '').replace('-35b', '')}.log",
+                })
 
     return alerts
 
@@ -235,12 +271,15 @@ def collect() -> dict | None:
     ts = now.strftime("%Y-%m-%d %H:%M:%S")
     iso = now.isoformat()
 
+    sync_manifest_from_disk()
     sys_m = system_metrics()
     gpus = query_gpu()
     procs = query_procs()
     ollama = query_ollama()
     hermes = query_hermes()
-    alerts = diagnose(sys_m, gpus, ollama, procs)
+    inv = query_inventory()
+    inv["hermes"] = hermes
+    alerts = diagnose(sys_m, gpus, ollama, procs, inv)
 
     gpu = gpus[0] if gpus else {}
     avg_util = round(sum(g["util_gpu"] for g in gpus) / len(gpus), 1) if gpus else 0
@@ -260,6 +299,8 @@ def collect() -> dict | None:
         "processes": procs,
         "ollama": ollama,
         "hermes": hermes,
+        "models": inv,
+        "vllm": inv.get("active_vllm") or [],
         "alerts": alerts,
         "alert_count": {"critical": sum(1 for a in alerts if a["level"] == "critical"),
                         "warning": sum(1 for a in alerts if a["level"] == "warning"),
@@ -292,6 +333,9 @@ def collect() -> dict | None:
     print(f"[{ts}] sparkmax performance snapshot")
     print(f"  CPU {sys_m['cpu_pct']}% | RAM {sys_m['mem_pct']}% ({sys_m['mem_avail_gb']}G free) | "
           f"GPU {avg_util}% {snap['total_power_watts']}W")
+    if inv.get("active_vllm"):
+        for m in inv["active_vllm"]:
+            print(f"  vLLM: {m['label']} :{m['port']} ({m['status']})")
     if ollama:
         for m in ollama:
             flag = " STUCK" if m.get("stuck") else ""
