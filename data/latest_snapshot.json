@@ -1,35 +1,35 @@
 {
-  "timestamp_utc": "2026-07-10 03:16:10",
-  "iso_ts": "2026-07-10T03:16:10.825183+00:00",
-  "hour": 3,
+  "timestamp_utc": "2026-07-10 10:33:03",
+  "iso_ts": "2026-07-10T10:33:03.140280+00:00",
+  "hour": 10,
   "dow": 4,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 18.6,
-    "load_1": 3.87,
-    "load_5": 4.76,
-    "load_15": 4.37,
-    "mem_used_gb": 63.92,
+    "cpu_pct": 1.2,
+    "load_1": 0.2,
+    "load_5": 0.26,
+    "load_15": 0.27,
+    "mem_used_gb": 72.49,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 57.77,
-    "mem_pct": 52.5,
-    "swap_used_gb": 3.44,
+    "mem_avail_gb": 49.2,
+    "mem_pct": 59.6,
+    "swap_used_gb": 1.13,
     "swap_total_gb": 16.0,
-    "swap_pct": 21.5,
-    "disk_used_pct": 20.6,
-    "disk_free_tb": 2.76
+    "swap_pct": 7.1,
+    "disk_used_pct": 22.3,
+    "disk_free_tb": 2.7
   },
   "num_gpus": 1,
-  "avg_util_pct": 93.0,
-  "total_power_watts": 35.63,
-  "avg_temp_c": 63.0,
+  "avg_util_pct": 0.0,
+  "total_power_watts": 10.24,
+  "avg_temp_c": 41.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 35.63,
-      "temp_c": 63,
-      "util_gpu": 93.0,
+      "power_w": 10.24,
+      "temp_c": 41,
+      "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -38,24 +38,16 @@
   ],
   "processes": [
     {
-      "name": "/home/coinupbtc/comfy/ComfyUI/.venv/bin/python",
-      "mem_mb": 385
-    },
-    {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 441
-    },
-    {
-      "name": "python3",
-      "mem_mb": 3151
-    },
-    {
-      "name": "python3",
-      "mem_mb": 3149
+      "mem_mb": 404
     },
     {
       "name": "/home/coinupbtc/llama.cpp/build/bin/llama-server",
-      "mem_mb": 39762
+      "mem_mb": 42542
+    },
+    {
+      "name": "/home/coinupbtc/llama.cpp/build/bin/llama-server",
+      "mem_mb": 7919
     }
   ],
   "ollama": [],
@@ -153,21 +145,15 @@
   "vllm": [],
   "alerts": [
     {
-      "level": "warning",
-      "category": "swap",
-      "message": "Swap usage 3.44 GB \u2014 memory pressure",
-      "action": "Free RAM by stopping large models"
-    },
-    {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 441 MB VRAM",
+      "message": "gnome-remote-desktop using 404 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
   "alert_count": {
     "critical": 0,
-    "warning": 1,
+    "warning": 0,
     "info": 1
   }
 }
