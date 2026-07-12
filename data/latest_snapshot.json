@@ -1,34 +1,34 @@
 {
-  "timestamp_utc": "2026-07-11 10:48:50",
-  "iso_ts": "2026-07-11T10:48:50.691080+00:00",
+  "timestamp_utc": "2026-07-12 10:44:16",
+  "iso_ts": "2026-07-12T10:44:16.152451+00:00",
   "hour": 10,
-  "dow": 5,
+  "dow": 6,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 1.2,
-    "load_1": 0.35,
-    "load_5": 0.41,
-    "load_15": 0.34,
-    "mem_used_gb": 66.06,
+    "cpu_pct": 1.5,
+    "load_1": 0.29,
+    "load_5": 0.58,
+    "load_15": 0.6,
+    "mem_used_gb": 51.44,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 55.63,
-    "mem_pct": 54.3,
-    "swap_used_gb": 4.56,
+    "mem_avail_gb": 70.25,
+    "mem_pct": 42.3,
+    "swap_used_gb": 6.09,
     "swap_total_gb": 16.0,
-    "swap_pct": 28.5,
-    "disk_used_pct": 24.0,
-    "disk_free_tb": 2.65
+    "swap_pct": 38.1,
+    "disk_used_pct": 27.4,
+    "disk_free_tb": 2.53
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.17,
-  "avg_temp_c": 41.0,
+  "total_power_watts": 10.84,
+  "avg_temp_c": 43.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.17,
-      "temp_c": 41,
+      "power_w": 10.84,
+      "temp_c": 43,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
@@ -42,8 +42,8 @@
       "mem_mb": 404
     },
     {
-      "name": "/home/coinupbtc/llama.cpp/build/bin/llama-server",
-      "mem_mb": 42602
+      "name": "/home/coinupbtc/llama.cpp-master/build/bin/llama-server",
+      "mem_mb": 27589
     }
   ],
   "ollama": [],
@@ -61,14 +61,14 @@
         "key": "qwen-nvfp4",
         "label": "Qwen 3.6 35B NVFP4",
         "tier": "daily",
-        "size_manifest": "25G",
+        "size_manifest": "--",
         "shards": "--",
         "repo": "",
         "port": 8001,
-        "single_spark": "\u2705",
-        "installed": true,
-        "size_disk": "25G",
-        "status": "installed",
+        "single_spark": "--",
+        "installed": false,
+        "size_disk": "--",
+        "status": "missing",
         "active_model_id": null
       },
       {
@@ -143,7 +143,7 @@
     {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 4.56 GB \u2014 memory pressure",
+      "message": "Swap usage 6.09 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
