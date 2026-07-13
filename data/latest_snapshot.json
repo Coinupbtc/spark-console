@@ -1,35 +1,35 @@
 {
-  "timestamp_utc": "2026-07-12 10:44:16",
-  "iso_ts": "2026-07-12T10:44:16.152451+00:00",
+  "timestamp_utc": "2026-07-13 10:42:34",
+  "iso_ts": "2026-07-13T10:42:34.022051+00:00",
   "hour": 10,
-  "dow": 6,
+  "dow": 0,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 1.5,
-    "load_1": 0.29,
-    "load_5": 0.58,
-    "load_15": 0.6,
-    "mem_used_gb": 51.44,
+    "cpu_pct": 13.3,
+    "load_1": 2.88,
+    "load_5": 2.27,
+    "load_15": 1.86,
+    "mem_used_gb": 51.56,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 70.25,
-    "mem_pct": 42.3,
-    "swap_used_gb": 6.09,
+    "mem_avail_gb": 70.13,
+    "mem_pct": 42.4,
+    "swap_used_gb": 2.69,
     "swap_total_gb": 16.0,
-    "swap_pct": 38.1,
-    "disk_used_pct": 27.4,
-    "disk_free_tb": 2.53
+    "swap_pct": 16.8,
+    "disk_used_pct": 37.7,
+    "disk_free_tb": 2.17
   },
   "num_gpus": 1,
-  "avg_util_pct": 0.0,
-  "total_power_watts": 10.84,
-  "avg_temp_c": 43.0,
+  "avg_util_pct": 18.0,
+  "total_power_watts": 15.36,
+  "avg_temp_c": 54.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.84,
-      "temp_c": 43,
-      "util_gpu": 0.0,
+      "power_w": 15.36,
+      "temp_c": 54,
+      "util_gpu": 18.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -39,11 +39,11 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 404
+      "mem_mb": 691
     },
     {
       "name": "/home/coinupbtc/llama.cpp-master/build/bin/llama-server",
-      "mem_mb": 27589
+      "mem_mb": 27545
     }
   ],
   "ollama": [],
@@ -143,13 +143,13 @@
     {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 6.09 GB \u2014 memory pressure",
+      "message": "Swap usage 2.69 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 404 MB VRAM",
+      "message": "gnome-remote-desktop using 691 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
