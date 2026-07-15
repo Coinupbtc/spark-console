@@ -1,33 +1,33 @@
 {
-  "timestamp_utc": "2026-07-14 10:58:08",
-  "iso_ts": "2026-07-14T10:58:08.044036+00:00",
+  "timestamp_utc": "2026-07-15 10:43:46",
+  "iso_ts": "2026-07-15T10:43:46.571079+00:00",
   "hour": 10,
-  "dow": 1,
+  "dow": 2,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 0.9,
-    "load_1": 0.16,
-    "load_5": 0.23,
-    "load_15": 0.25,
-    "mem_used_gb": 114.27,
+    "cpu_pct": 1.5,
+    "load_1": 0.06,
+    "load_5": 0.2,
+    "load_15": 0.23,
+    "mem_used_gb": 56.43,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 7.42,
-    "mem_pct": 93.9,
-    "swap_used_gb": 9.58,
+    "mem_avail_gb": 65.26,
+    "mem_pct": 46.4,
+    "swap_used_gb": 5.24,
     "swap_total_gb": 16.0,
-    "swap_pct": 59.9,
-    "disk_used_pct": 42.6,
-    "disk_free_tb": 2.0
+    "swap_pct": 32.8,
+    "disk_used_pct": 45.6,
+    "disk_free_tb": 1.89
   },
   "num_gpus": 1,
   "avg_util_pct": 1.0,
-  "total_power_watts": 11.08,
+  "total_power_watts": 11.11,
   "avg_temp_c": 47.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 11.08,
+      "power_w": 11.11,
       "temp_c": 47,
       "util_gpu": 1.0,
       "mem_used_mb": 0,
@@ -42,8 +42,8 @@
       "mem_mb": 389
     },
     {
-      "name": "VLLM::Worker_TP0",
-      "mem_mb": 106865
+      "name": "/home/coinupbtc/llama.cpp-master/build/bin/llama-server",
+      "mem_mb": 27545
     }
   ],
   "ollama": [],
@@ -141,15 +141,9 @@
   "vllm": [],
   "alerts": [
     {
-      "level": "critical",
-      "category": "memory",
-      "message": "RAM at 93.9% \u2014 only 7.42 GB free",
-      "action": "Stop vLLM or Ollama: switch-model qwen OR ollama stop <model>"
-    },
-    {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 9.58 GB \u2014 memory pressure",
+      "message": "Swap usage 5.24 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
@@ -160,7 +154,7 @@
     }
   ],
   "alert_count": {
-    "critical": 1,
+    "critical": 0,
     "warning": 1,
     "info": 1
   }
