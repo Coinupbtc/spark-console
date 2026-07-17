@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spark Console — prototype (B refined)</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#151b23; --panel2:#1d242e; --line:#2b333e;
+  --fg:#e9eef4; --dim:#93a0ad; --faint:#616d79;
+  --ok:#41c157; --warn:#e0a52c; --bad:#ff5d52; --stale:#8b98a5;
+  --accent:#5aa9ff; --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
+  font:14px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif}
+body{display:grid;grid-template-rows:34px 1.25fr 1fr;gap:8px;padding:8px;height:100vh}
+.num{font-family:var(--mono)}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.stale{color:var(--stale)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}
+
+/* header */
+header{display:flex;align-items:center;gap:14px;padding:0 6px}
+header h1{font-size:17px;font-weight:700;letter-spacing:.3px}
+header .sub{color:var(--faint);font-size:12px}
+header .clock{margin-left:auto;font:600 15px var(--mono);color:var(--dim)}
+header .badge{font-size:11px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:12px;padding:2px 10px;color:var(--warn)}
+
+/* top row: node columns */
+.nodes{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0}
+.node{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:12px 16px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.node h2{font-size:16px;color:var(--accent);display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.node h2 .up{color:var(--faint);font-weight:400;font-size:12px;margin-left:auto}
+.brow{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.brow label{width:52px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.bar{flex:1;height:14px;background:#232b35;border-radius:7px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:7px;background:var(--accent);transition:width .3s}
+.bar i.w{background:var(--warn)}.bar i.b{background:var(--bad)}
+.brow .v{width:150px;text-align:right;font:600 13px var(--mono);white-space:nowrap}
+.models{margin-top:auto;border-top:1px solid var(--line);padding-top:8px}
+.models h4{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+table{width:100%;border-collapse:collapse}
+td,th{padding:4px 8px 4px 0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td{font-size:13px;border-top:1px solid #1c232c;max-width:230px}
+td.num{text-align:right;padding-right:0}
+tr:first-child td{border-top:none}
+
+/* bottom row: alerts | todo | projects */
+.bottom{display:grid;grid-template-columns:1.1fr 1fr 1.1fr;gap:8px;min-height:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:10px 14px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.panel h3{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;
+  display:flex;justify-content:space-between}
+.panel h3 .cnt{color:var(--faint);font-weight:400;text-transform:none}
+.scrollless{overflow:hidden;flex:1;min-height:0}
+.alert-row{display:flex;gap:10px;padding:4px 0;border-top:1px solid #1c232c;font-size:13px;align-items:baseline}
+.alert-row:first-child{border-top:none}
+.alert-row .t{font:600 12px var(--mono);color:var(--faint);flex:0 0 44px}
+.alert-row .m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* todo */
+.todo-row{display:flex;gap:10px;padding:5px 0;border-top:1px solid #1c232c;font-size:13.5px;align-items:center;cursor:pointer}
+.todo-row:first-child{border-top:none}
+.todo-row input{width:15px;height:15px;accent-color:var(--ok)}
+.todo-row.done span{color:var(--faint);text-decoration:line-through}
+.todo-row .tag{margin-left:auto;font-size:10.5px;padding:1px 8px;border-radius:10px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--dim);flex:none}
+.todo-add{margin-top:auto;display:flex;gap:6px;padding-top:8px}
+.todo-add input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  color:var(--fg);padding:5px 10px;font-size:13px}
+.todo-add button{background:var(--accent);border:none;border-radius:6px;color:#04101f;
+  font-weight:700;padding:0 14px;cursor:pointer}
+
+/* projects */
+.proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1;min-height:0}
+.proj{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.proj.alert{border-color:var(--bad)}
+.proj b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj .st{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj .ago{font-size:10.5px;color:var(--faint)}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Spark Console</h1>
+  <span class="sub">sparkmax-10ef · sparkymaxxx-12ef</span>
+  <span class="badge">FAKE DATA — prototype</span>
+  <span class="clock" id="clock"></span>
+</header>
+
+<div class="nodes" id="nodes"></div>
+
+<div class="bottom">
+  <div class="panel"><h3>Alerts — last 24h <span class="cnt">2 critical</span></h3>
+    <div class="scrollless" id="alerts"></div></div>
+  <div class="panel"><h3>Todo · Home <span class="cnt" id="todo-cnt"></span></h3>
+    <div class="scrollless" id="todos"></div>
+    <div class="todo-add"><input id="todo-in" placeholder="add item… (prototype only)"><button onclick="addTodo()">+</button></div></div>
+  <div class="panel"><h3>Projects</h3><div class="proj-grid" id="projects"></div></div>
+</div>
+
+<script>
+// ---------------- FAKE DATA ----------------
+const D = {
+  nodes: [
+    { name:"sparkmax-10ef", role:"node1 · primary", up:"11d 4h",
+      cpu:23.4, load:"1.2 / 1.6 / 1.2", gpu:41, gputemp:61, power:38.2,
+      mem:{used:43.4,total:121.7}, swap:{used:0.0,total:16}, disk:{pct:36.9,freeTB:2.19} },
+    { name:"sparkymaxxx-12ef", role:"node2 · deep lane", up:"6d 21h",
+      cpu:78.9, load:"9.8 / 8.1 / 7.7", gpu:97, gputemp:74, power:96.4,
+      mem:{used:104.2,total:121.7}, swap:{used:11.3,total:16}, disk:{pct:81.0,freeTB:0.64} },
+  ],
+  models: [
+    {node:1, name:"MiaAI Qwen3.6-35B NVFP4", port:8889, ram:27.6, tps:"169 t/s", status:"ok", note:"default · Hermes"},
+    {node:1, name:"qwen3-vl:32b (ollama)", port:11434, ram:0, tps:"—", status:"idle", note:"unloaded · keep-alive 8m"},
+    {node:2, name:"DeepSeek-V4-Flash TP=2", port:8888, ram:88.1, tps:"30 t/s", status:"ok", note:"1M ctx"},
+    {node:2, name:"MiniMax-M2.5-REAP-Q4-longname-gguf-0001-of-0009", port:8890, ram:null, tps:"—", status:"bad", note:"crashed 04:12 — OOM"},
+  ],
+  alerts: [
+    {t:"04:31", s:"bad",  m:"restic Metal44: repo lock timeout, exit 1"},
+    {t:"04:12", s:"bad",  m:"node2 MiniMax loader SIGKILL (OOM) — swap 11.3G"},
+    {t:"13:05", s:"warn", m:"Pi mirror heartbeat missing 3d"},
+    {t:"16:02", s:"ok",   m:"crypto cycle: 2 opens, 1 close, +0.8% arena"},
+    {t:"17:00", s:"ok",   m:"pokemon scan: 7 hits, best spread $312"},
+  ],
+  todos: [
+    {txt:"Approve SPL proposal from Telegram (SOUL.md edit)", tag:"hermes", done:false},
+    {txt:"Fix restic Metal44 lock", tag:"backups", done:false},
+    {txt:"Change furnace filter", tag:"home", done:false},
+    {txt:"Review MiniMax OOM on node2 — lower ctx or REAP quant", tag:"models", done:false},
+    {txt:"Order PLA for the 3D printer before the weekend project with a really long description that overflows", tag:"home", done:false},
+    {txt:"Renew car registration", tag:"home", done:true},
+  ],
+  projects: [
+    {name:"Hermes gateways", status:"ok",   detail:"3/3 active · kanban 4 open", ago:"live"},
+    {name:"Pokemon Arb", status:"ok",   detail:"7 hits · $312 spread", ago:"1h 40m"},
+    {name:"Crypto Machine", status:"warn", detail:"champion idle 3 cycles", ago:"2h"},
+    {name:"Backups (restic)", status:"bad",  detail:"Metal44 FAILED exit 1", ago:"14h"},
+    {name:"STL Sandbox", status:"ok",   detail:":8050 · 200 OK", ago:"live"},
+    {name:"Blockfield", status:"ok",   detail:":8080 · mempool 41MB", ago:"live"},
+    {name:"Pi mirror", status:"stale",detail:"no heartbeat", ago:"3d"},
+    {name:"Start9", status:"warn", detail:"degraded (known)", ago:"22m"},
+  ],
+};
+const cls=p=>p>=90?"b":p>=70?"w":"";
+const stDot=s=>`<span class="dot ${s==='ok'?'ok':s==='warn'?'warn':s==='stale'?'stale':'bad'}"></span>`;
+const pct=(u,t)=>Math.round(u/t*100);
+
+// nodes
+document.getElementById("nodes").innerHTML = D.nodes.map(n=>{
+  const mp=pct(n.mem.used,n.mem.total), sp=pct(n.swap.used,n.swap.total);
+  const row=(l,p,v)=>`<div class="brow"><label>${l}</label><div class="bar"><i class="${cls(p)}" style="width:${p}%"></i></div><div class="v">${v}</div></div>`;
+  const mods=D.models.filter(m=>m.node===(n.role.startsWith("node1")?1:2));
+  return `<div class="node"><h2>${n.name} <span style="font-size:12px;color:var(--faint)">${n.role}</span><span class="up">up ${n.up}</span></h2>
+    ${row("GPU",n.gpu,`${n.gpu}% · ${n.gputemp}°C · ${n.power} W`)}
+    ${row("CPU",n.cpu,`${n.cpu}% · ${n.load}`)}
+    ${row("Mem",mp,`${n.mem.used} / ${n.mem.total} G (${mp}%)`)}
+    ${row("Swap",sp,`${n.swap.used} / ${n.swap.total} G`)}
+    ${row("Disk",n.disk.pct,`${n.disk.pct}% · ${n.disk.freeTB} TB free`)}
+    <div class="models"><h4>Models</h4><table>
+    ${mods.map(m=>`<tr><td title="${m.name}">${m.name} <span style="color:var(--faint)">:${m.port}</span></td>
+      <td class="num">${m.ram==null?"?":m.ram===0?"—":m.ram+" G"}</td><td class="num">${m.tps}</td>
+      <td>${stDot(m.status==="idle"?"stale":m.status)}${m.status==="bad"?`<span class="bad">${m.note}</span>`:m.note}</td></tr>`).join("")}
+    </table></div></div>`;
+}).join("");
+
+// alerts
+document.getElementById("alerts").innerHTML = D.alerts.map(a=>
+  `<div class="alert-row"><span class="t">${a.t}</span>${stDot(a.s)}<span class="m" title="${a.m}">${a.m}</span></div>`).join("");
+
+// todos
+function renderTodos(){
+  const open=D.todos.filter(t=>!t.done).length;
+  document.getElementById("todo-cnt").textContent=`${open} open`;
+  document.getElementById("todos").innerHTML=D.todos.map((t,i)=>
+    `<div class="todo-row ${t.done?'done':''}" onclick="toggle(${i})">
+     <input type="checkbox" ${t.done?"checked":""} onclick="event.stopPropagation();toggle(${i})">
+     <span title="${t.txt}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.txt}</span>
+     <span class="tag">${t.tag}</span></div>`).join("");
+}
+function toggle(i){D.todos[i].done=!D.todos[i].done;renderTodos();}
+function addTodo(){
+  const el=document.getElementById("todo-in");
+  if(el.value.trim()){D.todos.unshift({txt:el.value.trim(),tag:"home",done:false});el.value="";renderTodos();}
+}
+document.getElementById("todo-in").addEventListener("keydown",e=>{if(e.key==="Enter")addTodo();});
+renderTodos();
+
+// projects
+document.getElementById("projects").innerHTML = D.projects.map(p=>
+  `<div class="proj ${p.status==='bad'?'alert':''}"><b title="${p.name}">${p.name}</b>
+   <span class="st">${stDot(p.status)}${p.detail}</span><span class="ago">${p.ago}</span></div>`).join("");
+
+// clock
+const tick=()=>document.getElementById("clock").textContent=new Date().toLocaleTimeString();
+tick();setInterval(tick,1000);
+</script>
+</body>
+</html>

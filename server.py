@@ -23,6 +23,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 CSV_FILE = os.path.join(DATA_DIR, "performance_timeseries.csv")
 JSON_SNAP = os.path.join(DATA_DIR, "latest_snapshot.json")
 DASHBOARD_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard.html")
+CONSOLE_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "console.html")
 
 try:
     from fastapi import FastAPI
@@ -35,9 +36,12 @@ except ImportError:
 # Import collector functions for live queries
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from collector import (  # noqa: E402
-    diagnose, query_gpu, query_hermes, query_ollama, query_procs, system_metrics,
+    diagnose, query_endpoints, query_gpu, query_hermes, query_ollama,
+    query_procs, system_metrics,
 )
 from model_inventory import query_inventory  # noqa: E402
+from remote_node import query_node2  # noqa: E402
+import projects_status  # noqa: E402
 from model_control import (  # noqa: E402
     can_switch,
     control_status,
@@ -58,7 +62,112 @@ class SwitchRequest(BaseModel):
     fast: bool = False
 
 
+class TodoRequest(BaseModel):
+    action: str  # add | toggle | delete
+    text: str = ""
+    tag: str = "home"
+    id: str = ""
+
+
+# ---- background refreshers: node2 + projects cached so pages never block ----
+import collections  # noqa: E402
+import threading  # noqa: E402
+import time as _time  # noqa: E402
+
+import psutil  # noqa: E402
+
+_cache_lock = threading.Lock()
+_node2_cache: dict = {"reachable": False, "error": "not polled yet"}
+_projects_cache: dict = {"projects": []}
+_n1_hist: collections.deque = collections.deque(maxlen=90)   # 1s samples, 90s window
+_n2_hist: collections.deque = collections.deque(maxlen=90)
+
+
+def _gpu_util_quick() -> float | None:
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=utilization.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=3)
+        return float(out.stdout.strip().splitlines()[0])
+    except Exception:
+        return None
+
+
+def _node1_sampler():
+    """1 Hz local sampler for the System Monitor-style history graphs."""
+    psutil.cpu_percent(None)  # prime
+    prev_net = psutil.net_io_counters()
+    prev_t = _time.time()
+    gpu: float = 0.0
+    tick = 0
+    while True:
+        _time.sleep(1)
+        try:
+            now = _time.time()
+            cpu = psutil.cpu_percent(None)
+            vm = psutil.virtual_memory()
+            sw = psutil.swap_memory()
+            net = psutil.net_io_counters()
+            dt = max(now - prev_t, 0.1)
+            rx = (net.bytes_recv - prev_net.bytes_recv) / dt / 1024
+            tx = (net.bytes_sent - prev_net.bytes_sent) / dt / 1024
+            prev_net, prev_t = net, now
+            if tick % 2 == 0:  # nvidia-smi spawn is ~50ms; every other tick
+                g = _gpu_util_quick()
+                if g is not None:
+                    gpu = g
+            tick += 1
+            with _cache_lock:
+                _n1_hist.append({"t": round(now), "cpu": cpu, "gpu": gpu,
+                                 "mem": vm.percent, "swap": sw.percent,
+                                 "rx": round(rx, 1), "tx": round(tx, 1)})
+        except Exception:
+            pass
+
+
+def _node2_refresher():
+    """Continuous SSH loop; each call carries 10×1s samples for the graphs."""
+    while True:
+        try:
+            n2 = query_node2()
+            samples = n2.pop("samples", [])
+            with _cache_lock:
+                _node2_cache.clear()
+                _node2_cache.update(n2)
+                _n2_hist.extend(samples)
+        except Exception as e:  # never let the thread die
+            with _cache_lock:
+                _node2_cache.update({"reachable": False, "error": str(e)[:200]})
+            _time.sleep(10)
+        _time.sleep(1)
+
+
+def _projects_refresher():
+    while True:
+        try:
+            pr = projects_status.query_projects()
+            with _cache_lock:
+                _projects_cache.clear()
+                _projects_cache.update(pr)
+        except Exception:
+            pass
+        _time.sleep(60)
+
+
+threading.Thread(target=_node1_sampler, daemon=True).start()
+threading.Thread(target=_node2_refresher, daemon=True).start()
+threading.Thread(target=_projects_refresher, daemon=True).start()
+
+
 @app.get("/", response_class=HTMLResponse)
+async def console():
+    if os.path.exists(CONSOLE_HTML):
+        return HTMLResponse(content=open(CONSOLE_HTML).read())
+    return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500)
+
+
+@app.get("/classic", response_class=HTMLResponse)
 async def dashboard():
     if os.path.exists(DASHBOARD_HTML):
         return HTMLResponse(content=open(DASHBOARD_HTML).read())
@@ -166,6 +275,7 @@ async def api_live_snapshot():
         "processes": procs,
         "ollama": ollama,
         "hermes": hermes,
+        "endpoints": query_endpoints(),
         "models": inv,
         "vllm": inv.get("active_vllm") or [],
         "alerts": alerts,
@@ -208,6 +318,57 @@ def _series_stats(values: list[float]) -> dict:
 @app.get("/api/live")
 async def api_live():
     return await api_live_snapshot()
+
+
+@app.get("/api/sparks")
+async def api_sparks():
+    """1s-resolution rolling history for the System Monitor-style graphs."""
+    with _cache_lock:
+        return {"node1": list(_n1_hist), "node2": list(_n2_hist)}
+
+
+@app.get("/api/node2")
+async def api_node2():
+    with _cache_lock:
+        return dict(_node2_cache)
+
+
+@app.get("/api/projects")
+async def api_projects():
+    with _cache_lock:
+        return dict(_projects_cache)
+
+
+@app.get("/api/todos")
+async def api_todos():
+    return {"todos": projects_status.get_todos()}
+
+
+@app.post("/api/todos")
+async def api_todos_post(req: TodoRequest):
+    if req.action == "add" and req.text.strip():
+        return {"todos": projects_status.add_todo(req.text, req.tag)}
+    if req.action == "toggle" and req.id:
+        return {"todos": projects_status.toggle_todo(req.id)}
+    if req.action == "delete" and req.id:
+        return {"todos": projects_status.delete_todo(req.id)}
+    return JSONResponse({"ok": False, "error": "bad action"}, status_code=400)
+
+
+@app.get("/api/overview")
+async def api_overview():
+    """Everything the console page needs in one call."""
+    snap = await api_live_snapshot()
+    with _cache_lock:
+        node2 = dict(_node2_cache)
+        projects = dict(_projects_cache)
+    return {
+        "node1": snap,
+        "node2": node2,
+        "projects": projects.get("projects", []),
+        "projects_ts": projects.get("iso_ts"),
+        "todos": projects_status.get_todos(),
+    }
 
 
 @app.get("/api/history")

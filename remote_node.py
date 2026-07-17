@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""
+Node2 (sparkymaxxx-12ef) poller — one batched SSH call over the CX7 fabric,
+parsed into the same shape as the local node snapshot. Results are cached by
+a background refresher thread in server.py so page loads never wait on SSH.
+"""
+from __future__ import annotations
+
+import json
+import subprocess
+from datetime import datetime, timezone
+
+NODE2_ALIAS = "spark2"  # ~/.ssh/config → 192.168.100.11 over CX7
+SSH_TIMEOUT = 25  # remote script includes a 10×1s sampling loop
+
+REMOTE_SCRIPT = r"""
+echo @HOST; hostname
+echo @UPTIME; cat /proc/uptime
+echo @LOAD; cat /proc/loadavg
+echo @MEM; free -b | sed -n '2p;3p'
+echo @DISK; df -B1 / | tail -1
+echo @GPU; nvidia-smi --query-gpu=index,name,power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null
+echo @TOPMEM; ps -eo comm,rss --sort=-rss --no-headers | head -5
+echo @VLLM; curl -s -m 3 http://localhost:8888/v1/models 2>/dev/null || true
+echo @LLAMA; curl -s -m 3 http://localhost:8890/v1/models 2>/dev/null || true
+echo @SAMPLES
+read tprev iprev < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+read rxp txp < <(awk '/:/{sub(/^[^:]*:/,"");rx+=$1;tx+=$9} END{print rx,tx}' /proc/net/dev)
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  sleep 1
+  read tcur icur < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+  read rxc txc < <(awk '/:/{sub(/^[^:]*:/,"");rx+=$1;tx+=$9} END{print rx,tx}' /proc/net/dev)
+  gpu=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1)
+  read mem swap < <(awk '/MemTotal/{mt=$2}/MemAvailable/{ma=$2}/SwapTotal/{st=$2}/SwapFree/{sf=$2} END{printf "%.1f %.1f", (mt-ma)/mt*100, (st ? (st-sf)/st*100 : 0)}' /proc/meminfo)
+  cpu=$(awk -v t=$((tcur-tprev)) -v i=$((icur-iprev)) 'BEGIN{if(t>0)printf "%.1f",(t-i)/t*100; else print 0}')
+  rxk=$(awk -v a="$rxc" -v b="$rxp" 'BEGIN{printf "%.1f",(a-b)/1024}')
+  txk=$(awk -v a="$txc" -v b="$txp" 'BEGIN{printf "%.1f",(a-b)/1024}')
+  echo "$(date +%s) $cpu ${gpu:-0} $mem $swap $rxk $txk"
+  tprev=$tcur; iprev=$icur; rxp=$rxc; txp=$txc
+done
+echo @END
+"""
+
+
+def _uptime_human(seconds: float) -> str:
+    d, rem = divmod(int(seconds), 86400)
+    h, rem = divmod(rem, 3600)
+    m = rem // 60
+    return f"{d}d {h}h" if d else f"{h}h {m}m"
+
+
+def _parse_sections(raw: str) -> dict[str, list[str]]:
+    sections: dict[str, list[str]] = {}
+    key = None
+    for line in raw.splitlines():
+        if line.startswith("@"):
+            key = line.strip()[1:]
+            sections[key] = []
+        elif key:
+            sections[key].append(line)
+    return sections
+
+
+def _parse_models_json(lines: list[str], port: int, engine: str) -> list[dict]:
+    text = "\n".join(lines).strip()
+    if not text:
+        return []
+    try:
+        data = json.loads(text)
+    except (ValueError, TypeError):
+        return []
+    out = []
+    for m in data.get("data") or []:
+        mid = (m.get("id") or "?").rstrip("/").split("/")[-1]
+        out.append({"id": mid, "port": port, "engine": engine, "status": "ok"})
+    return out
+
+
+def query_node2() -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    base: dict = {"name": "sparkymaxxx-12ef", "role": "node2", "iso_ts": now}
+    try:
+        out = subprocess.run(
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5",
+             NODE2_ALIAS, "bash", "-s"],
+            input=REMOTE_SCRIPT, capture_output=True, text=True,
+            timeout=SSH_TIMEOUT,
+        )
+        if out.returncode != 0 or "@END" not in (out.stdout or ""):
+            base.update({"reachable": False,
+                         "error": (out.stderr or "ssh failed").strip()[:200]})
+            return base
+    except (subprocess.TimeoutExpired, OSError) as e:
+        base.update({"reachable": False, "error": str(e)[:200]})
+        return base
+
+    s = _parse_sections(out.stdout)
+    base["reachable"] = True
+    try:
+        base["hostname"] = s["HOST"][0].strip()
+        base["uptime"] = _uptime_human(float(s["UPTIME"][0].split()[0]))
+        load = s["LOAD"][0].split()
+        base["load"] = f"{load[0]} / {load[1]} / {load[2]}"
+
+        mem = s["MEM"][0].split()   # Mem: total used free shared buff avail
+        swap = s["MEM"][1].split()  # Swap: total used free
+        gib = 1024 ** 3
+        base["mem"] = {
+            "used_gb": round(int(mem[2]) / gib, 1),
+            "total_gb": round(int(mem[1]) / gib, 1),
+            "avail_gb": round(int(mem[6]) / gib, 1),
+            "pct": round(int(mem[2]) / int(mem[1]) * 100, 1),
+        }
+        st = int(swap[1])
+        base["swap"] = {
+            "used_gb": round(int(swap[2]) / gib, 1),
+            "total_gb": round(st / gib, 1),
+            "pct": round(int(swap[2]) / st * 100, 1) if st else 0.0,
+        }
+        disk = s["DISK"][0].split()
+        base["disk"] = {
+            "pct": float(disk[4].rstrip("%")),
+            "free_tb": round(int(disk[3]) / 1024 ** 4, 2),
+        }
+        # CPU% approximated from 1-min load (no interval sampling over SSH)
+        base["cpu_pct"] = round(min(float(load[0]) / 20 * 100, 100), 1)
+
+        gpus = []
+        for line in s.get("GPU", []):
+            p = [x.strip() for x in line.split(",")]
+            if len(p) >= 5:
+                gpus.append({
+                    "index": int(p[0]), "name": p[1],
+                    "power_w": float(p[2]) if p[2] not in ("N/A", "[N/A]") else 0.0,
+                    "temp_c": int(float(p[3])) if p[3] not in ("N/A", "[N/A]") else 0,
+                    "util_gpu": float(p[4]) if p[4] not in ("N/A", "[N/A]") else 0.0,
+                })
+        base["gpus"] = gpus
+
+        top = []
+        for line in s.get("TOPMEM", []):
+            p = line.split()
+            if len(p) >= 2:
+                top.append({"name": p[0], "mem_gb": round(int(p[1]) * 1024 / 1024 ** 3, 1)})
+        base["top_procs"] = top
+
+        models = _parse_models_json(s.get("VLLM", []), 8888, "vLLM")
+        models += _parse_models_json(s.get("LLAMA", []), 8890, "llama.cpp")
+        base["models"] = models
+
+        samples = []
+        for line in s.get("SAMPLES", []):
+            p = line.split()
+            if len(p) == 7:
+                try:
+                    samples.append({
+                        "t": int(p[0]), "cpu": float(p[1]), "gpu": float(p[2]),
+                        "mem": float(p[3]), "swap": float(p[4]),
+                        "rx": float(p[5]), "tx": float(p[6]),
+                    })
+                except ValueError:
+                    continue
+        base["samples"] = samples
+    except (KeyError, IndexError, ValueError) as e:
+        base["parse_error"] = f"{type(e).__name__}: {e}"
+    return base
+
+
+if __name__ == "__main__":
+    print(json.dumps(query_node2(), indent=2))

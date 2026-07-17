@@ -98,10 +98,19 @@ def query_procs() -> list[dict]:
     return procs
 
 
+OLLAMA_BIN = os.path.expanduser("~/.local/bin/ollama")
+if not os.path.exists(OLLAMA_BIN):
+    OLLAMA_BIN = "ollama"
+
+
 def query_ollama() -> list[dict]:
-    out = subprocess.run(
-        ["ollama", "ps"], capture_output=True, text=True, timeout=10,
-    )
+    # bare "ollama" fails under systemd (PATH lacks ~/.local/bin → errno 13)
+    try:
+        out = subprocess.run(
+            [OLLAMA_BIN, "ps"], capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
     models = []
     for line in (out.stdout or "").strip().splitlines()[1:]:
         parts = line.split()
@@ -126,6 +135,7 @@ def query_hermes() -> dict:
         ["systemctl", "--user", "is-active",
          "hermes-gateway-orchestrator.service",
          "hermes-gateway-light.service",
+         "hermes-gateway-dobby.service",
          "dgx-performance-dashboard.service"],
         capture_output=True, text=True, timeout=5,
     )
@@ -133,8 +143,27 @@ def query_hermes() -> dict:
     return {
         "orchestrator": lines[0] if len(lines) > 0 else "unknown",
         "light": lines[1] if len(lines) > 1 else "unknown",
-        "dashboard": lines[2] if len(lines) > 2 else "unknown",
+        "dobby": lines[2] if len(lines) > 2 else "unknown",
+        "dashboard": lines[3] if len(lines) > 3 else "unknown",
     }
+
+
+def query_endpoints() -> list[dict]:
+    """Local inference endpoints on this node (llama.cpp :8889 default)."""
+    import urllib.request
+    eps = []
+    for port, engine in ((8889, "llama.cpp"), (8888, "vLLM")):
+        try:
+            with urllib.request.urlopen(
+                    f"http://127.0.0.1:{port}/v1/models", timeout=2) as r:
+                data = json.load(r)
+            for m in data.get("data") or []:
+                mid = (m.get("id") or "?").rstrip("/").split("/")[-1]
+                eps.append({"id": mid, "port": port,
+                            "engine": engine, "status": "ok"})
+        except Exception:
+            continue
+    return eps
 
 
 def system_metrics() -> dict:
