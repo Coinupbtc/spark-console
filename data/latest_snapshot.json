@@ -1,33 +1,33 @@
 {
-  "timestamp_utc": "2026-07-17 10:46:47",
-  "iso_ts": "2026-07-17T10:46:47.535947+00:00",
+  "timestamp_utc": "2026-07-18 10:32:20",
+  "iso_ts": "2026-07-18T10:32:20.625411+00:00",
   "hour": 10,
-  "dow": 4,
+  "dow": 5,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 1.8,
-    "load_1": 0.17,
-    "load_5": 0.16,
-    "load_15": 0.17,
-    "mem_used_gb": 74.55,
+    "cpu_pct": 0.8,
+    "load_1": 0.33,
+    "load_5": 0.25,
+    "load_15": 0.2,
+    "mem_used_gb": 88.18,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 47.14,
-    "mem_pct": 61.3,
-    "swap_used_gb": 0.0,
+    "mem_avail_gb": 33.51,
+    "mem_pct": 72.5,
+    "swap_used_gb": 10.08,
     "swap_total_gb": 16.0,
-    "swap_pct": 0.0,
-    "disk_used_pct": 40.0,
-    "disk_free_tb": 2.09
+    "swap_pct": 63.0,
+    "disk_used_pct": 49.3,
+    "disk_free_tb": 1.76
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.86,
+  "total_power_watts": 10.94,
   "avg_temp_c": 47.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.86,
+      "power_w": 10.94,
       "temp_c": 47,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
@@ -38,12 +38,16 @@
   ],
   "processes": [
     {
-      "name": "/home/coinupbtc/llama.cpp-master/build/bin/llama-server",
-      "mem_mb": 27597
-    },
-    {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
       "mem_mb": 242
+    },
+    {
+      "name": "/home/coinupbtc/llama.cpp-master/build/bin/llama-server",
+      "mem_mb": 27545
+    },
+    {
+      "name": "/home/coinupbtc/llama.cpp-master/build/bin/llama-server",
+      "mem_mb": 20852
     }
   ],
   "ollama": [],
@@ -143,6 +147,18 @@
   "vllm": [],
   "alerts": [
     {
+      "level": "warning",
+      "category": "memory",
+      "message": "RAM at 72.5% \u2014 33.51 GB available",
+      "action": "Review vLLM (nvfp4-status.sh) and `ollama ps`"
+    },
+    {
+      "level": "warning",
+      "category": "swap",
+      "message": "Swap usage 10.08 GB \u2014 memory pressure",
+      "action": "Free RAM by stopping large models"
+    },
+    {
       "level": "info",
       "category": "gpu",
       "message": "gnome-remote-desktop using 242 MB VRAM",
@@ -151,7 +167,7 @@
   ],
   "alert_count": {
     "critical": 0,
-    "warning": 0,
+    "warning": 2,
     "info": 1
   }
 }
