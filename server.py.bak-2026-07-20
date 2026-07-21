@@ -53,11 +53,6 @@ from model_control import (  # noqa: E402
     sync_hermes,
     unload_ollama,
 )
-from service_control import (  # noqa: E402
-    get_operation as get_svc_operation,
-    list_services,
-    service_action,
-)
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -72,11 +67,6 @@ class TodoRequest(BaseModel):
     text: str = ""
     tag: str = "home"
     id: str = ""
-
-
-class ServiceActionRequest(BaseModel):
-    action: str  # start | stop | restart
-    model: str | None = None  # node2-deep only
 
 
 # ---- background refreshers: node2 + projects cached so pages never block ----
@@ -178,22 +168,10 @@ async def console():
 
 
 @app.get("/classic", response_class=HTMLResponse)
-async def dashboard_retired():
-    """Classic Plotly UI retired 2026-07-20 — redirect-style notice."""
-    return HTMLResponse(
-        content=(
-            "<!doctype html><meta charset=utf-8>"
-            "<title>Classic view retired</title>"
-            "<body style='font:16px system-ui;background:#0d1117;color:#e9eef4;"
-            "display:flex;min-height:100vh;align-items:center;justify-content:center'>"
-            "<div style='max-width:28rem;text-align:center;line-height:1.5'>"
-            "<p><strong>Classic view is gone.</strong></p>"
-            "<p style='color:#93a0ad'>Use the Spark Console control panel.</p>"
-            "<p><a href='/' style='color:#5aa9ff'>→ Spark Console</a></p>"
-            "</div></body>"
-        ),
-        status_code=410,
-    )
+async def dashboard():
+    if os.path.exists(DASHBOARD_HTML):
+        return HTMLResponse(content=open(DASHBOARD_HTML).read())
+    return HTMLResponse(content="<h1>dashboard.html missing</h1>", status_code=500)
 
 
 @app.get("/api/latest")
@@ -384,39 +362,13 @@ async def api_overview():
     with _cache_lock:
         node2 = dict(_node2_cache)
         projects = dict(_projects_cache)
-    try:
-        services = list_services()
-    except Exception as e:
-        services = {"services": [], "error": str(e)[:200], "active_operation": None}
     return {
         "node1": snap,
         "node2": node2,
         "projects": projects.get("projects", []),
         "projects_ts": projects.get("iso_ts"),
         "todos": projects_status.get_todos(),
-        "services": services,
     }
-
-
-@app.get("/api/services")
-async def api_services():
-    return list_services()
-
-
-@app.post("/api/services/{service_id}")
-async def api_services_action(service_id: str, req: ServiceActionRequest):
-    result = service_action(service_id, req.action, model=req.model)
-    if not result.get("ok"):
-        return JSONResponse(result, status_code=400)
-    return result
-
-
-@app.get("/api/services/operations/{op_id}")
-async def api_services_operation(op_id: str):
-    op = get_svc_operation(op_id)
-    if not op:
-        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
-    return {"ok": True, "operation": op}
 
 
 @app.get("/api/history")

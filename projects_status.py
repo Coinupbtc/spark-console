@@ -170,6 +170,9 @@ def query_projects() -> dict:
         _backup_tile(),
         _port_tile("STL Sandbox", 8050, "stl-sandbox.service"),
         _port_tile("Blockfield", 8080, "bitcoin-blockfield.service"),
+        _port_tile("BetIntel API", 8000, "betintel-backend.service"),
+        _port_tile("BetIntel UI", 5173, "betintel-frontend.service"),
+        _port_tile("Bakeoff UI", 8765, "bakeoff-ui.service"),
         _pi_tile(),
         _start9_tile(),
     ]

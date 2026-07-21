@@ -7,17 +7,11 @@ a background refresher thread in server.py so page loads never wait on SSH.
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 from datetime import datetime, timezone
-from pathlib import Path
 
 NODE2_ALIAS = "spark2"  # ~/.ssh/config → 192.168.100.11 over CX7
 SSH_TIMEOUT = 25  # remote script includes a 10×1s sampling loop
-# Pin identity so BatchMode works under systemd without SSH agent
-_SHARED_KEY = Path.home() / ".ssh/id_ed25519_shared"
-_CX7_IP = "192.168.100.11"
-_DEEP_PORT = 8100
 
 REMOTE_SCRIPT = r"""
 echo @HOST; hostname
@@ -27,11 +21,8 @@ echo @MEM; free -b | sed -n '2p;3p'
 echo @DISK; df -B1 / | tail -1
 echo @GPU; nvidia-smi --query-gpu=index,name,power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null
 echo @TOPMEM; ps -eo comm,rss --sort=-rss --no-headers | head -5
-# Always force a trailing newline after curl (JSON often has none → glues onto next @TAG)
-echo @VLLM; curl -s -m 3 http://127.0.0.1:8888/v1/models 2>/dev/null || true; echo
-echo @LLAMA; curl -s -m 3 http://127.0.0.1:8889/v1/models 2>/dev/null || true; echo
-# deep lane binds CX7 IP only (not always localhost)
-echo @DEEP; curl -s -m 3 http://192.168.100.11:8100/v1/models 2>/dev/null || curl -s -m 3 http://127.0.0.1:8100/v1/models 2>/dev/null || true; echo
+echo @VLLM; curl -s -m 3 http://localhost:8888/v1/models 2>/dev/null || true
+echo @LLAMA; curl -s -m 3 http://localhost:8890/v1/models 2>/dev/null || true
 echo @SAMPLES
 read tprev iprev < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
 read rxp txp < <(awk '/:/{sub(/^[^:]*:/,"");rx+=$1;tx+=$9} END{print rx,tx}' /proc/net/dev)
@@ -49,19 +40,6 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
 done
 echo @END
 """
-
-
-def _ssh_base() -> list[str]:
-    cmd = [
-        "ssh",
-        "-o", "BatchMode=yes",
-        "-o", "ConnectTimeout=5",
-        "-o", "StrictHostKeyChecking=accept-new",
-    ]
-    if _SHARED_KEY.is_file():
-        cmd += ["-o", "IdentitiesOnly=yes", "-i", str(_SHARED_KEY)]
-    # Avoid broken gpg-agent sockets under systemd when key file is enough
-    return cmd
 
 
 def _uptime_human(seconds: float) -> str:
@@ -87,28 +65,13 @@ def _parse_models_json(lines: list[str], port: int, engine: str) -> list[dict]:
     text = "\n".join(lines).strip()
     if not text:
         return []
-    # Prefer first JSON object if noise trailed (legacy glue bug)
     try:
         data = json.loads(text)
     except (ValueError, TypeError):
-        data = None
-        for i, ch in enumerate(text):
-            if ch != "{":
-                continue
-            try:
-                data, _ = json.JSONDecoder().raw_decode(text[i:])
-                break
-            except ValueError:
-                continue
-        if data is None:
-            return []
+        return []
     out = []
-    seen = set()
-    for m in (data.get("data") or []) + (data.get("models") or []):
-        mid = (m.get("id") or m.get("name") or m.get("model") or "?").rstrip("/").split("/")[-1]
-        if mid in seen:
-            continue
-        seen.add(mid)
+    for m in data.get("data") or []:
+        mid = (m.get("id") or "?").rstrip("/").split("/")[-1]
         out.append({"id": mid, "port": port, "engine": engine, "status": "ok"})
     return out
 
@@ -116,18 +79,16 @@ def _parse_models_json(lines: list[str], port: int, engine: str) -> list[dict]:
 def query_node2() -> dict:
     now = datetime.now(timezone.utc).isoformat()
     base: dict = {"name": "sparkymaxxx-12ef", "role": "node2", "iso_ts": now}
-    env = {**os.environ, "HOME": str(Path.home())}
-    # Prefer file key over a flaky agent socket
-    env.pop("SSH_AUTH_SOCK", None)
     try:
         out = subprocess.run(
-            _ssh_base() + [NODE2_ALIAS, "bash", "-s"],
+            ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5",
+             NODE2_ALIAS, "bash", "-s"],
             input=REMOTE_SCRIPT, capture_output=True, text=True,
-            timeout=SSH_TIMEOUT, env=env,
+            timeout=SSH_TIMEOUT,
         )
         if out.returncode != 0 or "@END" not in (out.stdout or ""):
             base.update({"reachable": False,
-                         "error": (out.stderr or out.stdout or "ssh failed").strip()[:200]})
+                         "error": (out.stderr or "ssh failed").strip()[:200]})
             return base
     except (subprocess.TimeoutExpired, OSError) as e:
         base.update({"reachable": False, "error": str(e)[:200]})
@@ -161,6 +122,7 @@ def query_node2() -> dict:
             "pct": float(disk[4].rstrip("%")),
             "free_tb": round(int(disk[3]) / 1024 ** 4, 2),
         }
+        # CPU% approximated from 1-min load (no interval sampling over SSH)
         base["cpu_pct"] = round(min(float(load[0]) / 20 * 100, 100), 1)
 
         gpus = []
@@ -182,9 +144,8 @@ def query_node2() -> dict:
                 top.append({"name": p[0], "mem_gb": round(int(p[1]) * 1024 / 1024 ** 3, 1)})
         base["top_procs"] = top
 
-        models = _parse_models_json(s.get("DEEP", []), _DEEP_PORT, "llama.cpp-deep")
-        models += _parse_models_json(s.get("LLAMA", []), 8889, "llama.cpp")
-        models += _parse_models_json(s.get("VLLM", []), 8888, "vLLM")
+        models = _parse_models_json(s.get("VLLM", []), 8888, "vLLM")
+        models += _parse_models_json(s.get("LLAMA", []), 8890, "llama.cpp")
         base["models"] = models
 
         samples = []

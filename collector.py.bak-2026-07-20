@@ -136,10 +136,7 @@ def query_hermes() -> dict:
          "hermes-gateway-orchestrator.service",
          "hermes-gateway-light.service",
          "hermes-gateway-dobby.service",
-         "hermes-gateway-smeagle.service",
-         "dgx-performance-dashboard.service",
-         "llama-miaai35.service",
-         "ollama.service"],
+         "dgx-performance-dashboard.service"],
         capture_output=True, text=True, timeout=5,
     )
     lines = (out.stdout or "").strip().splitlines()
@@ -147,10 +144,7 @@ def query_hermes() -> dict:
         "orchestrator": lines[0] if len(lines) > 0 else "unknown",
         "light": lines[1] if len(lines) > 1 else "unknown",
         "dobby": lines[2] if len(lines) > 2 else "unknown",
-        "smeagle": lines[3] if len(lines) > 3 else "unknown",
-        "dashboard": lines[4] if len(lines) > 4 else "unknown",
-        "llama_miaai35": lines[5] if len(lines) > 5 else "unknown",
-        "ollama": lines[6] if len(lines) > 6 else "unknown",
+        "dashboard": lines[3] if len(lines) > 3 else "unknown",
     }
 
 

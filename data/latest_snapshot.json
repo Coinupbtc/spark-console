@@ -1,35 +1,35 @@
 {
-  "timestamp_utc": "2026-07-20 10:47:34",
-  "iso_ts": "2026-07-20T10:47:34.442974+00:00",
+  "timestamp_utc": "2026-07-21 10:32:16",
+  "iso_ts": "2026-07-21T10:32:16.187362+00:00",
   "hour": 10,
-  "dow": 0,
+  "dow": 1,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 2.9,
-    "load_1": 0.69,
-    "load_5": 0.63,
-    "load_15": 0.67,
-    "mem_used_gb": 65.9,
+    "cpu_pct": 0.8,
+    "load_1": 0.37,
+    "load_5": 0.32,
+    "load_15": 0.42,
+    "mem_used_gb": 62.41,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 55.79,
-    "mem_pct": 54.2,
-    "swap_used_gb": 4.17,
+    "mem_avail_gb": 59.28,
+    "mem_pct": 51.3,
+    "swap_used_gb": 2.08,
     "swap_total_gb": 16.0,
-    "swap_pct": 26.1,
-    "disk_used_pct": 49.8,
-    "disk_free_tb": 1.75
+    "swap_pct": 13.0,
+    "disk_used_pct": 54.6,
+    "disk_free_tb": 1.58
   },
   "num_gpus": 1,
-  "avg_util_pct": 0.0,
-  "total_power_watts": 10.98,
-  "avg_temp_c": 48.0,
+  "avg_util_pct": 1.0,
+  "total_power_watts": 11.34,
+  "avg_temp_c": 47.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.98,
-      "temp_c": 48,
-      "util_gpu": 0.0,
+      "power_w": 11.34,
+      "temp_c": 47,
+      "util_gpu": 1.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -39,11 +39,11 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 246
+      "mem_mb": 428
     },
     {
       "name": "/home/coinupbtc/llama.cpp-v9/build/bin/llama-server",
-      "mem_mb": 27589
+      "mem_mb": 27535
     }
   ],
   "ollama": [],
@@ -51,7 +51,10 @@
     "orchestrator": "active",
     "light": "active",
     "dobby": "active",
-    "dashboard": "active"
+    "smeagle": "active",
+    "dashboard": "active",
+    "llama_miaai35": "active",
+    "ollama": "active"
   },
   "models": {
     "bundle_dir": "/home/coinupbtc/models/dgx_bundle",
@@ -137,7 +140,10 @@
       "orchestrator": "active",
       "light": "active",
       "dobby": "active",
-      "dashboard": "active"
+      "smeagle": "active",
+      "dashboard": "active",
+      "llama_miaai35": "active",
+      "ollama": "active"
     }
   },
   "vllm": [],
@@ -145,13 +151,13 @@
     {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 4.17 GB \u2014 memory pressure",
+      "message": "Swap usage 2.08 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 246 MB VRAM",
+      "message": "gnome-remote-desktop using 428 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
