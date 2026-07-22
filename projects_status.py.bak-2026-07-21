@@ -176,18 +176,6 @@ def query_projects() -> dict:
         _pi_tile(),
         _start9_tile(),
     ]
-    # Dynamic tiles from Spark Console register overlay (agents auto-register servers)
-    try:
-        from service_control import project_tiles_from_catalog
-        seen_ports = {8050, 8080, 8000, 5173, 8765, 18080}
-        for t in project_tiles_from_catalog():
-            port = t.get("port")
-            if not port or port in seen_ports:
-                continue
-            seen_ports.add(port)
-            tiles.append(_port_tile(t["label"], port, t.get("unit")))
-    except Exception:
-        pass
     return {"iso_ts": datetime.now(timezone.utc).isoformat(), "projects": tiles}
 
 

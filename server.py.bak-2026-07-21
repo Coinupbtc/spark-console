@@ -56,9 +56,7 @@ from model_control import (  # noqa: E402
 from service_control import (  # noqa: E402
     get_operation as get_svc_operation,
     list_services,
-    register_service,
     service_action,
-    unregister_service,
 )
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
@@ -79,25 +77,6 @@ class TodoRequest(BaseModel):
 class ServiceActionRequest(BaseModel):
     action: str  # start | stop | restart
     model: str | None = None  # node2-deep only
-
-
-class ServiceRegisterRequest(BaseModel):
-    """Register a new app/server on the Spark Console Services board.
-
-    Agents (Hermes/Telegram/Grok) MUST call this when they create a new HTTP
-    server — do not wait for the human to ask.
-    """
-    id: str
-    label: str
-    port: int | None = None
-    unit: str | None = None
-    detail: str = ""
-    group: str = "apps"
-    kind: str | None = None  # systemd | probe-only
-    probe_url: str | None = None
-    hint: str = ""
-    show_projects_tile: bool = True
-    replace: bool = True
 
 
 # ---- background refreshers: node2 + projects cached so pages never block ----
@@ -424,32 +403,8 @@ async def api_services():
     return list_services()
 
 
-@app.post("/api/services/register")
-async def api_services_register(req: ServiceRegisterRequest):
-    """Add/update a non-builtin service on the console (no restart needed)."""
-    payload = req.model_dump()
-    replace = payload.pop("replace", True)
-    result = register_service(payload, replace=replace)
-    if not result.get("ok"):
-        return JSONResponse(result, status_code=400)
-    return result
-
-
-@app.delete("/api/services/register/{service_id}")
-async def api_services_unregister(service_id: str):
-    result = unregister_service(service_id)
-    if not result.get("ok"):
-        return JSONResponse(result, status_code=400)
-    return result
-
-
 @app.post("/api/services/{service_id}")
 async def api_services_action(service_id: str, req: ServiceActionRequest):
-    if service_id == "register":
-        return JSONResponse(
-            {"ok": False, "error": "Use POST /api/services/register with a body"},
-            status_code=400,
-        )
     result = service_action(service_id, req.action, model=req.model)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)

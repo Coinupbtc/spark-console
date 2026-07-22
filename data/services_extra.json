@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "updated_at": "2026-07-22T00:53:15.855496+00:00",
+  "services": {
+    "beer-pong": {
+      "label": "Beer Pong",
+      "detail": "game :8099",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "Ad-hoc game server",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8099/",
+        2.0
+      ],
+      "port": 8099,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-22T00:53:04.431768+00:00"
+    }
+  }
+}
