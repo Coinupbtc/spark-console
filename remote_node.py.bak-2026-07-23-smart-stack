@@ -27,20 +27,6 @@ echo @MEM; free -b | sed -n '2p;3p'
 echo @DISK; df -B1 / | tail -1
 echo @GPU; nvidia-smi --query-gpu=index,name,power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null
 echo @TOPMEM; ps -eo comm,rss --sort=-rss --no-headers | head -5
-echo @WORKLOADS
-ps -eo comm,args --no-headers | awk '
-BEGIN { IGNORECASE=1 }
-($1 == "awk" || $1 == "ps") { next }
-/daily_scan|pokemon-arb/ { seen["pokemon"]=1 }
-/run_cycle|crypto-machine/ { seen["crypto"]=1 }
-/ComfyUI/ { seen["comfyui"]=1 }
-/huggingface-cli download|hf download|aria2c|wget / { seen["download"]=1 }
-/bakeoff.py/ { seen["bakeoff"]=1 }
-/llama-server/ { seen["llama"]=1 }
-/vllm/ { seen["vllm"]=1 }
-/ollama/ { seen["ollama"]=1 }
-END { for (label in seen) print label }
-'
 # Always force a trailing newline after curl (JSON often has none → glues onto next @TAG)
 echo @VLLM; curl -s -m 3 http://127.0.0.1:8888/v1/models 2>/dev/null || true; echo
 echo @LLAMA; curl -s -m 3 http://127.0.0.1:8889/v1/models 2>/dev/null || true; echo
@@ -130,10 +116,6 @@ def _parse_models_json(lines: list[str], port: int, engine: str) -> list[dict]:
 def query_node2() -> dict:
     now = datetime.now(timezone.utc).isoformat()
     base: dict = {"name": "sparkymaxxx-12ef", "role": "node2", "iso_ts": now}
-    if os.getenv("DGX_NODE2_FORCE_FAILURE") == "1":
-        # Isolate an end-to-end degraded-path test without changing SSH or node2.
-        base.update({"reachable": False, "error": "forced node2 collection test"})
-        return base
     env = {**os.environ, "HOME": str(Path.home())}
     # Prefer file key over a flaky agent socket
     env.pop("SSH_AUTH_SOCK", None)
@@ -200,22 +182,10 @@ def query_node2() -> dict:
                 top.append({"name": p[0], "mem_gb": round(int(p[1]) * 1024 / 1024 ** 3, 1)})
         base["top_procs"] = top
 
-        deep_models = _parse_models_json(s.get("DEEP", []), _DEEP_PORT, "llama.cpp-deep")
-        llama_models = _parse_models_json(s.get("LLAMA", []), 8889, "llama.cpp")
-        vllm_models = _parse_models_json(s.get("VLLM", []), 8888, "vLLM")
-        models = deep_models + llama_models + vllm_models
+        models = _parse_models_json(s.get("DEEP", []), _DEEP_PORT, "llama.cpp-deep")
+        models += _parse_models_json(s.get("LLAMA", []), 8889, "llama.cpp")
+        models += _parse_models_json(s.get("VLLM", []), 8888, "vLLM")
         base["models"] = models
-        base["endpoints"] = [
-            {"port": _DEEP_PORT, "engine": "llama.cpp-deep",
-             "status": "ok" if deep_models else "down"},
-            {"port": 8889, "engine": "llama.cpp",
-             "status": "ok" if llama_models else "down"},
-            {"port": 8888, "engine": "vLLM",
-             "status": "ok" if vllm_models else "down"},
-        ]
-        base["workloads"] = sorted(set(s.get("WORKLOADS", [])))
-        if any(gpu.get("util_gpu", 0) >= 5 for gpu in gpus) and models:
-            base["workloads"].append("inference-busy")
 
         samples = []
         for line in s.get("SAMPLES", []):
@@ -230,12 +200,6 @@ def query_node2() -> dict:
                 except ValueError:
                     continue
         base["samples"] = samples
-        if samples:
-            # The 10-second sampled CPU value is more representative than
-            # converting load average with an arbitrary core-count divisor.
-            base["cpu_pct"] = round(
-                sum(sample["cpu"] for sample in samples) / len(samples), 1
-            )
     except (KeyError, IndexError, ValueError) as e:
         base["parse_error"] = f"{type(e).__name__}: {e}"
     return base

@@ -6,6 +6,7 @@ Appends one CSV row per run and overwrites latest_snapshot.json.
 """
 from __future__ import annotations
 
+import csv
 import json
 import os
 import re
@@ -13,14 +14,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-from cluster_metrics import (
-    CLUSTER_CSV_HEADERS,
-    cluster_csv_values,
-    collect_cluster,
-    notify_node2_state,
-)
 from model_inventory import query_inventory, sync_manifest_from_disk
-from timeseries_schema import SCHEMA_VERSION, append_row
 
 try:
     import psutil
@@ -28,15 +22,11 @@ except ImportError:
     print("ERROR: pip install psutil", file=sys.stderr)
     sys.exit(1)
 
-# Tests can isolate writes while exercising the real collector and alert path.
-DATA_DIR = os.getenv(
-    "DGX_DATA_DIR",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"),
-)
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 CSV_FILE = os.path.join(DATA_DIR, "performance_timeseries.csv")
 JSON_SNAP = os.path.join(DATA_DIR, "latest_snapshot.json")
 
-BASE_CSV_HEADERS = [
+CSV_HEADERS = [
     "timestamp_utc", "iso_ts", "hour", "dow",
     "cpu_pct", "load_1", "load_5", "load_15",
     "mem_used_gb", "mem_total_gb", "mem_avail_gb", "mem_pct",
@@ -45,7 +35,6 @@ BASE_CSV_HEADERS = [
     "gpu_util", "gpu_power_w", "gpu_temp_c", "gpu_mem_used_mb", "gpu_mem_total_mb",
     "ollama_models_json", "gpu_procs_json", "alerts_json",
 ]
-CSV_HEADERS = BASE_CSV_HEADERS + CLUSTER_CSV_HEADERS
 
 
 def _safe_int(v: str | None, default: int = 0) -> int:
@@ -326,14 +315,11 @@ def collect() -> dict | None:
     inv = query_inventory()
     inv["hermes"] = hermes
     alerts = diagnose(sys_m, gpus, ollama, procs, inv)
-    cluster = collect_cluster(sys_m, gpus)
-    node2_alert_state = notify_node2_state(cluster["node2"])
 
     gpu = gpus[0] if gpus else {}
     avg_util = round(sum(g["util_gpu"] for g in gpus) / len(gpus), 1) if gpus else 0
 
     snap = {
-        "schema_version": SCHEMA_VERSION,
         "timestamp_utc": ts,
         "iso_ts": iso,
         "hour": now.hour,
@@ -350,16 +336,6 @@ def collect() -> dict | None:
         "hermes": hermes,
         "models": inv,
         "vllm": inv.get("active_vllm") or [],
-        "nodes": cluster,
-        "endpoint_health": {
-            "node1": cluster["node1"]["endpoints"],
-            "node2": cluster["node2"]["endpoints"],
-        },
-        "workloads": {
-            "node1": cluster["node1"]["workloads"],
-            "node2": cluster["node2"]["workloads"],
-        },
-        "node2_alert_state": node2_alert_state,
         "alerts": alerts,
         "alert_count": {"critical": sum(1 for a in alerts if a["level"] == "critical"),
                         "warning": sum(1 for a in alerts if a["level"] == "warning"),
@@ -368,23 +344,23 @@ def collect() -> dict | None:
 
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    row = {
-        "timestamp_utc": ts,
-        "iso_ts": iso,
-        "hour": now.hour,
-        "dow": now.weekday(),
-        **sys_m,
-        "gpu_util": gpu.get("util_gpu", 0),
-        "gpu_power_w": gpu.get("power_w", 0),
-        "gpu_temp_c": gpu.get("temp_c", 0),
-        "gpu_mem_used_mb": gpu.get("mem_used_mb", 0),
-        "gpu_mem_total_mb": gpu.get("mem_total_mb", 0),
-        "ollama_models_json": json.dumps(ollama),
-        "gpu_procs_json": json.dumps(procs),
-        "alerts_json": json.dumps(alerts),
-        **cluster_csv_values(cluster),
-    }
-    append_row(CSV_FILE, CSV_HEADERS, row)
+    row = [
+        ts, iso, now.hour, now.weekday(),
+        sys_m["cpu_pct"], sys_m["load_1"], sys_m["load_5"], sys_m["load_15"],
+        sys_m["mem_used_gb"], sys_m["mem_total_gb"], sys_m["mem_avail_gb"], sys_m["mem_pct"],
+        sys_m["swap_used_gb"], sys_m["swap_total_gb"], sys_m["swap_pct"],
+        sys_m["disk_used_pct"], sys_m["disk_free_tb"],
+        gpu.get("util_gpu", 0), gpu.get("power_w", 0), gpu.get("temp_c", 0),
+        gpu.get("mem_used_mb", 0), gpu.get("mem_total_mb", 0),
+        json.dumps(ollama), json.dumps(procs), json.dumps(alerts),
+    ]
+
+    write_header = not os.path.exists(CSV_FILE) or os.path.getsize(CSV_FILE) == 0
+    with open(CSV_FILE, "a", newline="") as f:
+        w = csv.writer(f)
+        if write_header:
+            w.writerow(CSV_HEADERS)
+        w.writerow(row)
 
     with open(JSON_SNAP, "w") as f:
         json.dump(snap, f, indent=2)
@@ -392,16 +368,6 @@ def collect() -> dict | None:
     print(f"[{ts}] sparkmax performance snapshot")
     print(f"  CPU {sys_m['cpu_pct']}% | RAM {sys_m['mem_pct']}% ({sys_m['mem_avail_gb']}G free) | "
           f"GPU {avg_util}% {snap['total_power_watts']}W")
-    node2 = cluster["node2"]
-    if node2["reachable"]:
-        node2_gpu = (node2["gpus"] or [{}])[0]
-        print(
-            f"  Node2 CPU {node2.get('cpu_pct', 0)}% | "
-            f"RAM {node2.get('mem', {}).get('avail_gb', 0)}G free | "
-            f"GPU {node2_gpu.get('util_gpu', 0)}% {node2_gpu.get('power_w', 0)}W"
-        )
-    else:
-        print(f"  [WARNING] Node2 degraded: {node2.get('error', 'unreachable')}")
     if inv.get("active_vllm"):
         for m in inv["active_vllm"]:
             print(f"  vLLM: {m['label']} :{m['port']} ({m['status']})")

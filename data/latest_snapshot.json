@@ -1,35 +1,36 @@
 {
-  "timestamp_utc": "2026-07-23 10:32:18",
-  "iso_ts": "2026-07-23T10:32:18.839506+00:00",
+  "schema_version": 2,
+  "timestamp_utc": "2026-07-24 10:58:40",
+  "iso_ts": "2026-07-24T10:58:40.948980+00:00",
   "hour": 10,
-  "dow": 3,
+  "dow": 4,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 10.4,
-    "load_1": 1.5,
-    "load_5": 1.28,
-    "load_15": 1.15,
-    "mem_used_gb": 64.96,
+    "cpu_pct": 0.2,
+    "load_1": 0.24,
+    "load_5": 0.24,
+    "load_15": 0.2,
+    "mem_used_gb": 59.15,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 56.73,
-    "mem_pct": 53.4,
-    "swap_used_gb": 0.98,
+    "mem_avail_gb": 62.54,
+    "mem_pct": 48.6,
+    "swap_used_gb": 0.32,
     "swap_total_gb": 16.0,
-    "swap_pct": 6.2,
+    "swap_pct": 2.0,
     "disk_used_pct": 59.5,
     "disk_free_tb": 1.41
   },
   "num_gpus": 1,
-  "avg_util_pct": 19.0,
-  "total_power_watts": 15.45,
-  "avg_temp_c": 55.0,
+  "avg_util_pct": 0.0,
+  "total_power_watts": 10.68,
+  "avg_temp_c": 46.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 15.45,
-      "temp_c": 55,
-      "util_gpu": 19.0,
+      "power_w": 10.68,
+      "temp_c": 46,
+      "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -38,12 +39,12 @@
   ],
   "processes": [
     {
-      "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 428
+      "name": "/home/coinupbtc/llama.cpp-v9/build/bin/llama-server",
+      "mem_mb": 27535
     },
     {
-      "name": "/home/coinupbtc/llama.cpp-v9/build/bin/llama-server",
-      "mem_mb": 27581
+      "name": "/usr/libexec/gnome-remote-desktop-daemon",
+      "mem_mb": 176
     }
   ],
   "ollama": [],
@@ -147,11 +148,211 @@
     }
   },
   "vllm": [],
+  "nodes": {
+    "node1": {
+      "name": "sparkmax-10ef",
+      "role": "node1",
+      "reachable": true,
+      "system": {
+        "cpu_pct": 0.2,
+        "load_1": 0.24,
+        "load_5": 0.24,
+        "load_15": 0.2,
+        "mem_used_gb": 59.15,
+        "mem_total_gb": 121.69,
+        "mem_avail_gb": 62.54,
+        "mem_pct": 48.6,
+        "swap_used_gb": 0.32,
+        "swap_total_gb": 16.0,
+        "swap_pct": 2.0,
+        "disk_used_pct": 59.5,
+        "disk_free_tb": 1.41
+      },
+      "gpus": [
+        {
+          "index": 0,
+          "name": "NVIDIA GB10",
+          "power_w": 10.68,
+          "temp_c": 46,
+          "util_gpu": 0.0,
+          "mem_used_mb": 0,
+          "mem_total_mb": 0,
+          "fan_pct": 0,
+          "pstate": "P0"
+        }
+      ],
+      "endpoints": [
+        {
+          "port": 8889,
+          "engine": "llama.cpp",
+          "status": "ok",
+          "models": [
+            "q36-35b-a3b-nvfp4.gguf"
+          ]
+        },
+        {
+          "port": 8888,
+          "engine": "vLLM",
+          "status": "down",
+          "models": [],
+          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+        },
+        {
+          "port": 11434,
+          "engine": "Ollama",
+          "status": "ok",
+          "models": [
+            "qwen3.6:27b",
+            "qwen3-vl:32b"
+          ]
+        }
+      ],
+      "workloads": [
+        "llama",
+        "ollama",
+        "pokemon"
+      ]
+    },
+    "node2": {
+      "name": "sparkymaxxx-12ef",
+      "role": "node2",
+      "iso_ts": "2026-07-24T10:58:41.844649+00:00",
+      "reachable": true,
+      "error": null,
+      "cpu_pct": 0.4,
+      "mem": {
+        "used_gb": 106.0,
+        "total_gb": 121.7,
+        "avail_gb": 15.7,
+        "pct": 87.1
+      },
+      "swap": {
+        "used_gb": 1.3,
+        "total_gb": 16.0,
+        "pct": 8.2
+      },
+      "gpus": [
+        {
+          "index": 0,
+          "name": "NVIDIA GB10",
+          "power_w": 11.98,
+          "temp_c": 44,
+          "util_gpu": 0.0
+        }
+      ],
+      "models": [
+        {
+          "id": "mimo-v2.5-pro",
+          "port": 8100,
+          "engine": "llama.cpp-deep",
+          "status": "ok"
+        }
+      ],
+      "endpoints": [
+        {
+          "port": 8100,
+          "engine": "llama.cpp-deep",
+          "status": "ok"
+        },
+        {
+          "port": 8889,
+          "engine": "llama.cpp",
+          "status": "down"
+        },
+        {
+          "port": 8888,
+          "engine": "vLLM",
+          "status": "down"
+        }
+      ],
+      "workloads": [
+        "llama"
+      ],
+      "top_procs": [
+        {
+          "name": "llama-server",
+          "mem_gb": 6.4
+        },
+        {
+          "name": "polkitd",
+          "mem_gb": 0.3
+        },
+        {
+          "name": "gnome-shell",
+          "mem_gb": 0.1
+        },
+        {
+          "name": "systemd-journal",
+          "mem_gb": 0.1
+        },
+        {
+          "name": "tailscaled",
+          "mem_gb": 0.0
+        }
+      ]
+    }
+  },
+  "endpoint_health": {
+    "node1": [
+      {
+        "port": 8889,
+        "engine": "llama.cpp",
+        "status": "ok",
+        "models": [
+          "q36-35b-a3b-nvfp4.gguf"
+        ]
+      },
+      {
+        "port": 8888,
+        "engine": "vLLM",
+        "status": "down",
+        "models": [],
+        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+      },
+      {
+        "port": 11434,
+        "engine": "Ollama",
+        "status": "ok",
+        "models": [
+          "qwen3.6:27b",
+          "qwen3-vl:32b"
+        ]
+      }
+    ],
+    "node2": [
+      {
+        "port": 8100,
+        "engine": "llama.cpp-deep",
+        "status": "ok"
+      },
+      {
+        "port": 8889,
+        "engine": "llama.cpp",
+        "status": "down"
+      },
+      {
+        "port": 8888,
+        "engine": "vLLM",
+        "status": "down"
+      }
+    ]
+  },
+  "workloads": {
+    "node1": [
+      "llama",
+      "ollama",
+      "pokemon"
+    ],
+    "node2": [
+      "llama"
+    ]
+  },
+  "node2_alert_state": "healthy",
   "alerts": [
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 428 MB VRAM",
+      "message": "gnome-remote-desktop using 176 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],

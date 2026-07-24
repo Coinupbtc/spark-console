@@ -1,0 +1,55 @@
+{
+  "schema_version": 2,
+  "window_hours": 72,
+  "generated_at": "2026-07-23T15:07:49.236976+00:00",
+  "sample_count": 1,
+  "expected_samples": 864,
+  "utilization": {
+    "node1_cpu_pct": {
+      "p50": 2.5,
+      "p95": 2.5,
+      "max": 2.5
+    },
+    "node1_gpu_pct": {
+      "p50": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "node2_cpu_pct": {
+      "p50": 0.4,
+      "p95": 0.4,
+      "max": 0.4
+    },
+    "node2_gpu_pct": {
+      "p50": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "node1_min_available_gb": 52.93,
+    "node2_min_available_gb": 17.9,
+    "node1_max_swap_gb": 0.95,
+    "node2_max_swap_gb": 1.3,
+    "samples_below_15gb": 0,
+    "node1_longest_swap_over_8gb_samples": 0,
+    "node2_longest_swap_over_8gb_samples": 0
+  },
+  "endpoint_availability_pct": {
+    "node1_8889": 100.0,
+    "node2_8100": 100.0,
+    "node2_ssh": 100.0
+  },
+  "overlap_samples": {
+    "agent-cron+comfyui": 1,
+    "agent-cron+download": 1,
+    "agent-cron+inference": 1,
+    "agent-cron+pokemon": 1,
+    "comfyui+download": 1,
+    "comfyui+inference": 1,
+    "comfyui+pokemon": 1,
+    "download+inference": 1,
+    "download+pokemon": 1,
+    "inference+pokemon": 1
+  }
+}
