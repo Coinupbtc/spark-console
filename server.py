@@ -60,6 +60,11 @@ from service_control import (  # noqa: E402
     service_action,
     unregister_service,
 )
+import automation_status  # noqa: E402
+import backups_status  # noqa: E402
+import fleet_links  # noqa: E402
+import fleet_nodes  # noqa: E402
+import quick_actions  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -112,6 +117,13 @@ _node2_cache: dict = {"reachable": False, "error": "not polled yet"}
 _projects_cache: dict = {"projects": []}
 _n1_hist: collections.deque = collections.deque(maxlen=90)   # 1s samples, 90s window
 _n2_hist: collections.deque = collections.deque(maxlen=90)
+# Fleet appliances + control-center panels: all served from caches so a slow
+# SSH hop or a stalled script can never block a page load.
+_pi_cache: dict = {"reachable": False, "error": "not polled yet", "id": "pi"}
+_start9_cache: dict = {"reachable": False, "error": "not polled yet", "id": "start9"}
+_automation_cache: dict = {"jobs": [], "counts": {}, "upcoming": [], "failing": []}
+_backups_cache: dict = {"entries": [], "counts": {}, "issues": []}
+_links_cache: dict = {"groups": [], "counts": {}}
 
 
 def _gpu_util_quick() -> float | None:
@@ -186,9 +198,102 @@ def _projects_refresher():
         _time.sleep(60)
 
 
+def _fleet_refresher():
+    """Pi + Start9 over LAN SSH. Slow-changing appliances — 30s is plenty."""
+    while True:
+        for query, cache in ((fleet_nodes.query_pi, _pi_cache),
+                             (fleet_nodes.query_start9, _start9_cache)):
+            try:
+                data = query()
+                with _cache_lock:
+                    cache.clear()
+                    cache.update(data)
+            except Exception as e:  # never let the thread die
+                with _cache_lock:
+                    cache.update({"reachable": False, "error": str(e)[:200]})
+        _time.sleep(30)
+
+
+def _panels_refresher():
+    """Automation (file reads, ms) and backups (log tails) + launcher catalog.
+
+    Backups and the launcher both read the fleet caches, so give the first SSH
+    poll a head start — otherwise the first pass records every remote tier as
+    "unknown" and the UI shows a cold-start lie for 30s.
+    """
+    _time.sleep(6)
+    tick = 0
+    while True:
+        try:
+            auto = automation_status.query_automation()
+            with _cache_lock:
+                _automation_cache.clear()
+                _automation_cache.update(auto)
+        except Exception:
+            pass
+        with _cache_lock:
+            pi, s9 = dict(_pi_cache), dict(_start9_cache)
+        try:
+            back = backups_status.query_backups(pi, s9)
+            with _cache_lock:
+                _backups_cache.clear()
+                _backups_cache.update(back)
+        except Exception:
+            pass
+        try:
+            links = fleet_links.query_links(list_services(), s9, pi)
+            with _cache_lock:
+                _links_cache.clear()
+                _links_cache.update(links)
+        except Exception:
+            pass
+        tick += 1
+        _time.sleep(30)
+
+
+def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
+                  automation: dict, backups: dict, projects: list) -> list[dict]:
+    """One ranked alert list for the whole fleet — the console's headline claim
+    is 'nothing needs you right now', so every source has to feed this."""
+    out: list[dict] = []
+
+    def add(level, host, message):
+        out.append({"level": level, "host": host, "message": message})
+
+    def booting(host: dict) -> bool:
+        # First poll after a restart is not an outage — do not page for it.
+        return "not polled yet" in str(host.get("error", ""))
+
+    for a in (node1.get("alerts") or []):
+        add(a.get("level", "info"), "node1", a.get("message", ""))
+    if node2 and not node2.get("reachable") and not booting(node2):
+        add("critical", "node2", f"unreachable over fabric ({node2.get('error', '?')[:70]})")
+    elif node2 and (node2.get("swap") or {}).get("used_gb", 0) >= 2:
+        add("warning", "node2", f"swap {node2['swap']['used_gb']} G — memory pressure")
+    for host, data in (("pi", pi), ("start9", start9)):
+        if booting(data):
+            continue
+        for issue in (data.get("issues") or []):
+            add(issue.get("level", "warning"), host, issue.get("message", ""))
+    for job in (automation.get("failing") or []):
+        add("critical", "automation", f"{job['name']} ({job['layer']}) failed — {job['error']}"[:150])
+    for unit in (automation.get("failed_units") or []):
+        add("critical", "automation", f"systemd unit failed: {unit}")
+    for issue in (backups.get("issues") or []):
+        add(issue.get("level", "warning"), "backups", issue.get("message", ""))
+    for p in (projects or []):
+        if p.get("status") == "bad":
+            add("critical", "projects", f"{p.get('name')}: {p.get('detail')}")
+    rank = {"critical": 0, "warning": 1, "info": 2}
+    out.sort(key=lambda a: rank.get(a["level"], 3))
+    return out
+
+
 threading.Thread(target=_node1_sampler, daemon=True).start()
 threading.Thread(target=_node2_refresher, daemon=True).start()
 threading.Thread(target=_projects_refresher, daemon=True).start()
+threading.Thread(target=_fleet_refresher, daemon=True).start()
+threading.Thread(target=_panels_refresher, daemon=True).start()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -398,6 +503,57 @@ async def api_todos_post(req: TodoRequest):
     return JSONResponse({"ok": False, "error": "bad action"}, status_code=400)
 
 
+@app.get("/api/pi")
+async def api_pi():
+    with _cache_lock:
+        return dict(_pi_cache)
+
+
+@app.get("/api/start9")
+async def api_start9():
+    with _cache_lock:
+        return dict(_start9_cache)
+
+
+@app.get("/api/automation")
+async def api_automation():
+    with _cache_lock:
+        return dict(_automation_cache)
+
+
+@app.get("/api/backups")
+async def api_backups():
+    with _cache_lock:
+        return dict(_backups_cache)
+
+
+@app.get("/api/links")
+async def api_links():
+    with _cache_lock:
+        return dict(_links_cache)
+
+
+@app.get("/api/actions")
+async def api_actions():
+    return {"actions": quick_actions.list_actions()}
+
+
+@app.post("/api/actions/{action_id}")
+async def api_action_run(action_id: str):
+    result = quick_actions.run_action(action_id)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/actions/runs/{run_id}")
+async def api_action_run_status(run_id: str):
+    run = quick_actions.get_run(run_id)
+    if not run:
+        return JSONResponse({"ok": False, "error": "run not found"}, status_code=404)
+    return {"ok": True, "run": run}
+
+
 @app.get("/api/overview")
 async def api_overview():
     """Everything the console page needs in one call."""
@@ -405,17 +561,30 @@ async def api_overview():
     with _cache_lock:
         node2 = dict(_node2_cache)
         projects = dict(_projects_cache)
+        pi = dict(_pi_cache)
+        start9 = dict(_start9_cache)
+        automation = dict(_automation_cache)
+        backups = dict(_backups_cache)
+        links = dict(_links_cache)
     try:
         services = list_services()
     except Exception as e:
         services = {"services": [], "error": str(e)[:200], "active_operation": None}
+    project_list = projects.get("projects", [])
     return {
         "node1": snap,
         "node2": node2,
-        "projects": projects.get("projects", []),
+        "pi": pi,
+        "start9": start9,
+        "projects": project_list,
         "projects_ts": projects.get("iso_ts"),
         "todos": projects_status.get_todos(),
         "services": services,
+        "automation": automation,
+        "backups": backups,
+        "links": links,
+        "actions": quick_actions.list_actions(),
+        "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list),
     }
 
 

@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+"""
+Fleet appliance pollers — Raspberry Pi 5 (mirror/watchdog) and Start9 server
+(cosmic-charcoal, self-hosted Bitcoin/Nextcloud/Gitea stack).
+
+Same shape as remote_node.query_node2(): ONE batched SSH call per host parsed
+by @SECTION markers, driven by a background thread in server.py so page loads
+never wait on SSH. Both hosts authenticate with ~/.ssh/id_ed25519_shared so
+BatchMode works under systemd with no agent.
+
+Read-only by design: these are appliances holding money-adjacent services
+(bitcoind/lnd) and the tier-3 backup — the console reports, it does not
+start/stop containers.
+"""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+
+SHARED_KEY = Path.home() / ".ssh/id_ed25519_shared"
+PI_ALIAS = "pi5"           # ~/.ssh/config → coffee-house@192.168.50.152:2222
+START9_ALIAS = "start9"    # ~/.ssh/config → start9@192.168.50.119
+SSH_TIMEOUT = 30           # remote scripts include a 1s CPU sampling delta
+GIB = 1024 ** 3
+
+# ---------------------------------------------------------------- remote scripts
+
+PI_SCRIPT = r"""
+echo @HOST; hostname
+echo @UPTIME; cat /proc/uptime
+echo @LOAD; cat /proc/loadavg
+echo @NPROC; nproc
+echo @CPU
+read t1 i1 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+sleep 1
+read t2 i2 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+awk -v t=$((t2-t1)) -v i=$((i2-i1)) 'BEGIN{if(t>0)printf "%.1f\n",(t-i)/t*100; else print 0}'
+echo @MEM; free -b | sed -n '2p;3p'
+echo @DISK; df -B1 / | tail -1
+echo @TEMP; vcgencmd measure_temp 2>/dev/null || awk '{printf "temp=%.1f'\''C\n",$1/1000}' /sys/class/thermal/thermal_zone0/temp 2>/dev/null
+echo @THROTTLE; vcgencmd get_throttled 2>/dev/null || echo throttled=0x0
+echo @SVC
+for u in ssh cron tailscaled syncthing; do echo "$u $(systemctl is-active $u 2>/dev/null || echo unknown)"; done
+echo @MIRROR
+if [ -d /home/coffee-house/spark-mirror ]; then
+  find /home/coffee-house/spark-mirror -type f -printf '%T@\n' 2>/dev/null | sort -n | tail -1
+  du -sb /home/coffee-house/spark-mirror 2>/dev/null | cut -f1
+  find /home/coffee-house/spark-mirror -type f 2>/dev/null | wc -l
+fi
+echo @WATCHDOG
+stat -c %Y /home/coffee-house/logs/stack-watchdog.log 2>/dev/null
+tail -2 /home/coffee-house/logs/stack-watchdog.log 2>/dev/null
+echo @TAILSCALE; tailscale ip -4 2>/dev/null | head -1
+echo @END
+"""
+
+START9_SCRIPT = r"""
+echo @HOST; hostname
+echo @UPTIME; cat /proc/uptime
+echo @LOAD; cat /proc/loadavg
+echo @NPROC; nproc
+echo @CPU
+read t1 i1 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+sleep 1
+read t2 i2 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
+awk -v t=$((t2-t1)) -v i=$((i2-i1)) 'BEGIN{if(t>0)printf "%.1f\n",(t-i)/t*100; else print 0}'
+echo @MEM; free -b | sed -n '2p;3p'
+echo @DISKROOT; df -B1 / | tail -1
+echo @DISKDATA; df -B1 /embassy-data/package-data 2>/dev/null | tail -1
+echo @TEMP
+for z in /sys/class/thermal/thermal_zone*; do
+  echo "$(cat $z/type 2>/dev/null) $(cat $z/temp 2>/dev/null)"
+done 2>/dev/null
+echo @STARTD; systemctl is-active startd 2>/dev/null || echo unknown
+echo @PODMAN
+sudo -n podman ps -q 2>/dev/null | wc -l
+sudo -n podman ps -a -q 2>/dev/null | wc -l
+echo @NAMES; sudo -n podman ps -a --format '{{.Names}}|{{.Status}}' 2>/dev/null
+echo @BACKUP
+head -2 /mnt/backup/hermes/last-backup.txt 2>/dev/null
+stat -c %Y /mnt/backup/hermes/last-backup.txt 2>/dev/null
+echo @END
+"""
+
+# Containers whose absence is worth an alert (core of the self-hosted stack).
+START9_CORE = ("bitcoind", "lnd", "electrs", "fulcrum", "nextcloud",
+               "gitea", "syncthing", "searxng", "vaultwarden", "mempool")
+
+
+def _ssh(alias: str, script: str, timeout: int = SSH_TIMEOUT) -> tuple[bool, str, str]:
+    cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6",
+           "-o", "StrictHostKeyChecking=accept-new"]
+    if SHARED_KEY.is_file():
+        cmd += ["-o", "IdentitiesOnly=yes", "-i", str(SHARED_KEY)]
+    env = {**os.environ, "HOME": str(Path.home())}
+    env.pop("SSH_AUTH_SOCK", None)  # a stale agent socket breaks BatchMode
+    try:
+        out = subprocess.run(cmd + [alias, "bash", "-s"], input=script,
+                             capture_output=True, text=True, timeout=timeout, env=env)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return False, "", f"{type(e).__name__}: {str(e)[:160]}"
+    if out.returncode != 0 or "@END" not in (out.stdout or ""):
+        return False, out.stdout or "", (out.stderr or out.stdout or "ssh failed").strip()[:200]
+    return True, out.stdout, ""
+
+
+def _sections(raw: str) -> dict[str, list[str]]:
+    out: dict[str, list[str]] = {}
+    key = None
+    for line in raw.splitlines():
+        if line.startswith("@"):
+            key = line.strip()[1:]
+            out[key] = []
+        elif key:
+            out[key].append(line.rstrip())
+    return out
+
+
+def _first(sec: dict, key: str, default: str = "") -> str:
+    vals = [v for v in sec.get(key, []) if v.strip()]
+    return vals[0].strip() if vals else default
+
+
+def _uptime_human(seconds: float) -> str:
+    d, rem = divmod(int(seconds), 86400)
+    h, rem = divmod(rem, 3600)
+    return f"{d}d {h}h" if d else f"{h}h {rem // 60}m"
+
+
+def ago_human(epoch: float | None) -> str:
+    if not epoch:
+        return "never"
+    delta = datetime.now(timezone.utc).timestamp() - epoch
+    if delta < 90:
+        return f"{int(delta)}s ago"
+    if delta < 5400:
+        return f"{int(delta / 60)}m ago"
+    if delta < 172800:
+        return f"{delta / 3600:.1f}h ago"
+    return f"{int(delta / 86400)}d ago"
+
+
+def _mem_block(lines: list[str]) -> tuple[dict, dict]:
+    mem = lines[0].split()   # Mem: total used free shared buff avail
+    swap = lines[1].split()  # Swap: total used free
+    total, used, avail = int(mem[1]), int(mem[2]), int(mem[6])
+    st, su = int(swap[1]), int(swap[2])
+    return (
+        {"used_gb": round(used / GIB, 1), "total_gb": round(total / GIB, 1),
+         "avail_gb": round(avail / GIB, 1), "pct": round(used / total * 100, 1)},
+        {"used_gb": round(su / GIB, 1), "total_gb": round(st / GIB, 1),
+         "pct": round(su / st * 100, 1) if st else 0.0},
+    )
+
+
+def _disk_block(line: str) -> dict:
+    p = line.split()
+    total, used, free = int(p[1]), int(p[2]), int(p[3])
+    return {"pct": float(p[4].rstrip("%")),
+            "used_gb": round(used / GIB, 1), "total_gb": round(total / GIB, 1),
+            "free_gb": round(free / GIB, 1),
+            "free_tb": round(free / 1024 ** 4, 2), "mount": p[5] if len(p) > 5 else "/"}
+
+
+# ---------------------------------------------------------------- Raspberry Pi
+
+def query_pi() -> dict:
+    now = datetime.now(timezone.utc)
+    base: dict = {"id": "pi", "name": "raspberrypi", "role": "Pi 5 · mirror + watchdog",
+                  "kind": "appliance", "iso_ts": now.isoformat(), "ts": now.timestamp()}
+    ok, raw, err = _ssh(PI_ALIAS, PI_SCRIPT)
+    if not ok:
+        base.update({"reachable": False, "error": err, "issues": [
+            {"level": "critical", "message": f"Pi unreachable — {err[:90]}"}]})
+        return base
+    s = _sections(raw)
+    base["reachable"] = True
+    issues: list[dict] = []
+    try:
+        base["hostname"] = _first(s, "HOST", "raspberrypi")
+        base["uptime"] = _uptime_human(float(_first(s, "UPTIME", "0").split()[0]))
+        load = _first(s, "LOAD").split()
+        base["load"] = " / ".join(load[:3]) if load else "?"
+        base["cores"] = int(_first(s, "NPROC", "4") or 4)
+        base["cpu_pct"] = float(_first(s, "CPU", "0") or 0)
+        base["mem"], base["swap"] = _mem_block([l for l in s.get("MEM", []) if l.strip()])
+        base["disk"] = _disk_block(_first(s, "DISK"))
+
+        temp_raw = _first(s, "TEMP")  # temp=43.3'C
+        temp = None
+        if "=" in temp_raw:
+            try:
+                temp = float(temp_raw.split("=")[1].rstrip("'C").rstrip("C"))
+            except ValueError:
+                temp = None
+        base["temp_c"] = temp
+        throttled = _first(s, "THROTTLE", "throttled=0x0").split("=")[-1]
+        base["throttled"] = throttled
+        base["throttled_ok"] = throttled in ("0x0", "")
+
+        services = []
+        for line in s.get("SVC", []):
+            p = line.split()
+            if len(p) == 2:
+                services.append({"name": p[0], "state": p[1]})
+        base["services"] = services
+
+        mirror_lines = [l for l in s.get("MIRROR", []) if l.strip()]
+        if len(mirror_lines) >= 2:
+            newest = float(mirror_lines[0])
+            base["mirror"] = {
+                "newest_ts": newest, "newest_ago": ago_human(newest),
+                "size_gb": round(int(mirror_lines[1]) / GIB, 2),
+                "files": int(mirror_lines[2]) if len(mirror_lines) > 2 else None,
+                "age_h": round((now.timestamp() - newest) / 3600, 1),
+            }
+        wd = [l for l in s.get("WATCHDOG", []) if l.strip()]
+        if wd:
+            try:
+                wts = float(wd[0])
+                base["watchdog"] = {"last_ts": wts, "last_ago": ago_human(wts),
+                                    "tail": wd[-1][:120] if len(wd) > 1 else "",
+                                    "age_m": round((now.timestamp() - wts) / 60, 1)}
+            except ValueError:
+                pass
+        base["tailscale_ip"] = _first(s, "TAILSCALE")
+
+        # ---- judgments (the console's job is to say what is wrong, not just show numbers)
+        if temp is not None and temp >= 75:
+            issues.append({"level": "warning", "message": f"Pi CPU {temp}°C — throttle risk"})
+        if not base["throttled_ok"]:
+            issues.append({"level": "warning",
+                           "message": f"Pi throttled flags {throttled} (power/heat)"})
+        if base["disk"]["pct"] >= 85:
+            issues.append({"level": "warning",
+                           "message": f"Pi disk {base['disk']['pct']}% full"})
+        for svc in services:
+            if svc["name"] in ("ssh", "cron") and svc["state"] != "active":
+                issues.append({"level": "critical",
+                               "message": f"Pi {svc['name']} is {svc['state']}"})
+        wdog = base.get("watchdog")
+        if wdog and wdog["age_m"] > 25:
+            issues.append({"level": "warning",
+                           "message": f"Pi stack-watchdog silent {wdog['last_ago']} (runs */10m)"})
+        mirror = base.get("mirror")
+        if mirror and mirror["age_h"] > 48:
+            issues.append({"level": "warning",
+                           "message": f"Pi mirror stale — newest file {mirror['newest_ago']}"})
+    except (KeyError, IndexError, ValueError) as e:
+        base["parse_error"] = f"{type(e).__name__}: {e}"
+        issues.append({"level": "warning", "message": f"Pi parse error: {e}"})
+    base["issues"] = issues
+    return base
+
+
+# ---------------------------------------------------------------- Start9
+
+def query_start9() -> dict:
+    now = datetime.now(timezone.utc)
+    base: dict = {"id": "start9", "name": "cosmic-charcoal", "role": "Start9 · self-hosted stack",
+                  "kind": "appliance", "iso_ts": now.isoformat(), "ts": now.timestamp()}
+    ok, raw, err = _ssh(START9_ALIAS, START9_SCRIPT)
+    if not ok:
+        base.update({"reachable": False, "error": err, "issues": [
+            {"level": "critical", "message": f"Start9 unreachable — {err[:90]}"}]})
+        return base
+    s = _sections(raw)
+    base["reachable"] = True
+    issues: list[dict] = []
+    try:
+        base["hostname"] = _first(s, "HOST", "cosmic-charcoal")
+        base["uptime"] = _uptime_human(float(_first(s, "UPTIME", "0").split()[0]))
+        load = _first(s, "LOAD").split()
+        base["load"] = " / ".join(load[:3]) if load else "?"
+        base["cores"] = int(_first(s, "NPROC", "8") or 8)
+        base["cpu_pct"] = float(_first(s, "CPU", "0") or 0)
+        base["mem"], base["swap"] = _mem_block([l for l in s.get("MEM", []) if l.strip()])
+        base["disk_root"] = _disk_block(_first(s, "DISKROOT"))
+        data_line = _first(s, "DISKDATA")
+        base["disk_data"] = _disk_block(data_line) if data_line else None
+
+        # Hottest thermal zone wins, but keep its name — "87°C" means nothing
+        # until you know it is the CPU package and not a chipset sensor.
+        hottest, hot_name = None, ""
+        for line in s.get("TEMP", []):
+            parts = line.split()
+            if len(parts) != 2:
+                continue
+            try:
+                milli = float(parts[1])
+            except ValueError:
+                continue
+            if hottest is None or milli > hottest:
+                hottest, hot_name = milli, parts[0]
+        base["temp_c"] = round(hottest / 1000, 1) if hottest else None
+        base["temp_source"] = hot_name
+
+        base["startd"] = _first(s, "STARTD", "unknown")
+        pod = [l for l in s.get("PODMAN", []) if l.strip()]
+        running = int(pod[0]) if pod else 0
+        total = int(pod[1]) if len(pod) > 1 else running
+        base["containers"] = {"running": running, "total": total}
+
+        svc_list = []
+        for line in s.get("NAMES", []):
+            if "|" not in line:
+                continue
+            name, status = line.split("|", 1)
+            short = name.replace(".embassy", "").strip()
+            up = status.strip().lower().startswith("up")
+            svc_list.append({"name": short, "status": status.strip(), "up": up,
+                             "core": short in START9_CORE})
+        svc_list.sort(key=lambda x: (not x["core"], not x["up"], x["name"]))
+        base["podman_services"] = svc_list
+        base["core_down"] = [x["name"] for x in svc_list if x["core"] and not x["up"]]
+        missing = [c for c in START9_CORE if not any(x["name"] == c for x in svc_list)]
+        base["core_missing"] = missing
+
+        bk = [l for l in s.get("BACKUP", []) if l.strip()]
+        if bk:
+            backup = {"label": bk[0].strip()}
+            if len(bk) > 1:
+                backup["stamp"] = bk[1].strip()
+            try:
+                bts = float(bk[-1])
+                backup["ts"] = bts
+                backup["ago"] = ago_human(bts)
+                backup["age_h"] = round((now.timestamp() - bts) / 3600, 1)
+            except ValueError:
+                pass
+            base["backup"] = backup
+
+        # ---- judgments
+        if base["startd"] != "active":
+            issues.append({"level": "critical",
+                           "message": f"Start9 startd {base['startd']} — services will not run"})
+        if running == 0:
+            issues.append({"level": "critical", "message": "Start9: no containers running"})
+        elif running < 20:
+            issues.append({"level": "warning",
+                           "message": f"Start9 only {running}/{total} containers up"})
+        for name in base["core_down"]:
+            issues.append({"level": "critical", "message": f"Start9 core service down: {name}"})
+        for name in missing:
+            issues.append({"level": "warning", "message": f"Start9 core service missing: {name}"})
+        dd = base.get("disk_data")
+        if dd and dd["pct"] >= 85:
+            issues.append({"level": "warning",
+                           "message": f"Start9 package-data {dd['pct']}% full "
+                                      f"({dd['free_tb']} TB free)"})
+        if base["disk_root"]["pct"] >= 80:
+            issues.append({"level": "warning",
+                           "message": f"Start9 root overlay {base['disk_root']['pct']}% "
+                                      f"— only {base['disk_root']['total_gb']} G total"})
+        if base["swap"]["used_gb"] >= 6:
+            issues.append({"level": "warning",
+                           "message": f"Start9 swap {base['swap']['used_gb']} G in use"})
+        if base["temp_c"] and base["temp_c"] >= 90:
+            issues.append({"level": "warning",
+                           "message": f"Start9 {base['temp_source'] or 'CPU'} "
+                                      f"{base['temp_c']}°C — near throttle"})
+        bkp = base.get("backup")
+        if bkp and bkp.get("age_h") is not None and bkp["age_h"] > 36:
+            issues.append({"level": "warning",
+                           "message": f"Start9 tier-3 backup stale — {bkp['ago']}"})
+    except (KeyError, IndexError, ValueError) as e:
+        base["parse_error"] = f"{type(e).__name__}: {e}"
+        issues.append({"level": "warning", "message": f"Start9 parse error: {e}"})
+    base["issues"] = issues
+    return base
+
+
+if __name__ == "__main__":
+    import sys
+    which = sys.argv[1] if len(sys.argv) > 1 else "both"
+    if which in ("pi", "both"):
+        print(json.dumps(query_pi(), indent=2))
+    if which in ("start9", "both"):
+        print(json.dumps(query_start9(), indent=2))
