@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,8 +42,6 @@ echo @MEM; free -b | sed -n '2p;3p'
 echo @DISK; df -B1 / | tail -1
 echo @TEMP; vcgencmd measure_temp 2>/dev/null || awk '{printf "temp=%.1f'\''C\n",$1/1000}' /sys/class/thermal/thermal_zone0/temp 2>/dev/null
 echo @THROTTLE; vcgencmd get_throttled 2>/dev/null || echo throttled=0x0
-# Pi 5 PMIC rails (I×V sum ≈ board draw; EXT5V has V only — not wall meter)
-echo @PMIC; vcgencmd pmic_read_adc 2>/dev/null
 echo @SVC
 for u in ssh cron tailscaled syncthing; do echo "$u $(systemctl is-active $u 2>/dev/null || echo unknown)"; done
 echo @MIRROR
@@ -66,19 +63,10 @@ echo @UPTIME; cat /proc/uptime
 echo @LOAD; cat /proc/loadavg
 echo @NPROC; nproc
 echo @CPU
-# RAPL energy_uj is root-only; sudo -n works (same as podman). Sample across the
-# same 1s window used for CPU % — package watts, not wall (no BMC meter here).
-E1=$(sudo -n cat /sys/class/powercap/intel-rapl:0/energy_uj 2>/dev/null || echo)
-D1=$(sudo -n cat /sys/class/powercap/intel-rapl:0:2/energy_uj 2>/dev/null || echo)
 read t1 i1 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
 sleep 1
 read t2 i2 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
-E2=$(sudo -n cat /sys/class/powercap/intel-rapl:0/energy_uj 2>/dev/null || echo)
-D2=$(sudo -n cat /sys/class/powercap/intel-rapl:0:2/energy_uj 2>/dev/null || echo)
 awk -v t=$((t2-t1)) -v i=$((i2-i1)) 'BEGIN{if(t>0)printf "%.1f\n",(t-i)/t*100; else print 0}'
-echo @POWER
-# lines: package_uj_delta dram_uj_delta  (÷1e6 → watts over the 1s sleep)
-echo "${E1} ${E2} ${D1} ${D2}"
 echo @MEM; free -b | sed -n '2p;3p'
 echo @DISKROOT; df -B1 / | tail -1
 echo @DISKDATA; df -B1 /embassy-data/package-data 2>/dev/null | tail -1
@@ -177,77 +165,6 @@ def _disk_block(line: str) -> dict:
             "free_tb": round(free / 1024 ** 4, 2), "mount": p[5] if len(p) > 5 else "/"}
 
 
-def _pi_pmic_power_w(lines: list[str]) -> dict | None:
-    """Sum Pi 5 PMIC rail I×V from `vcgencmd pmic_read_adc` (board estimate, not wall)."""
-    curr: dict[str, float] = {}
-    volt: dict[str, float] = {}
-    # "VDD_CORE_A current(7)=0.56A" / "VDD_CORE_V volt(15)=0.75V"
-    pat = re.compile(r"^\s*(\S+)\s+(current|volt)\(\d+\)=([0-9.]+)")
-    for line in lines:
-        m = pat.match(line)
-        if not m:
-            continue
-        name, kind, val = m.group(1), m.group(2), float(m.group(3))
-        # Only strip the trailing _A / _V suffix — mid-name "_V" (DDR_VDD2) must stay
-        if kind == "current" and name.endswith("_A"):
-            curr[name[:-2]] = val
-        elif kind == "volt" and name.endswith("_V"):
-            volt[name[:-2]] = val
-    if not curr:
-        return None
-    rails = []
-    total = 0.0
-    for rail, amps in curr.items():
-        v = volt.get(rail)
-        if v is None:
-            continue
-        watts = amps * v
-        total += watts
-        rails.append({"rail": rail, "a": round(amps, 4), "v": round(v, 4),
-                      "w": round(watts, 3)})
-    rails.sort(key=lambda r: -r["w"])
-    return {
-        "power_w": round(total, 2),
-        "power_source": "pmic-rails",
-        "power_label": "board",
-        "power_scale_w": 15.0,  # Pi 5 typical peak board draw for bar fill
-        "ext5v_v": round(volt["EXT5V"], 3) if "EXT5V" in volt else None,
-        "rails_top": rails[:5],
-    }
-
-
-def _start9_rapl_power_w(line: str) -> dict | None:
-    """Parse `E1 E2 D1 D2` µJ samples taken 1s apart → package (+DRAM) watts."""
-    parts = line.split()
-    if len(parts) < 2:
-        return None
-    try:
-        e1, e2 = float(parts[0]), float(parts[1])
-    except ValueError:
-        return None
-    if e2 < e1:  # counter wrap — skip this sample
-        return None
-    pkg_w = (e2 - e1) / 1e6  # 1-second window → watts
-    dram_w = None
-    if len(parts) >= 4 and parts[2] and parts[3]:
-        try:
-            d1, d2 = float(parts[2]), float(parts[3])
-            if d2 >= d1:
-                dram_w = (d2 - d1) / 1e6
-        except ValueError:
-            dram_w = None
-    # On this Cannon Lake box DRAM is a sibling domain, not inside package-0
-    total = pkg_w + (dram_w or 0.0)
-    return {
-        "power_w": round(total, 2),
-        "power_pkg_w": round(pkg_w, 2),
-        "power_dram_w": round(dram_w, 2) if dram_w is not None else None,
-        "power_source": "rapl-package+dram",
-        "power_label": "CPU+DRAM",
-        "power_scale_w": 65.0,  # modest NUC-class package headroom for bar fill
-    }
-
-
 # ---------------------------------------------------------------- Raspberry Pi
 
 def query_pi() -> dict:
@@ -283,10 +200,6 @@ def query_pi() -> dict:
         throttled = _first(s, "THROTTLE", "throttled=0x0").split("=")[-1]
         base["throttled"] = throttled
         base["throttled_ok"] = throttled in ("0x0", "")
-
-        pmic = _pi_pmic_power_w(s.get("PMIC", []))
-        if pmic:
-            base.update(pmic)
 
         services = []
         for line in s.get("SVC", []):
@@ -364,9 +277,6 @@ def query_start9() -> dict:
         base["load"] = " / ".join(load[:3]) if load else "?"
         base["cores"] = int(_first(s, "NPROC", "8") or 8)
         base["cpu_pct"] = float(_first(s, "CPU", "0") or 0)
-        rapl = _start9_rapl_power_w(_first(s, "POWER"))
-        if rapl:
-            base.update(rapl)
         base["mem"], base["swap"] = _mem_block([l for l in s.get("MEM", []) if l.strip()])
         base["disk_root"] = _disk_block(_first(s, "DISKROOT"))
         data_line = _first(s, "DISKDATA")

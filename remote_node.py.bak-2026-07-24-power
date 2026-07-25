@@ -53,13 +53,12 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
   sleep 1
   read tcur icur < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
   read rxc txc < <(awk '/:/{sub(/^[^:]*:/,"");rx+=$1;tx+=$9} END{print rx,tx}' /proc/net/dev)
-  # util + power in one smi call (GB10 power.limit is N/A — draw only)
-  read gpu pwr < <(nvidia-smi --query-gpu=utilization.gpu,power.draw --format=csv,noheader,nounits 2>/dev/null | head -1 | tr ',' ' ')
+  gpu=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -1)
   read mem swap < <(awk '/MemTotal/{mt=$2}/MemAvailable/{ma=$2}/SwapTotal/{st=$2}/SwapFree/{sf=$2} END{printf "%.1f %.1f", (mt-ma)/mt*100, (st ? (st-sf)/st*100 : 0)}' /proc/meminfo)
   cpu=$(awk -v t=$((tcur-tprev)) -v i=$((icur-iprev)) 'BEGIN{if(t>0)printf "%.1f",(t-i)/t*100; else print 0}')
   rxk=$(awk -v a="$rxc" -v b="$rxp" 'BEGIN{printf "%.1f",(a-b)/1024}')
   txk=$(awk -v a="$txc" -v b="$txp" 'BEGIN{printf "%.1f",(a-b)/1024}')
-  echo "$(date +%s) $cpu ${gpu:-0} $mem $swap $rxk $txk ${pwr:-0}"
+  echo "$(date +%s) $cpu ${gpu:-0} $mem $swap $rxk $txk"
   tprev=$tcur; iprev=$icur; rxp=$rxc; txp=$txc
 done
 echo @END
@@ -221,14 +220,12 @@ def query_node2() -> dict:
         samples = []
         for line in s.get("SAMPLES", []):
             p = line.split()
-            # 7 fields = legacy (pre-power); 8 = util+power.draw watts
-            if len(p) in (7, 8):
+            if len(p) == 7:
                 try:
                     samples.append({
                         "t": int(p[0]), "cpu": float(p[1]), "gpu": float(p[2]),
                         "mem": float(p[3]), "swap": float(p[4]),
                         "rx": float(p[5]), "tx": float(p[6]),
-                        "pwr": float(p[7]) if len(p) == 8 else 0.0,
                     })
                 except ValueError:
                     continue

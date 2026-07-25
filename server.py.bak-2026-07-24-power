@@ -126,20 +126,13 @@ _backups_cache: dict = {"entries": [], "counts": {}, "issues": []}
 _links_cache: dict = {"groups": [], "counts": {}}
 
 
-def _gpu_quick() -> tuple[float, float] | None:
-    """Return (util_pct, power_w) from one nvidia-smi call; None on failure."""
+def _gpu_util_quick() -> float | None:
     try:
         out = subprocess.run(
-            ["nvidia-smi",
-             "--query-gpu=utilization.gpu,power.draw",
+            ["nvidia-smi", "--query-gpu=utilization.gpu",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=3)
-        line = out.stdout.strip().splitlines()[0]
-        parts = [p.strip() for p in line.split(",")]
-        util = float(parts[0]) if parts[0] not in ("", "N/A", "[N/A]") else 0.0
-        # GB10 reports Instantaneous Power Draw; limit fields are N/A on this platform
-        pwr = float(parts[1]) if len(parts) > 1 and parts[1] not in ("", "N/A", "[N/A]") else 0.0
-        return util, pwr
+        return float(out.stdout.strip().splitlines()[0])
     except Exception:
         return None
 
@@ -150,7 +143,6 @@ def _node1_sampler():
     prev_net = psutil.net_io_counters()
     prev_t = _time.time()
     gpu: float = 0.0
-    pwr: float = 0.0
     tick = 0
     while True:
         _time.sleep(1)
@@ -165,16 +157,14 @@ def _node1_sampler():
             tx = (net.bytes_sent - prev_net.bytes_sent) / dt / 1024
             prev_net, prev_t = net, now
             if tick % 2 == 0:  # nvidia-smi spawn is ~50ms; every other tick
-                g = _gpu_quick()
+                g = _gpu_util_quick()
                 if g is not None:
-                    gpu, pwr = g
+                    gpu = g
             tick += 1
             with _cache_lock:
-                # pwr = GPU draw watts (not wall); GB10 has no RAPL/module meter
                 _n1_hist.append({"t": round(now), "cpu": cpu, "gpu": gpu,
                                  "mem": vm.percent, "swap": sw.percent,
-                                 "rx": round(rx, 1), "tx": round(tx, 1),
-                                 "pwr": round(pwr, 1)})
+                                 "rx": round(rx, 1), "tx": round(tx, 1)})
         except Exception:
             pass
 

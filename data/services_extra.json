@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-22T00:53:15.855496+00:00",
+  "updated_at": "2026-07-25T01:46:59.587458+00:00",
   "services": {
     "beer-pong": {
       "label": "Beer Pong",
@@ -18,6 +18,41 @@
       "port": 8099,
       "show_projects_tile": true,
       "registered_at": "2026-07-22T00:53:04.431768+00:00"
+    },
+    "crypto-machine-desk": {
+      "label": "Crypto Machine Desk",
+      "detail": "Paper trading dashboard \u2014 charts, strategies, buy/sell tape",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "crypto-machine-dashboard.service",
+      "probe": [
+        "http://127.0.0.1:8787/",
+        2.0
+      ],
+      "port": 8787,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-24T14:20:19.691899+00:00"
+    },
+    "ai-trend-monitor": {
+      "label": "AI Model Trend Monitor",
+      "detail": ":9000",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:9000/",
+        2.0
+      ],
+      "port": 9000,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-25T01:46:59.587293+00:00"
     }
   }
 }
