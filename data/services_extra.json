@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-26T03:03:16.326959+00:00",
+  "updated_at": "2026-07-26T16:11:06.834781+00:00",
   "services": {
     "crypto-machine-desk": {
       "label": "Crypto Machine Desk",
@@ -62,6 +62,76 @@
       "unit": "cardarb-mobile.service",
       "show_projects_tile": true,
       "registered_at": "2026-07-26T03:03:16.326841+00:00"
+    },
+    "jobscan-applyd": {
+      "label": "Job Apply Console",
+      "detail": ":8090",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "jobscan-applyd.service",
+      "probe": [
+        "http://127.0.0.1:8090/",
+        2.0
+      ],
+      "port": 8090,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T15:48:41.665788+00:00"
+    },
+    "hermes-db-watch": {
+      "label": "Hermes DB Corruption Watch",
+      "detail": "",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "hermes-db-watch.timer.service",
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T16:11:06.597096+00:00"
+    },
+    "hermes-db-integrity": {
+      "label": "Hermes DB Integrity (nightly)",
+      "detail": "",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "hermes-db-integrity.timer.service",
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T16:11:06.685634+00:00"
+    },
+    "restic-weekly-verify": {
+      "label": "Restic Deep Verify (weekly)",
+      "detail": "",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "restic-weekly-verify.timer.service",
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T16:11:06.755626+00:00"
+    },
+    "backup-model-weights": {
+      "label": "Model Weight Mirror (weekly)",
+      "detail": "",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "backup-model-weights.timer.service",
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T16:11:06.834657+00:00"
     }
   }
 }
