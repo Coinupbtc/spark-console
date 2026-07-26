@@ -23,9 +23,6 @@ from pathlib import Path
 
 SHARED_KEY = Path.home() / ".ssh/id_ed25519_shared"
 PI_ALIAS = "pi5"           # ~/.ssh/config → coffee-house@192.168.50.152:2222
-# Must track PI_MIRROR_KEEP_DAYS in ~/scripts/data/pi-setup-mirror.sh (keep-daily=14,
-# same policy as restic tier-1). Used to detect a prune that has stopped running.
-PI_MIRROR_KEEP_DAYS = 14
 START9_ALIAS = "start9"    # ~/.ssh/config → start9@192.168.50.119
 SSH_TIMEOUT = 30           # remote scripts include a 1s CPU sampling delta
 GIB = 1024 ** 3
@@ -49,25 +46,13 @@ echo @THROTTLE; vcgencmd get_throttled 2>/dev/null || echo throttled=0x0
 # Pi 5 PMIC rails (I×V sum ≈ board draw; EXT5V has V only — not wall meter)
 echo @PMIC; vcgencmd pmic_read_adc 2>/dev/null
 echo @SVC
-for u in ssh cron tailscaled docker; do echo "$u $(systemctl is-active $u 2>/dev/null || echo unknown)"; done
-# Syncthing runs as a TEMPLATED unit here (syncthing@coffee-house), not plain "syncthing".
-# Probing the bare name reported inactive forever — check both, report under one name.
-st=$(systemctl is-active syncthing 2>/dev/null || true)
-[ "$st" = active ] || st=$(systemctl is-active syncthing@coffee-house 2>/dev/null || echo unknown)
-echo "syncthing $st"
+for u in ssh cron tailscaled syncthing; do echo "$u $(systemctl is-active $u 2>/dev/null || echo unknown)"; done
 echo @MIRROR
 if [ -d /home/coffee-house/spark-mirror ]; then
   find /home/coffee-house/spark-mirror -type f -printf '%T@\n' 2>/dev/null | sort -n | tail -1
   du -sb /home/coffee-house/spark-mirror 2>/dev/null | cut -f1
   find /home/coffee-house/spark-mirror -type f 2>/dev/null | wc -l
-  # line 4 = oldest file: the mirror tier has no prune rule, so retention span is the
-  # only way to see unbounded growth on a 57G SD card before it bites.
-  find /home/coffee-house/spark-mirror -type f -printf '%T@\n' 2>/dev/null | sort -n | head -1
 fi
-# Headless-overhead: this box has no monitor but runs LXDE+VNC+telegram-desktop.
-# Reported so the console can show reclaimable RAM instead of just "18% used".
-echo @OVERHEAD
-ps -eo rss,comm --no-headers 2>/dev/null | awk '$2 ~ /telegram|Xorg|lxpanel|pcmanfm|lightdm|gtk-nop|vnc/ {s+=$1} END{print (s?s:0)}'
 echo @WATCHDOG
 stat -c %Y /home/coffee-house/logs/stack-watchdog.log 2>/dev/null
 tail -2 /home/coffee-house/logs/stack-watchdog.log 2>/dev/null
@@ -113,9 +98,7 @@ echo @END
 """
 
 # Containers whose absence is worth an alert (core of the self-hosted stack).
-# Lightning (lnd) and Fulcrum are optional — many installs run electrs-only or
-# no Lightning at all; treating them as core produced permanent false warnings.
-START9_CORE = ("bitcoind", "electrs", "nextcloud",
+START9_CORE = ("bitcoind", "lnd", "electrs", "fulcrum", "nextcloud",
                "gitea", "syncthing", "searxng", "vaultwarden", "mempool")
 
 
@@ -321,17 +304,6 @@ def query_pi() -> dict:
                 "files": int(mirror_lines[2]) if len(mirror_lines) > 2 else None,
                 "age_h": round((now.timestamp() - newest) / 3600, 1),
             }
-            if len(mirror_lines) > 3:
-                oldest = float(mirror_lines[3])
-                span_d = max((newest - oldest) / 86400, 0)
-                base["mirror"]["oldest_ts"] = oldest
-                base["mirror"]["oldest_ago"] = ago_human(oldest)
-                base["mirror"]["span_days"] = round(span_d, 1)
-                # No prune rule exists in pi-setup-mirror.sh, so growth is linear in
-                # retention. Project a year out to make the SD-card ceiling concrete.
-                if span_d >= 1:
-                    base["mirror"]["growth_gb_per_yr"] = round(
-                        base["mirror"]["size_gb"] / span_d * 365, 1)
         wd = [l for l in s.get("WATCHDOG", []) if l.strip()]
         if wd:
             try:
@@ -342,21 +314,6 @@ def query_pi() -> dict:
             except ValueError:
                 pass
         base["tailscale_ip"] = _first(s, "TAILSCALE")
-
-        # ---- headroom: this box is a mirror+watchdog appliance, so the interesting
-        # number is how much of it is unused, not how much is used.
-        try:
-            overhead_mb = round(int(_first(s, "OVERHEAD", "0") or 0) / 1024, 1)
-        except ValueError:
-            overhead_mb = 0.0
-        base["overhead_mb"] = overhead_mb
-        base["headroom"] = {
-            "cpu_idle_pct": round(100 - base["cpu_pct"], 1),
-            "mem_free_gb": base["mem"].get("avail_gb"),
-            "disk_free_gb": base["disk"].get("free_gb"),
-            # Desktop stack is reclaimable on a box with no monitor attached.
-            "reclaimable_mb": overhead_mb,
-        }
 
         # ---- judgments (the console's job is to say what is wrong, not just show numbers)
         if temp is not None and temp >= 75:
@@ -371,10 +328,6 @@ def query_pi() -> dict:
             if svc["name"] in ("ssh", "cron") and svc["state"] != "active":
                 issues.append({"level": "critical",
                                "message": f"Pi {svc['name']} is {svc['state']}"})
-            # Syncthing is the vault replica leg — degraded, not fatal.
-            elif svc["name"] == "syncthing" and svc["state"] != "active":
-                issues.append({"level": "warning",
-                               "message": f"Pi syncthing is {svc['state']} — vault replica stalled"})
         wdog = base.get("watchdog")
         if wdog and wdog["age_m"] > 25:
             issues.append({"level": "warning",
@@ -383,15 +336,6 @@ def query_pi() -> dict:
         if mirror and mirror["age_h"] > 48:
             issues.append({"level": "warning",
                            "message": f"Pi mirror stale — newest file {mirror['newest_ago']}"})
-        # pi-setup-mirror.sh prunes to keep-daily=14 (matching restic tier-1). If the
-        # retention span drifts well past that, the prune has silently stopped and the
-        # mirror is back to growing unbounded on a 57G SD card.
-        if mirror and mirror.get("span_days") is not None:
-            if mirror["span_days"] > PI_MIRROR_KEEP_DAYS + 7:
-                issues.append({
-                    "level": "warning",
-                    "message": (f"Pi mirror retention {mirror['span_days']}d "
-                                f"> {PI_MIRROR_KEEP_DAYS}d policy — prune not running")})
     except (KeyError, IndexError, ValueError) as e:
         base["parse_error"] = f"{type(e).__name__}: {e}"
         issues.append({"level": "warning", "message": f"Pi parse error: {e}"})
@@ -485,9 +429,7 @@ def query_start9() -> dict:
                            "message": f"Start9 startd {base['startd']} — services will not run"})
         if running == 0:
             issues.append({"level": "critical", "message": "Start9: no containers running"})
-        elif total and running < total:
-            # Only fire when something is actually down — "9/9" is healthy, and a
-            # hard-coded floor of 20 used to warn on every lean install forever.
+        elif running < 20:
             issues.append({"level": "warning",
                            "message": f"Start9 only {running}/{total} containers up"})
         for name in base["core_down"]:

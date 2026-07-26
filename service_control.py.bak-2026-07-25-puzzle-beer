@@ -81,10 +81,10 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "group": "inference",
         "kind": "node2-deep",
         "critical": False,
-        # Keys must match node2-deep-lane.sh / switch-deep-lane-trial.sh.
-        # Puzzle live since 2026-07-24; MiniMax deleted from disk the same day.
-        "models": ["puzzle", "mimo", "laguna", "qwen122"],
-        "default_model": "puzzle",  # start-when-stopped fallback; UI prefers live model_key
+        # All switchable keys. Trial active may be laguna — switch anytime:
+        # bash ~/scripts/dgx/switch-deep-lane-trial.sh mimo|laguna|…
+        "models": ["laguna", "mimo", "qwen122", "minimax", "minimax-reap"],
+        "default_model": "laguna",  # start-when-stopped fallback; UI prefers live model_key
         "hint": "Deep-lane TRIAL switchable. Start dropdown = key. Full swap (serve+wire TG): switch-deep-lane-trial.sh.",
     },
     "comfyui": {

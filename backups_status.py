@@ -55,7 +55,12 @@ def _newest_log(script: str) -> Path | None:
     return logs[-1] if logs else None
 
 
-def _tail(path: Path, n: int = 4000) -> str:
+def _tail(path: Path, n: int = 262144) -> str:
+    """Last N bytes of a log.
+
+    Rsync jobs print huge path lists (and optional dry-runs append after a real
+    Done.), so a 4KB tail used to miss `Done. ok=` and false-warn every morning.
+    """
     try:
         with path.open("rb") as f:
             f.seek(0, 2)
@@ -63,6 +68,14 @@ def _tail(path: Path, n: int = 4000) -> str:
             return f.read().decode("utf-8", "replace")
     except OSError:
         return ""
+
+
+def _latest_match(text: str, pattern: str) -> re.Match | None:
+    """Rightmost regex match — the newest signal in an appending daily log."""
+    last = None
+    for m in re.finditer(pattern, text):
+        last = m
+    return last
 
 
 def query_backups(pi: dict | None = None, start9: dict | None = None) -> dict:
@@ -81,10 +94,20 @@ def query_backups(pi: dict | None = None, start9: dict | None = None) -> dict:
         mtime = log.stat().st_mtime
         text = _tail(log)
         age_h = (now - mtime) / 3600
-        succeeded = bool(re.search(ok_re, text))
-        failed = bool(re.search(fail_re, text))
+        ok_m = _latest_match(text, ok_re)
+        fail_m = _latest_match(text, fail_re)
+        # backup-to-start9 can append a multi-MB dry-run after Done — deepen scan
+        if not ok_m:
+            deep = _tail(log, 3_000_000)
+            ok_m = _latest_match(deep, ok_re)
+            fail_m = _latest_match(deep, fail_re) or fail_m
+            if ok_m:
+                text = deep
+        succeeded = bool(ok_m)
+        # A fail after the last success wins; a fail before it is stale noise.
+        failed = bool(fail_m) and (not ok_m or fail_m.start() > ok_m.start())
         skipped = "already running, exiting" in text
-        if failed and not succeeded:
+        if failed:
             state, note = "fail", "last run reported an error"
         elif not succeeded:
             state, note = "warn", "no success marker in last log"
@@ -92,7 +115,11 @@ def query_backups(pi: dict | None = None, start9: dict | None = None) -> dict:
             state, note = "warn", f"stale — expected every {cadence_h}h"
         else:
             state, note = "ok", ""
-        if skipped and succeeded:
+            # Dry-run / second pass after Done can leave a huge unfinished tail —
+            # that is noise, not a failed backup, when Done already landed.
+            if "Dry run: true" in text:
+                note = "ok · later dry-run in same log"
+        if skipped and succeeded and not failed:
             note = (note + " · a later run exited on flock (already running)").strip(" ·")
         snaps = re.search(r"(\d+) snapshots", text)
         if snaps:

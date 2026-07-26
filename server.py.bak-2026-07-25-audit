@@ -1,0 +1,766 @@
+#!/usr/bin/env python3
+"""
+DGX Spark Performance Dashboard — FastAPI server.
+  GET /                  → dashboard HTML
+  GET /api/latest        → latest snapshot JSON
+  GET /api/csv           → time-series CSV
+  GET /api/gpu-stats     → live GPU data
+  GET /api/system        → live system metrics
+  GET /api/diagnostics   → live alerts + recommendations
+Runs on port 8085 by default.
+"""
+from __future__ import annotations
+
+import csv
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from io import StringIO
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+CSV_FILE = os.path.join(DATA_DIR, "performance_timeseries.csv")
+JSON_SNAP = os.path.join(DATA_DIR, "latest_snapshot.json")
+DASHBOARD_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard.html")
+CONSOLE_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "console.html")
+
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
+    from pydantic import BaseModel
+except ImportError:
+    print("ERROR: pip install fastapi uvicorn", file=sys.stderr)
+    sys.exit(1)
+
+# Import collector functions for live queries
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from collector import (  # noqa: E402
+    diagnose, query_endpoints, query_gpu, query_hermes, query_ollama,
+    query_procs, system_metrics,
+)
+from model_inventory import query_inventory  # noqa: E402
+from remote_node import query_node2  # noqa: E402
+import projects_status  # noqa: E402
+from model_control import (  # noqa: E402
+    can_switch,
+    control_status,
+    get_operation,
+    kill_orphans,
+    list_operations,
+    stop_models,
+    switch_model,
+    sync_hermes,
+    unload_ollama,
+)
+from service_control import (  # noqa: E402
+    get_operation as get_svc_operation,
+    list_services,
+    register_service,
+    service_action,
+    unregister_service,
+)
+import automation_status  # noqa: E402
+import backups_status  # noqa: E402
+import fleet_links  # noqa: E402
+import fleet_nodes  # noqa: E402
+import quick_actions  # noqa: E402
+
+app = FastAPI(title="DGX Spark Performance Dashboard")
+
+
+class SwitchRequest(BaseModel):
+    key: str
+    fast: bool = False
+
+
+class TodoRequest(BaseModel):
+    action: str  # add | toggle | delete
+    text: str = ""
+    tag: str = "home"
+    id: str = ""
+
+
+class ServiceActionRequest(BaseModel):
+    action: str  # start | stop | restart
+    model: str | None = None  # node2-deep only
+
+
+class ServiceRegisterRequest(BaseModel):
+    """Register a new app/server on the Spark Console Services board.
+
+    Agents (Hermes/Telegram/Grok) MUST call this when they create a new HTTP
+    server — do not wait for the human to ask.
+    """
+    id: str
+    label: str
+    port: int | None = None
+    unit: str | None = None
+    detail: str = ""
+    group: str = "apps"
+    kind: str | None = None  # systemd | probe-only
+    probe_url: str | None = None
+    hint: str = ""
+    show_projects_tile: bool = True
+    replace: bool = True
+
+
+# ---- background refreshers: node2 + projects cached so pages never block ----
+import collections  # noqa: E402
+import threading  # noqa: E402
+import time as _time  # noqa: E402
+
+import psutil  # noqa: E402
+
+_cache_lock = threading.Lock()
+_node2_cache: dict = {"reachable": False, "error": "not polled yet"}
+_projects_cache: dict = {"projects": []}
+_n1_hist: collections.deque = collections.deque(maxlen=90)   # 1s samples, 90s window
+_n2_hist: collections.deque = collections.deque(maxlen=90)
+# Fleet appliances + control-center panels: all served from caches so a slow
+# SSH hop or a stalled script can never block a page load.
+_pi_cache: dict = {"reachable": False, "error": "not polled yet", "id": "pi"}
+_start9_cache: dict = {"reachable": False, "error": "not polled yet", "id": "start9"}
+_automation_cache: dict = {"jobs": [], "counts": {}, "upcoming": [], "failing": []}
+_backups_cache: dict = {"entries": [], "counts": {}, "issues": []}
+_links_cache: dict = {"groups": [], "counts": {}}
+
+
+def _gpu_quick() -> tuple[float, float] | None:
+    """Return (util_pct, power_w) from one nvidia-smi call; None on failure."""
+    try:
+        out = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=utilization.gpu,power.draw",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=3)
+        line = out.stdout.strip().splitlines()[0]
+        parts = [p.strip() for p in line.split(",")]
+        util = float(parts[0]) if parts[0] not in ("", "N/A", "[N/A]") else 0.0
+        # GB10 reports Instantaneous Power Draw; limit fields are N/A on this platform
+        pwr = float(parts[1]) if len(parts) > 1 and parts[1] not in ("", "N/A", "[N/A]") else 0.0
+        return util, pwr
+    except Exception:
+        return None
+
+
+def _node1_sampler():
+    """1 Hz local sampler for the System Monitor-style history graphs."""
+    psutil.cpu_percent(None)  # prime
+    prev_net = psutil.net_io_counters()
+    prev_t = _time.time()
+    gpu: float = 0.0
+    pwr: float = 0.0
+    tick = 0
+    while True:
+        _time.sleep(1)
+        try:
+            now = _time.time()
+            cpu = psutil.cpu_percent(None)
+            vm = psutil.virtual_memory()
+            sw = psutil.swap_memory()
+            net = psutil.net_io_counters()
+            dt = max(now - prev_t, 0.1)
+            rx = (net.bytes_recv - prev_net.bytes_recv) / dt / 1024
+            tx = (net.bytes_sent - prev_net.bytes_sent) / dt / 1024
+            prev_net, prev_t = net, now
+            if tick % 2 == 0:  # nvidia-smi spawn is ~50ms; every other tick
+                g = _gpu_quick()
+                if g is not None:
+                    gpu, pwr = g
+            tick += 1
+            with _cache_lock:
+                # pwr = GPU draw watts (not wall); GB10 has no RAPL/module meter
+                _n1_hist.append({"t": round(now), "cpu": cpu, "gpu": gpu,
+                                 "mem": vm.percent, "swap": sw.percent,
+                                 "rx": round(rx, 1), "tx": round(tx, 1),
+                                 "pwr": round(pwr, 1)})
+        except Exception:
+            pass
+
+
+def _node2_refresher():
+    """Continuous SSH loop; each call carries 10×1s samples for the graphs."""
+    while True:
+        try:
+            n2 = query_node2()
+            samples = n2.pop("samples", [])
+            with _cache_lock:
+                _node2_cache.clear()
+                _node2_cache.update(n2)
+                _n2_hist.extend(samples)
+        except Exception as e:  # never let the thread die
+            with _cache_lock:
+                _node2_cache.update({"reachable": False, "error": str(e)[:200]})
+            _time.sleep(10)
+        _time.sleep(1)
+
+
+def _projects_refresher():
+    while True:
+        try:
+            pr = projects_status.query_projects()
+            with _cache_lock:
+                _projects_cache.clear()
+                _projects_cache.update(pr)
+        except Exception:
+            pass
+        _time.sleep(60)
+
+
+def _fleet_refresher():
+    """Pi + Start9 over LAN SSH. Slow-changing appliances — 30s is plenty."""
+    while True:
+        for query, cache in ((fleet_nodes.query_pi, _pi_cache),
+                             (fleet_nodes.query_start9, _start9_cache)):
+            try:
+                data = query()
+                with _cache_lock:
+                    cache.clear()
+                    cache.update(data)
+            except Exception as e:  # never let the thread die
+                with _cache_lock:
+                    cache.update({"reachable": False, "error": str(e)[:200]})
+        _time.sleep(30)
+
+
+def _panels_refresher():
+    """Automation (file reads, ms) and backups (log tails) + launcher catalog.
+
+    Backups and the launcher both read the fleet caches, so give the first SSH
+    poll a head start — otherwise the first pass records every remote tier as
+    "unknown" and the UI shows a cold-start lie for 30s.
+    """
+    _time.sleep(6)
+    tick = 0
+    while True:
+        try:
+            auto = automation_status.query_automation()
+            with _cache_lock:
+                _automation_cache.clear()
+                _automation_cache.update(auto)
+        except Exception:
+            pass
+        with _cache_lock:
+            pi, s9 = dict(_pi_cache), dict(_start9_cache)
+        try:
+            back = backups_status.query_backups(pi, s9)
+            with _cache_lock:
+                _backups_cache.clear()
+                _backups_cache.update(back)
+        except Exception:
+            pass
+        try:
+            links = fleet_links.query_links(list_services(), s9, pi)
+            with _cache_lock:
+                _links_cache.clear()
+                _links_cache.update(links)
+        except Exception:
+            pass
+        tick += 1
+        _time.sleep(30)
+
+
+def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
+                  automation: dict, backups: dict, projects: list) -> list[dict]:
+    """One ranked alert list for the whole fleet — the console's headline claim
+    is 'nothing needs you right now', so every source has to feed this."""
+    out: list[dict] = []
+
+    def add(level, host, message):
+        out.append({"level": level, "host": host, "message": message})
+
+    def booting(host: dict) -> bool:
+        # First poll after a restart is not an outage — do not page for it.
+        return "not polled yet" in str(host.get("error", ""))
+
+    for a in (node1.get("alerts") or []):
+        add(a.get("level", "info"), "node1", a.get("message", ""))
+    if node2 and not node2.get("reachable") and not booting(node2):
+        add("critical", "node2", f"unreachable over fabric ({node2.get('error', '?')[:70]})")
+    elif node2 and (node2.get("swap") or {}).get("used_gb", 0) >= 2:
+        add("warning", "node2", f"swap {node2['swap']['used_gb']} G — memory pressure")
+    for host, data in (("pi", pi), ("start9", start9)):
+        if booting(data):
+            continue
+        for issue in (data.get("issues") or []):
+            add(issue.get("level", "warning"), host, issue.get("message", ""))
+    for job in (automation.get("failing") or []):
+        add("critical", "automation", f"{job['name']} ({job['layer']}) failed — {job['error']}"[:150])
+    for unit in (automation.get("failed_units") or []):
+        add("critical", "automation", f"systemd unit failed: {unit}")
+    for issue in (backups.get("issues") or []):
+        add(issue.get("level", "warning"), "backups", issue.get("message", ""))
+    for p in (projects or []):
+        if p.get("status") == "bad":
+            add("critical", "projects", f"{p.get('name')}: {p.get('detail')}")
+    rank = {"critical": 0, "warning": 1, "info": 2}
+    out.sort(key=lambda a: rank.get(a["level"], 3))
+    return out
+
+
+threading.Thread(target=_node1_sampler, daemon=True).start()
+threading.Thread(target=_node2_refresher, daemon=True).start()
+threading.Thread(target=_projects_refresher, daemon=True).start()
+threading.Thread(target=_fleet_refresher, daemon=True).start()
+threading.Thread(target=_panels_refresher, daemon=True).start()
+
+
+@app.get("/", response_class=HTMLResponse)
+async def console():
+    if os.path.exists(CONSOLE_HTML):
+        return HTMLResponse(content=open(CONSOLE_HTML).read())
+    return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500)
+
+
+@app.get("/classic", response_class=HTMLResponse)
+async def dashboard_retired():
+    """Classic Plotly UI retired 2026-07-20 — redirect-style notice."""
+    return HTMLResponse(
+        content=(
+            "<!doctype html><meta charset=utf-8>"
+            "<title>Classic view retired</title>"
+            "<body style='font:16px system-ui;background:#0d1117;color:#e9eef4;"
+            "display:flex;min-height:100vh;align-items:center;justify-content:center'>"
+            "<div style='max-width:28rem;text-align:center;line-height:1.5'>"
+            "<p><strong>Classic view is gone.</strong></p>"
+            "<p style='color:#93a0ad'>Use the Spark Console control panel.</p>"
+            "<p><a href='/' style='color:#5aa9ff'>→ Spark Console</a></p>"
+            "</div></body>"
+        ),
+        status_code=410,
+    )
+
+
+@app.get("/api/latest")
+async def api_latest():
+    if os.path.exists(JSON_SNAP):
+        return json.load(open(JSON_SNAP))
+    return await api_live_snapshot()
+
+
+@app.get("/api/csv")
+async def api_csv():
+    if not os.path.exists(CSV_FILE):
+        legacy = os.path.join(DATA_DIR, "gpu_timeseries.csv")
+        if os.path.exists(legacy):
+            return PlainTextResponse(content=open(legacy).read(), media_type="text/csv")
+        return PlainTextResponse("No data yet — run collector.py first", status_code=404)
+    return PlainTextResponse(content=open(CSV_FILE).read(), media_type="text/csv")
+
+
+@app.get("/api/gpu-stats")
+async def api_gpu_stats():
+    gpus = query_gpu()
+    procs = query_procs()
+    now = datetime.now(timezone.utc)
+    avg_u = round(sum(g["util_gpu"] for g in gpus) / len(gpus), 1) if gpus else 0
+    return {
+        "timestamp_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "iso_ts": now.isoformat(),
+        "gpus": gpus,
+        "processes": procs,
+        "avg_util_pct": avg_u,
+        "total_power_watts": round(sum(g["power_w"] for g in gpus), 2),
+        "avg_temp_c": round(sum(g["temp_c"] for g in gpus) / len(gpus), 1) if gpus else 0,
+    }
+
+
+@app.get("/api/system")
+async def api_system():
+    now = datetime.now(timezone.utc)
+    return {
+        "timestamp_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "iso_ts": now.isoformat(),
+        "system": system_metrics(),
+        "ollama": query_ollama(),
+        "hermes": query_hermes(),
+    }
+
+
+@app.get("/api/models")
+async def api_models():
+    inv = query_inventory()
+    inv["hermes"] = query_hermes()
+    return inv
+
+
+@app.get("/api/diagnostics")
+async def api_diagnostics():
+    sys_m = system_metrics()
+    gpus = query_gpu()
+    procs = query_procs()
+    ollama = query_ollama()
+    inv = query_inventory()
+    inv["hermes"] = query_hermes()
+    alerts = diagnose(sys_m, gpus, ollama, procs, inv)
+    return {
+        "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        "alerts": alerts,
+        "alert_count": {
+            "critical": sum(1 for a in alerts if a["level"] == "critical"),
+            "warning": sum(1 for a in alerts if a["level"] == "warning"),
+            "info": sum(1 for a in alerts if a["level"] == "info"),
+        },
+        "ollama": ollama,
+        "hermes": inv["hermes"],
+        "models": inv,
+        "vllm": inv.get("active_vllm") or [],
+    }
+
+
+async def api_live_snapshot():
+    sys_m = system_metrics()
+    gpus = query_gpu()
+    procs = query_procs()
+    ollama = query_ollama()
+    hermes = query_hermes()
+    inv = query_inventory()
+    inv["hermes"] = hermes
+    alerts = diagnose(sys_m, gpus, ollama, procs, inv)
+    now = datetime.now(timezone.utc)
+    avg_util = round(sum(g["util_gpu"] for g in gpus) / len(gpus), 1) if gpus else 0
+    return {
+        "timestamp_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "iso_ts": now.isoformat(),
+        "hostname": os.uname().nodename,
+        "system": sys_m,
+        "num_gpus": len(gpus),
+        "avg_util_pct": avg_util,
+        "total_power_watts": round(sum(g["power_w"] for g in gpus), 2),
+        "avg_temp_c": round(sum(g["temp_c"] for g in gpus) / len(gpus), 1) if gpus else 0,
+        "gpus": gpus,
+        "processes": procs,
+        "ollama": ollama,
+        "hermes": hermes,
+        "endpoints": query_endpoints(),
+        "models": inv,
+        "vllm": inv.get("active_vllm") or [],
+        "alerts": alerts,
+        "alert_count": {
+            "critical": sum(1 for a in alerts if a["level"] == "critical"),
+            "warning": sum(1 for a in alerts if a["level"] == "warning"),
+            "info": sum(1 for a in alerts if a["level"] == "info"),
+        },
+    }
+
+
+def _load_history_rows(hours: int) -> list[dict]:
+    if not os.path.exists(CSV_FILE):
+        return []
+    cutoff = datetime.now(timezone.utc).timestamp() - hours * 3600
+    rows = []
+    with open(CSV_FILE) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                ts = datetime.fromisoformat(row["iso_ts"].replace("Z", "+00:00"))
+                if ts.timestamp() >= cutoff:
+                    rows.append(row)
+            except (KeyError, ValueError):
+                continue
+    return rows
+
+
+def _series_stats(values: list[float]) -> dict:
+    if not values:
+        return {"min": None, "max": None, "avg": None, "last": None}
+    return {
+        "min": round(min(values), 1),
+        "max": round(max(values), 1),
+        "avg": round(sum(values) / len(values), 1),
+        "last": round(values[-1], 1),
+    }
+
+
+@app.get("/api/live")
+async def api_live():
+    return await api_live_snapshot()
+
+
+@app.get("/api/sparks")
+async def api_sparks():
+    """1s-resolution rolling history for the System Monitor-style graphs."""
+    with _cache_lock:
+        return {"node1": list(_n1_hist), "node2": list(_n2_hist)}
+
+
+@app.get("/api/node2")
+async def api_node2():
+    with _cache_lock:
+        return dict(_node2_cache)
+
+
+@app.get("/api/projects")
+async def api_projects():
+    with _cache_lock:
+        return dict(_projects_cache)
+
+
+@app.get("/api/todos")
+async def api_todos():
+    return {"todos": projects_status.get_todos()}
+
+
+@app.post("/api/todos")
+async def api_todos_post(req: TodoRequest):
+    if req.action == "add" and req.text.strip():
+        return {"todos": projects_status.add_todo(req.text, req.tag)}
+    if req.action == "toggle" and req.id:
+        return {"todos": projects_status.toggle_todo(req.id)}
+    if req.action == "delete" and req.id:
+        return {"todos": projects_status.delete_todo(req.id)}
+    return JSONResponse({"ok": False, "error": "bad action"}, status_code=400)
+
+
+@app.get("/api/pi")
+async def api_pi():
+    with _cache_lock:
+        return dict(_pi_cache)
+
+
+@app.get("/api/start9")
+async def api_start9():
+    with _cache_lock:
+        return dict(_start9_cache)
+
+
+@app.get("/api/automation")
+async def api_automation():
+    with _cache_lock:
+        return dict(_automation_cache)
+
+
+@app.get("/api/backups")
+async def api_backups():
+    with _cache_lock:
+        return dict(_backups_cache)
+
+
+@app.get("/api/links")
+async def api_links():
+    with _cache_lock:
+        return dict(_links_cache)
+
+
+@app.get("/api/actions")
+async def api_actions():
+    return {"actions": quick_actions.list_actions()}
+
+
+@app.post("/api/actions/{action_id}")
+async def api_action_run(action_id: str):
+    result = quick_actions.run_action(action_id)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/actions/runs/{run_id}")
+async def api_action_run_status(run_id: str):
+    run = quick_actions.get_run(run_id)
+    if not run:
+        return JSONResponse({"ok": False, "error": "run not found"}, status_code=404)
+    return {"ok": True, "run": run}
+
+
+@app.get("/api/overview")
+async def api_overview():
+    """Everything the console page needs in one call."""
+    snap = await api_live_snapshot()
+    with _cache_lock:
+        node2 = dict(_node2_cache)
+        projects = dict(_projects_cache)
+        pi = dict(_pi_cache)
+        start9 = dict(_start9_cache)
+        automation = dict(_automation_cache)
+        backups = dict(_backups_cache)
+        links = dict(_links_cache)
+    try:
+        services = list_services()
+    except Exception as e:
+        services = {"services": [], "error": str(e)[:200], "active_operation": None}
+    project_list = projects.get("projects", [])
+    return {
+        "node1": snap,
+        "node2": node2,
+        "pi": pi,
+        "start9": start9,
+        "projects": project_list,
+        "projects_ts": projects.get("iso_ts"),
+        "todos": projects_status.get_todos(),
+        "services": services,
+        "automation": automation,
+        "backups": backups,
+        "links": links,
+        "actions": quick_actions.list_actions(),
+        "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list),
+    }
+
+
+@app.get("/api/services")
+async def api_services():
+    return list_services()
+
+
+@app.post("/api/services/register")
+async def api_services_register(req: ServiceRegisterRequest):
+    """Add/update a non-builtin service on the console (no restart needed)."""
+    payload = req.model_dump()
+    replace = payload.pop("replace", True)
+    result = register_service(payload, replace=replace)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.delete("/api/services/register/{service_id}")
+async def api_services_unregister(service_id: str):
+    result = unregister_service(service_id)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.post("/api/services/{service_id}")
+async def api_services_action(service_id: str, req: ServiceActionRequest):
+    if service_id == "register":
+        return JSONResponse(
+            {"ok": False, "error": "Use POST /api/services/register with a body"},
+            status_code=400,
+        )
+    result = service_action(service_id, req.action, model=req.model)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/services/operations/{op_id}")
+async def api_services_operation(op_id: str):
+    op = get_svc_operation(op_id)
+    if not op:
+        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
+    return {"ok": True, "operation": op}
+
+
+@app.get("/api/history")
+async def api_history(hours: int = 24):
+    rows = _load_history_rows(hours)
+    return {"rows": rows, "hours": hours, "count": len(rows)}
+
+
+@app.get("/api/summary")
+async def api_summary(hours: int = 24):
+    rows = _load_history_rows(hours)
+    if not rows:
+        return {"hours": hours, "count": 0, "metrics": {}}
+
+    def col(name: str) -> list[float]:
+        out = []
+        for row in rows:
+            try:
+                out.append(float(row[name]))
+            except (KeyError, ValueError, TypeError):
+                continue
+        return out
+
+    metrics = {
+        "gpu_util": _series_stats(col("gpu_util")),
+        "cpu_pct": _series_stats(col("cpu_pct")),
+        "mem_pct": _series_stats(col("mem_pct")),
+        "mem_avail_gb": _series_stats(col("mem_avail_gb")),
+        "gpu_power_w": _series_stats(col("gpu_power_w")),
+        "gpu_temp_c": _series_stats(col("gpu_temp_c")),
+        "swap_used_gb": _series_stats(col("swap_used_gb")),
+    }
+    return {
+        "hours": hours,
+        "count": len(rows),
+        "first_ts": rows[0].get("iso_ts"),
+        "last_ts": rows[-1].get("iso_ts"),
+        "metrics": metrics,
+    }
+
+
+@app.get("/api/models/control")
+async def api_models_control():
+    return control_status()
+
+
+@app.get("/api/models/can-switch/{key}")
+async def api_models_can_switch(key: str):
+    return can_switch(key)
+
+
+@app.get("/api/models/operations")
+async def api_models_operations(limit: int = 10):
+    return {"operations": list_operations(limit=limit)}
+
+
+@app.get("/api/models/operations/{op_id}")
+async def api_models_operation(op_id: str):
+    op = get_operation(op_id)
+    if not op:
+        return JSONResponse({"ok": False, "error": "Operation not found"}, status_code=404)
+    return {"ok": True, "operation": op}
+
+
+@app.post("/api/models/switch")
+async def api_models_switch(req: SwitchRequest):
+    result = switch_model(req.key, fast=req.fast)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.post("/api/models/stop")
+async def api_models_stop():
+    result = stop_models()
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.post("/api/models/kill-orphans")
+async def api_models_kill_orphans():
+    return kill_orphans()
+
+
+@app.post("/api/models/unload-ollama")
+async def api_models_unload_ollama():
+    return unload_ollama()
+
+
+@app.post("/api/models/sync-hermes")
+async def api_models_sync_hermes():
+    result = sync_hermes()
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.post("/api/refresh")
+async def api_refresh():
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "collector.py")
+    try:
+        result = subprocess.run(
+            [sys.executable, script],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return JSONResponse(
+                {"ok": False, "error": result.stderr.strip() or "collector failed"},
+                status_code=500,
+            )
+        snap = json.load(open(JSON_SNAP)) if os.path.exists(JSON_SNAP) else None
+        return {"ok": True, "snapshot": snap}
+    except subprocess.TimeoutExpired:
+        return JSONResponse({"ok": False, "error": "collector timed out"}, status_code=504)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8085))
+    host = os.environ.get("HOST", "127.0.0.1")
+    print(f"DGX Spark Performance Dashboard → http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)

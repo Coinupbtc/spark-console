@@ -81,10 +81,10 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "group": "inference",
         "kind": "node2-deep",
         "critical": False,
-        # Keys must match node2-deep-lane.sh / switch-deep-lane-trial.sh.
-        # Puzzle live since 2026-07-24; MiniMax deleted from disk the same day.
-        "models": ["puzzle", "mimo", "laguna", "qwen122"],
-        "default_model": "puzzle",  # start-when-stopped fallback; UI prefers live model_key
+        # All switchable keys. Trial active may be laguna — switch anytime:
+        # bash ~/scripts/dgx/switch-deep-lane-trial.sh mimo|laguna|…
+        "models": ["laguna", "mimo", "qwen122", "minimax", "minimax-reap"],
+        "default_model": "laguna",  # start-when-stopped fallback; UI prefers live model_key
         "hint": "Deep-lane TRIAL switchable. Start dropdown = key. Full swap (serve+wire TG): switch-deep-lane-trial.sh.",
     },
     "comfyui": {
@@ -628,38 +628,6 @@ def _unit_exists(unit: str) -> bool:
         return False
 
 
-def _unit_states_bulk(units: list[str]) -> dict[str, tuple[bool, str]]:
-    """Resolve every unit's existence + active state in ONE systemctl call.
-
-    Returns {unit: (exists, active_state)}. Replaces the per-unit
-    `systemctl cat` + `systemctl is-active` pair, which cost two process spawns
-    per service — 34 spawns for a 17-service catalog, on every single poll.
-
-    A missing unit still gets its own output block (LoadState=not-found) rather
-    than failing the whole command, so one bad catalog entry cannot blank the
-    board. Blocks are keyed by the Id systemd echoes back; callers fall back to
-    the single-unit helpers for anything absent from the result (e.g. aliases).
-    """
-    states: dict[str, tuple[bool, str]] = {}
-    if not units:
-        return states
-    try:
-        out = _systemctl("show", "--no-pager",
-                         "--property=Id,LoadState,ActiveState", *units, timeout=15)
-        if out.returncode != 0:
-            return states
-        for block in (out.stdout or "").split("\n\n"):
-            fields = dict(line.split("=", 1)
-                          for line in block.strip().splitlines() if "=" in line)
-            uid = fields.get("Id")
-            if uid:
-                states[uid] = (fields.get("LoadState") != "not-found",
-                               fields.get("ActiveState") or "unknown")
-    except Exception:
-        pass
-    return states
-
-
 _NODE2_STATE = Path.home() / ".local/state/hermes/node2-deep-lane"
 _NODE2_ACTIVE_FILE = _NODE2_STATE / "active-model"
 _NODE2_TRIAL_FILE = _NODE2_STATE / "trial-key"
@@ -677,37 +645,7 @@ def _read_node2_active_key() -> str | None:
     return None
 
 
-_N2_STATUS_TTL = 15.0
-_n2_status_lock = threading.Lock()
-_n2_status_cache: dict = {"at": 0.0, "data": None}
-
-
-def invalidate_node2_status() -> None:
-    """Drop the cached deep-lane status — call after mutating the lane."""
-    with _n2_status_lock:
-        _n2_status_cache["at"] = 0.0
-
-
 def _node2_status() -> dict:
-    """Deep-lane status, cached for _N2_STATUS_TTL seconds.
-
-    Each uncached call shells out to node2-deep-lane.sh, which SSHes to node2 —
-    measured at 0.42s, i.e. ~72% of the entire service-board sweep. The lane
-    changes state on the order of minutes (a cold model load is several), so a
-    few seconds of staleness costs nothing, and start/stop/restart invalidate
-    the cache explicitly so the UI never shows pre-click state.
-    """
-    with _n2_status_lock:
-        cached = _n2_status_cache["data"]
-        if cached is not None and (time.time() - _n2_status_cache["at"]) < _N2_STATUS_TTL:
-            return dict(cached)
-    fresh = _node2_status_uncached()
-    with _n2_status_lock:
-        _n2_status_cache.update({"at": time.time(), "data": dict(fresh)})
-    return fresh
-
-
-def _node2_status_uncached() -> dict:
     st = {
         "active": False,
         "state": "inactive",
@@ -776,12 +714,6 @@ def list_services() -> dict:
             n2_cache = _node2_status()
         return n2_cache
 
-    # One systemctl call up front for the whole board (see _unit_states_bulk)
-    unit_states = _unit_states_bulk([
-        meta["unit"] for meta in catalog.values()
-        if meta.get("kind") == "systemd" and meta.get("unit")
-    ])
-
     services = []
     for sid, meta in catalog.items():
         row = {
@@ -809,14 +741,12 @@ def list_services() -> dict:
         kind = meta["kind"]
         if kind == "systemd":
             unit = meta["unit"]
-            exists, state = unit_states.get(unit, (None, None))
-            if exists is None:  # absent from the bulk result — ask about it directly
-                exists, state = _unit_exists(unit), _unit_active(unit)
-            if not exists:
+            if not _unit_exists(unit):
                 row["state"] = "missing"
                 row["unit_missing"] = True
                 row["extra"] = f"no unit {unit}"
             else:
+                state = _unit_active(unit)
                 row["state"] = state
                 row["active"] = state == "active"
                 if meta.get("ollama_status"):
@@ -1072,7 +1002,6 @@ def service_action(service_id: str, action: str, model: str | None = None) -> di
     if kind == "node2-deep":
         if not NODE2_SCRIPT.is_file():
             return {"ok": False, "error": f"Missing {NODE2_SCRIPT}"}
-        invalidate_node2_status()  # lane is about to change; don't serve the TTL copy
         if action == "stop":
             return _spawn(
                 ["bash", str(NODE2_SCRIPT), "stop"],

@@ -45,6 +45,20 @@ ACTIONS: dict[str, dict] = {
         "cmd": ["curl", "-s", "-m", "5", "http://127.0.0.1:8889/v1/models"],
         "timeout": 15,
     },
+    # --- Pi (read-only; the headless/desktop toggle needs an interactive sudo
+    # password on the Pi and so deliberately stays a terminal-only operation).
+    "pi-status": {
+        "label": "Pi mode + headroom",
+        "detail": "Which Pi units are on, RAM reclaimed, desktop-stack RSS",
+        "cmd": ["bash", str(HOME / "scripts/data/pi-headless-mode.sh"), "status"],
+        "timeout": 45,
+    },
+    "pi-mirror-verify": {
+        "label": "Verify Pi mirror",
+        "detail": "gzip -t + entry count on today's pushed tarballs (backup tier is real)",
+        "cmd": ["bash", str(HOME / "scripts/data/pi-mirror-verify.sh")],
+        "timeout": 60,
+    },
 }
 
 _lock = threading.Lock()

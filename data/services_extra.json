@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-26T01:24:37.900752+00:00",
+  "updated_at": "2026-07-26T03:03:16.326959+00:00",
   "services": {
     "crypto-machine-desk": {
       "label": "Crypto Machine Desk",
@@ -52,16 +52,16 @@
     },
     "cardarb-mobile": {
       "label": "CardArb Mobile (PWA)",
-      "detail": ":8060 tailnet-only",
+      "detail": "HTTPS via tailscale serve",
       "group": "apps",
       "kind": "systemd",
       "critical": false,
       "no_stop": false,
-      "hint": "Phone PWA: http://sparkmax-10ef.tail6cfceb.ts.net:8060 (Tailscale only, not LAN)",
+      "hint": "Phone PWA: https://sparkmax-10ef.tail6cfceb.ts.net (Tailscale only; app is loopback-only, serve terminates TLS)",
       "source": "extra",
       "unit": "cardarb-mobile.service",
       "show_projects_tile": true,
-      "registered_at": "2026-07-26T01:24:37.900587+00:00"
+      "registered_at": "2026-07-26T03:03:16.326841+00:00"
     }
   }
 }

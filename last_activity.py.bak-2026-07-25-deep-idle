@@ -244,41 +244,6 @@ def probe_last_used(service_id: str, meta: dict, active: bool) -> dict:
                     sources.append((p.stat().st_mtime, p.name))
                 except OSError:
                     pass
-        # Real traffic is Hermes deep clients (light + smeagle → :8100 / Puzzle).
-        # Without this, a long-lived trial looks "13h unused · STOP?" while Kanban
-        # and Telegram are actively hitting the lane through those profiles.
-        for profile in ("light", "smeagle"):
-            base = HOME / f".hermes/profiles/{profile}"
-            for rel, label in (
-                ("logs/agent.log", f"{profile}/agent.log"),
-                ("state.db-wal", f"{profile}/state.db-wal"),
-                ("state.db", f"{profile}/state.db"),
-                ("auth.json", f"{profile}/auth.json"),
-            ):
-                p = base / rel
-                if p.is_file():
-                    try:
-                        sources.append((p.stat().st_mtime, label))
-                    except OSError:
-                        pass
-            ping = HOME / ".local/state/hermes/kanban-progress-ping.json"
-            if ping.is_file():
-                try:
-                    data = json.loads(ping.read_text())
-                    best_ping = None
-                    for _tid, row in (data or {}).items():
-                        if not isinstance(row, dict):
-                            continue
-                        who = str(row.get("assignee") or "").lower()
-                        if who != profile:
-                            continue
-                        lp = row.get("last_ping")
-                        if isinstance(lp, (int, float)) and lp > 1_000_000_000:
-                            best_ping = lp if best_ping is None else max(best_ping, float(lp))
-                    if best_ping:
-                        sources.append((float(best_ping), f"{profile}/kanban ping"))
-                except Exception:
-                    pass
 
     if service_id == "bakeoff-ui":
         st = HOME / ".local/state/hermes/bakeoff"

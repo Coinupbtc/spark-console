@@ -113,9 +113,7 @@ echo @END
 """
 
 # Containers whose absence is worth an alert (core of the self-hosted stack).
-# Lightning (lnd) and Fulcrum are optional — many installs run electrs-only or
-# no Lightning at all; treating them as core produced permanent false warnings.
-START9_CORE = ("bitcoind", "electrs", "nextcloud",
+START9_CORE = ("bitcoind", "lnd", "electrs", "fulcrum", "nextcloud",
                "gitea", "syncthing", "searxng", "vaultwarden", "mempool")
 
 
@@ -485,9 +483,7 @@ def query_start9() -> dict:
                            "message": f"Start9 startd {base['startd']} — services will not run"})
         if running == 0:
             issues.append({"level": "critical", "message": "Start9: no containers running"})
-        elif total and running < total:
-            # Only fire when something is actually down — "9/9" is healthy, and a
-            # hard-coded floor of 20 used to warn on every lean install forever.
+        elif running < 20:
             issues.append({"level": "warning",
                            "message": f"Start9 only {running}/{total} containers up"})
         for name in base["core_down"]:
