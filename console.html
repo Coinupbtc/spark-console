@@ -270,6 +270,18 @@ nav .hint{font-size:10.5px;color:var(--faint);padding-right:8px;white-space:nowr
   transform:translateY(-1px)}
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn.go{border-color:color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok)}
+.launch-panel h3{font-size:12px;display:flex;align-items:baseline;gap:8px}
+.lp-hint{font-size:10px;color:var(--faint);font-weight:400}
+.launch-row{display:flex;flex-wrap:wrap;gap:8px}
+.launch-tile{display:flex;align-items:center;gap:9px;background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;padding:8px 11px;min-width:230px}
+.launch-tile .lt-ico{font-size:19px;line-height:1}
+.launch-tile .lt-txt{min-width:0;flex:1}
+.launch-tile .lt-txt b{font-size:12px;display:block}
+.launch-tile .lt-txt span{font-size:10px;color:var(--faint);display:block;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.launch-tile.up{border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.btn.launch{border-color:color-mix(in srgb,var(--accent,#6ea8fe) 55%,transparent)}
 .btn.stop{border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)}
 .act-out{font:10.5px/1.4 var(--mono);color:var(--dim);background:rgba(0,0,0,.25);border-radius:6px;
   padding:6px 8px;margin-top:6px;max-height:76px;overflow:auto;white-space:pre-wrap;
@@ -304,7 +316,7 @@ nav .hint{font-size:10.5px;color:var(--faint);padding-right:8px;white-space:nowr
 .chart h5 .cur{margin-left:auto;font:600 10px var(--mono);color:var(--fg);display:flex;gap:7px;
   align-items:center;text-transform:none}
 .chart h5 .cur i{display:inline-block;width:7px;height:7px;border-radius:999px;margin-right:3px}
-.chart canvas{width:100%;height:66px;display:block;cursor:crosshair;position:relative;z-index:1}
+.chart canvas{width:100%;height:86px;display:block;cursor:crosshair;position:relative;z-index:1}
 .subhead{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;font-weight:700;
   margin:8px 0 5px;border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between}
 .subhead .cnt{font:400 10px var(--mono);color:var(--faint);text-transform:none;letter-spacing:0}
@@ -507,6 +519,10 @@ tr:first-child td{border-top:none}
       <span class="svc-op" id="svc-op"></span>
     </div>
   </div>
+  <div class="panel launch-panel" style="padding:10px 12px">
+    <h3 style="margin:0 0 7px">Desktop apps <span class="lp-hint">launch on the physical display (:0)</span></h3>
+    <div class="launch-row" id="launch-apps"></div>
+  </div>
   <div class="svc-grid" id="services"></div>
 </section>
 
@@ -604,17 +620,51 @@ function drawChart(cv,samples,cfg,hoverX){
   if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
   const paint=chartPaint();
+  // Leave room for Y ticks (left) and X time labels (bottom) — without this
+  // the series fills the canvas and the axes are invisible by design.
+  const padL=30, padR=4, padT=3, padB=14;
+  const plotW=Math.max(1,w-padL-padR), plotH=Math.max(1,h-padT-padB);
   const win=60, tmax=samples.length?samples[samples.length-1].t:0, tmin=tmax-win;
   const pts=samples.filter(s=>s.t>=tmin);
   let ymax=cfg.max;
   if(!ymax)ymax=niceMax(Math.max(64,...pts.map(p=>Math.max(p[cfg.a.f],cfg.b?p[cfg.b.f]:0))));
-  const X=t=>(t-tmin)/win*w, Y=v=>h-Math.min(v,ymax)/ymax*(h-4)-2;
-  x.strokeStyle=paint.grid;x.lineWidth=1;
-  for(const fr of[.25,.5,.75]){x.beginPath();x.moveTo(0,h*fr);x.lineTo(w,h*fr);x.stroke();}
+  const X=t=>padL+(t-tmin)/win*plotW, Y=v=>padT+plotH-Math.min(v,ymax)/ymax*plotH;
+  const tickFmt=v=>cfg.unit==="%"?Math.round(v)+""
+    :cfg.unit==="W"?String(Math.round(v))
+    :v>=1024?(v/1024).toFixed(v>=10240?0:1)+"M":Math.round(v)+"";
+
+  // Y grid + tick labels (0 / mid / max) — right-aligned into the left pad
+  x.font="9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  const tickColor=cssVar("--dim","#8b98a5");
+  for(const fr of[0,0.5,1]){
+    const yy=padT+plotH*(1-fr);
+    x.strokeStyle=paint.grid;x.lineWidth=1;
+    x.beginPath();x.moveTo(padL,yy);x.lineTo(padL+plotW,yy);x.stroke();
+    x.fillStyle=tickColor;x.textAlign="right";x.textBaseline="middle";
+    x.fillText(tickFmt(ymax*fr), padL-3, yy+(fr===0? -1 : fr===1? 1 : 0));
+  }
+  // Tiny unit badge under the top tick so you know what the numbers mean
+  x.textAlign="left";x.textBaseline="top";
+  x.fillText(cfg.unit, padL+2, padT+1);
+
+  // X ticks: window start / mid / now
+  x.textAlign="center";x.textBaseline="top";
+  const xTicks=[[tmin,"−60s"],[tmin+win/2,"−30s"],[tmax,"now"]];
+  for(const[t,lab] of xTicks){
+    const xx=X(t);
+    x.strokeStyle=paint.grid;x.lineWidth=1;
+    x.beginPath();x.moveTo(xx,padT+plotH);x.lineTo(xx,padT+plotH+3);x.stroke();
+    x.fillStyle=tickColor;
+    // Keep edge labels from clipping off the canvas
+    const align=t===tmin?"left":t===tmax?"right":"center";
+    x.textAlign=align;
+    x.fillText(lab, xx, padT+plotH+4);
+  }
+
   const series=(f,color,glow,alpha)=>{
     if(pts.length<2)return;
     x.beginPath();pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
-    x.lineTo(X(pts[pts.length-1].t),h);x.lineTo(X(pts[0].t),h);x.closePath();
+    x.lineTo(X(pts[pts.length-1].t),padT+plotH);x.lineTo(X(pts[0].t),padT+plotH);x.closePath();
     x.save();x.globalAlpha=alpha;x.fillStyle=color;x.fill();x.restore();
     x.save();x.beginPath();pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
     x.shadowColor=glow;x.shadowBlur=10;x.strokeStyle=color;x.lineWidth=2;x.lineJoin="round";x.stroke();x.restore();};
@@ -622,10 +672,12 @@ function drawChart(cv,samples,cfg,hoverX){
   series(cfg.a.f,paint.a,paint.glowA,.16);
   let cur=pts[pts.length-1];
   if(hoverX!=null&&pts.length){
-    let best=pts[0];for(const p of pts)if(Math.abs(X(p.t)-hoverX)<Math.abs(X(best.t)-hoverX))best=p;
+    // Map mouse X into the plot (hover may land in the pads)
+    const hx=Math.min(Math.max(hoverX,padL),padL+plotW);
+    let best=pts[0];for(const p of pts)if(Math.abs(X(p.t)-hx)<Math.abs(X(best.t)-hx))best=p;
     cur=best;
     x.strokeStyle=paint.cursor;x.lineWidth=1;
-    x.beginPath();x.moveTo(X(cur.t),0);x.lineTo(X(cur.t),h);x.stroke();
+    x.beginPath();x.moveTo(X(cur.t),padT);x.lineTo(X(cur.t),padT+plotH);x.stroke();
     const dots=[[cfg.a.f,paint.a,paint.glowA]];
     if(cfg.b)dots.push([cfg.b.f,paint.b,paint.glowB]);
     for(const[f,c,g]of dots){
@@ -793,6 +845,29 @@ function renderTodos(todos){
      <span class="del" title="delete" onclick="todoAction('delete','${esc(t.id)}')">✕</span></div>`).join("")
     :`<div class="empty">nothing on the list</div>`;
 }
+function renderLaunch(apps){
+  const box=$("launch-apps"); if(!box)return;
+  box.innerHTML=(apps||[]).map(a=>{
+    const running=!!a.running;
+    const sub=running?`running · pid ${a.pid}`:(a.last?`last: ${esc(a.last.at||"")}`:esc(a.detail));
+    return `<div class="launch-tile ${running?"up":""}" title="${esc(a.note||a.detail||"")}">
+      <span class="lt-ico">${esc(a.icon||"▶")}</span>
+      <div class="lt-txt"><b>${stDot(running?"ok":"stale")}${esc(a.label)}</b><span>${sub}</span></div>
+      <button class="btn launch" id="lnc-${esc(a.id)}" ${running?"disabled":""}
+        onclick="launchApp('${esc(a.id)}')">${running?"Open":"Launch"}</button>
+    </div>`;
+  }).join("")||`<div class="empty">no desktop apps</div>`;
+}
+async function launchApp(id){
+  const b=$("lnc-"+id); if(b){b.disabled=true;b.textContent="…";}
+  try{
+    const r=await fetch("/api/launch/"+encodeURIComponent(id),{method:"POST"});
+    const j=await r.json();
+    if(!j.ok){ alert(j.error||"launch failed"); }
+    else if(b){ b.textContent="Open"; }
+  }catch(e){ alert("launch failed: "+e); }
+  finally{ setTimeout(refresh,1500); }
+}
 function renderActions(actions){
   $("actions").innerHTML=(actions||[]).map(a=>{
     const last=a.last;
@@ -891,7 +966,7 @@ function piHtml(p){
   if(!p||!p.reachable)
     return `<div class="node"><h2>raspberrypi <span class="role">Pi 5 · mirror</span></h2>
       <div class="offline ${/not polled yet/.test((p&&p.error)||"")?"stale":""}">${/not polled yet/.test((p&&p.error)||"")?"connecting to the Pi…":"Pi unreachable — "+esc(p&&p.error||"no data")}</div></div>`;
-  const m=p.mem||{},d=p.disk||{},mirror=p.mirror||{},wd=p.watchdog||{};
+  const m=p.mem||{},d=p.disk||{},mirror=p.mirror||{},wd=p.watchdog||{},hr=p.headroom||{};
   const scale=p.power_scale_w||15;
   const pwrPct=p.power_w!=null?Math.min((p.power_w/scale)*100,100):0;
   const svc=(p.services||[]).map(s=>
@@ -913,6 +988,15 @@ function piHtml(p){
     <div class="kv"><span class="k">Spark mirror</span>
       <span class="v">${esc(mirror.size_gb??"?")} GB · ${esc(mirror.files??"?")} files
         · ${esc(mirror.newest_ago||"?")}</span></div>
+    ${mirror.span_days!=null?`<div class="kv"><span class="k">Mirror retention</span>
+      <span class="v ${mirror.span_days>21?"warn":"ok"}">${esc(mirror.span_days)}d kept
+        <span class="faint">· policy 14d</span></span></div>`:""}
+    <div class="subhead">Headroom<span class="cnt">idle appliance</span></div>
+    <div class="kv"><span class="k">Unused</span>
+      <span class="v">${esc(hr.cpu_idle_pct??"?")}% CPU · ${esc(hr.mem_free_gb??"?")} G RAM
+        · ${esc(hr.disk_free_gb??"?")} G disk</span></div>
+    ${hr.reclaimable_mb?`<div class="kv"><span class="k">Desktop overhead</span>
+      <span class="v warn">${esc(hr.reclaimable_mb)} MB (LXDE+VNC, headless)</span></div>`:""}
     <div class="subhead">Services<span class="cnt">${(p.services||[]).length}</span></div>
     <div class="ctr-grid" style="max-height:88px">${svc||'<div class="empty">none</div>'}</div></div>`;
 }
@@ -1163,6 +1247,7 @@ async function refresh(){
     renderAlerts(d.alerts||[]);
     renderTodos(d.todos||[]);
     renderActions(d.actions||[]);
+    renderLaunch(d.launch||[]);
     renderUpcoming(d.automation||{});
     renderBackupMini(d.backups||{});
     renderProjects(d.projects||[]);

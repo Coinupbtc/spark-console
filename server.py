@@ -26,12 +26,15 @@ DASHBOARD_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashb
 CONSOLE_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "console.html")
 
 try:
-    from fastapi import FastAPI
+    from fastapi import FastAPI, Request
     from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
     from pydantic import BaseModel
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
 except ImportError:
     print("ERROR: pip install fastapi uvicorn", file=sys.stderr)
     sys.exit(1)
+
+from urllib.parse import urlsplit  # noqa: E402
 
 # Import collector functions for live queries
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -65,8 +68,56 @@ import backups_status  # noqa: E402
 import fleet_links  # noqa: E402
 import fleet_nodes  # noqa: E402
 import quick_actions  # noqa: E402
+import desktop_launch  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
+
+# NOTE: every route handler below is a plain `def`, never `async def`. They all do
+# blocking work (subprocess/systemctl/SSH/file reads), and an `async def` handler
+# runs *on* the event loop — one slow call freezes every other request. Measured
+# before this was fixed: /api/latest went 1.6ms -> 1.36s while a single
+# /api/overview was in flight, and a service restart could stall the whole panel
+# for the 60s systemctl timeout. As plain `def`, Starlette runs them in its
+# threadpool and slow calls stay isolated. Do not add `async` to these.
+
+# --- control-plane hardening -------------------------------------------------
+# This is not just a dashboard: it can stop inference and restart services. Two
+# browser-borne attacks reach it even though it binds loopback only.
+#
+#   DNS rebinding — a page on evil.com re-points its own hostname at 127.0.0.1,
+#     becoming same-origin with the console, and can then READ every endpoint
+#     and POST to /api/models/stop. TrustedHostMiddleware rejects the forged
+#     Host header before any handler runs.
+#   CSRF — several mutating routes take no request body, so a plain cross-origin
+#     POST (a "simple request", no preflight to block it) used to reach the
+#     handler. _refuse_foreign_origin rejects any Origin we don't own.
+#
+# Requests carrying no Origin at all are still allowed: that is the scripted
+# path (curl, register-console-service.sh, Hermes agents), not a browser one,
+# and browsers always attach Origin to cross-origin mutating requests.
+# Remote access is expected to be an SSH tunnel (-L 8085:127.0.0.1:8085), which
+# keeps the Host as localhost; set CONSOLE_ALLOWED_HOSTS=a,b to widen it.
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+ALLOWED_HOSTS = _LOCAL_HOSTS | {
+    h.strip().lower()
+    for h in os.environ.get("CONSOLE_ALLOWED_HOSTS", "").split(",") if h.strip()
+}
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=sorted(ALLOWED_HOSTS))
+
+
+@app.middleware("http")
+async def _refuse_foreign_origin(request: Request, call_next):
+    """Block cross-origin writes. Async by design — pure header work, no I/O."""
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        origin = request.headers.get("origin")
+        if origin and (urlsplit(origin).hostname or "").lower() not in ALLOWED_HOSTS:
+            return JSONResponse(
+                {"ok": False,
+                 "error": f"cross-origin {request.method} refused (origin: {origin})"},
+                status_code=403,
+            )
+    return await call_next(request)
 
 
 class SwitchRequest(BaseModel):
@@ -124,6 +175,10 @@ _start9_cache: dict = {"reachable": False, "error": "not polled yet", "id": "sta
 _automation_cache: dict = {"jobs": [], "counts": {}, "upcoming": [], "failing": []}
 _backups_cache: dict = {"entries": [], "counts": {}, "issues": []}
 _links_cache: dict = {"groups": [], "counts": {}}
+# Service board: one systemctl sweep + an endpoint probe per row, so it is polled
+# on a thread like every other panel instead of rebuilt on the request path.
+_services_cache: dict = {}
+_services_refresh = threading.Event()
 
 
 def _gpu_quick() -> tuple[float, float] | None:
@@ -196,6 +251,46 @@ def _node2_refresher():
         _time.sleep(1)
 
 
+def _services_snapshot() -> dict:
+    """Cached service board, computed synchronously on the very first read.
+
+    The cold-start path matters: the console watchdog curls /api/services every
+    2 minutes and an empty-but-200 board would look healthy while telling the UI
+    nothing is running. So the first caller pays the full sweep rather than
+    being served an empty cache.
+    """
+    with _cache_lock:
+        if _services_cache.get("iso_ts"):
+            return dict(_services_cache)
+    try:
+        data = list_services()
+    except Exception as e:
+        return {"services": [], "error": str(e)[:200], "active_operation": None}
+    with _cache_lock:
+        _services_cache.clear()
+        _services_cache.update(data)
+    return data
+
+
+def _services_refresher():
+    """Re-sweep the board every 5s, or immediately when an action asks for it.
+
+    start/stop/restart set _services_refresh so the UI reflects the click on the
+    next poll instead of showing pre-click state for up to a full interval.
+    """
+    while True:
+        try:
+            data = list_services()
+            with _cache_lock:
+                _services_cache.clear()
+                _services_cache.update(data)
+        except Exception as e:
+            with _cache_lock:
+                _services_cache["error"] = str(e)[:200]
+        _services_refresh.wait(timeout=5)
+        _services_refresh.clear()
+
+
 def _projects_refresher():
     while True:
         try:
@@ -251,7 +346,7 @@ def _panels_refresher():
         except Exception:
             pass
         try:
-            links = fleet_links.query_links(list_services(), s9, pi)
+            links = fleet_links.query_links(_services_snapshot(), s9, pi)
             with _cache_lock:
                 _links_cache.clear()
                 _links_cache.update(links)
@@ -304,17 +399,18 @@ threading.Thread(target=_node2_refresher, daemon=True).start()
 threading.Thread(target=_projects_refresher, daemon=True).start()
 threading.Thread(target=_fleet_refresher, daemon=True).start()
 threading.Thread(target=_panels_refresher, daemon=True).start()
+threading.Thread(target=_services_refresher, daemon=True).start()
 
 
 @app.get("/", response_class=HTMLResponse)
-async def console():
+def console():
     if os.path.exists(CONSOLE_HTML):
         return HTMLResponse(content=open(CONSOLE_HTML).read())
     return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500)
 
 
 @app.get("/classic", response_class=HTMLResponse)
-async def dashboard_retired():
+def dashboard_retired():
     """Classic Plotly UI retired 2026-07-20 — redirect-style notice."""
     return HTMLResponse(
         content=(
@@ -333,14 +429,14 @@ async def dashboard_retired():
 
 
 @app.get("/api/latest")
-async def api_latest():
+def api_latest():
     if os.path.exists(JSON_SNAP):
         return json.load(open(JSON_SNAP))
-    return await api_live_snapshot()
+    return api_live_snapshot()
 
 
 @app.get("/api/csv")
-async def api_csv():
+def api_csv():
     if not os.path.exists(CSV_FILE):
         legacy = os.path.join(DATA_DIR, "gpu_timeseries.csv")
         if os.path.exists(legacy):
@@ -350,7 +446,7 @@ async def api_csv():
 
 
 @app.get("/api/gpu-stats")
-async def api_gpu_stats():
+def api_gpu_stats():
     gpus = query_gpu()
     procs = query_procs()
     now = datetime.now(timezone.utc)
@@ -367,7 +463,7 @@ async def api_gpu_stats():
 
 
 @app.get("/api/system")
-async def api_system():
+def api_system():
     now = datetime.now(timezone.utc)
     return {
         "timestamp_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
@@ -379,14 +475,14 @@ async def api_system():
 
 
 @app.get("/api/models")
-async def api_models():
+def api_models():
     inv = query_inventory()
     inv["hermes"] = query_hermes()
     return inv
 
 
 @app.get("/api/diagnostics")
-async def api_diagnostics():
+def api_diagnostics():
     sys_m = system_metrics()
     gpus = query_gpu()
     procs = query_procs()
@@ -409,7 +505,7 @@ async def api_diagnostics():
     }
 
 
-async def api_live_snapshot():
+def api_live_snapshot():
     sys_m = system_metrics()
     gpus = query_gpu()
     procs = query_procs()
@@ -474,36 +570,36 @@ def _series_stats(values: list[float]) -> dict:
 
 
 @app.get("/api/live")
-async def api_live():
-    return await api_live_snapshot()
+def api_live():
+    return api_live_snapshot()
 
 
 @app.get("/api/sparks")
-async def api_sparks():
+def api_sparks():
     """1s-resolution rolling history for the System Monitor-style graphs."""
     with _cache_lock:
         return {"node1": list(_n1_hist), "node2": list(_n2_hist)}
 
 
 @app.get("/api/node2")
-async def api_node2():
+def api_node2():
     with _cache_lock:
         return dict(_node2_cache)
 
 
 @app.get("/api/projects")
-async def api_projects():
+def api_projects():
     with _cache_lock:
         return dict(_projects_cache)
 
 
 @app.get("/api/todos")
-async def api_todos():
+def api_todos():
     return {"todos": projects_status.get_todos()}
 
 
 @app.post("/api/todos")
-async def api_todos_post(req: TodoRequest):
+def api_todos_post(req: TodoRequest):
     if req.action == "add" and req.text.strip():
         return {"todos": projects_status.add_todo(req.text, req.tag)}
     if req.action == "toggle" and req.id:
@@ -514,42 +610,42 @@ async def api_todos_post(req: TodoRequest):
 
 
 @app.get("/api/pi")
-async def api_pi():
+def api_pi():
     with _cache_lock:
         return dict(_pi_cache)
 
 
 @app.get("/api/start9")
-async def api_start9():
+def api_start9():
     with _cache_lock:
         return dict(_start9_cache)
 
 
 @app.get("/api/automation")
-async def api_automation():
+def api_automation():
     with _cache_lock:
         return dict(_automation_cache)
 
 
 @app.get("/api/backups")
-async def api_backups():
+def api_backups():
     with _cache_lock:
         return dict(_backups_cache)
 
 
 @app.get("/api/links")
-async def api_links():
+def api_links():
     with _cache_lock:
         return dict(_links_cache)
 
 
 @app.get("/api/actions")
-async def api_actions():
+def api_actions():
     return {"actions": quick_actions.list_actions()}
 
 
 @app.post("/api/actions/{action_id}")
-async def api_action_run(action_id: str):
+def api_action_run(action_id: str):
     result = quick_actions.run_action(action_id)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
@@ -557,17 +653,30 @@ async def api_action_run(action_id: str):
 
 
 @app.get("/api/actions/runs/{run_id}")
-async def api_action_run_status(run_id: str):
+def api_action_run_status(run_id: str):
     run = quick_actions.get_run(run_id)
     if not run:
         return JSONResponse({"ok": False, "error": "run not found"}, status_code=404)
     return {"ok": True, "run": run}
 
 
+@app.get("/api/launch")
+def api_launch_list():
+    return {"apps": desktop_launch.list_apps()}
+
+
+@app.post("/api/launch/{app_id}")
+def api_launch(app_id: str):
+    result = desktop_launch.launch_app(app_id)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
 @app.get("/api/overview")
-async def api_overview():
+def api_overview():
     """Everything the console page needs in one call."""
-    snap = await api_live_snapshot()
+    snap = api_live_snapshot()
     with _cache_lock:
         node2 = dict(_node2_cache)
         projects = dict(_projects_cache)
@@ -577,7 +686,7 @@ async def api_overview():
         backups = dict(_backups_cache)
         links = dict(_links_cache)
     try:
-        services = list_services()
+        services = _services_snapshot()
     except Exception as e:
         services = {"services": [], "error": str(e)[:200], "active_operation": None}
     project_list = projects.get("projects", [])
@@ -594,49 +703,53 @@ async def api_overview():
         "backups": backups,
         "links": links,
         "actions": quick_actions.list_actions(),
+        "launch": desktop_launch.list_apps(),
         "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list),
     }
 
 
 @app.get("/api/services")
-async def api_services():
-    return list_services()
+def api_services():
+    return _services_snapshot()
 
 
 @app.post("/api/services/register")
-async def api_services_register(req: ServiceRegisterRequest):
+def api_services_register(req: ServiceRegisterRequest):
     """Add/update a non-builtin service on the console (no restart needed)."""
     payload = req.model_dump()
     replace = payload.pop("replace", True)
     result = register_service(payload, replace=replace)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
+    _services_refresh.set()  # new row must appear without waiting out the interval
     return result
 
 
 @app.delete("/api/services/register/{service_id}")
-async def api_services_unregister(service_id: str):
+def api_services_unregister(service_id: str):
     result = unregister_service(service_id)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
+    _services_refresh.set()
     return result
 
 
 @app.post("/api/services/{service_id}")
-async def api_services_action(service_id: str, req: ServiceActionRequest):
+def api_services_action(service_id: str, req: ServiceActionRequest):
     if service_id == "register":
         return JSONResponse(
             {"ok": False, "error": "Use POST /api/services/register with a body"},
             status_code=400,
         )
     result = service_action(service_id, req.action, model=req.model)
+    _services_refresh.set()  # reflect the click even if the action itself failed
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
     return result
 
 
 @app.get("/api/services/operations/{op_id}")
-async def api_services_operation(op_id: str):
+def api_services_operation(op_id: str):
     op = get_svc_operation(op_id)
     if not op:
         return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
@@ -644,13 +757,13 @@ async def api_services_operation(op_id: str):
 
 
 @app.get("/api/history")
-async def api_history(hours: int = 24):
+def api_history(hours: int = 24):
     rows = _load_history_rows(hours)
     return {"rows": rows, "hours": hours, "count": len(rows)}
 
 
 @app.get("/api/summary")
-async def api_summary(hours: int = 24):
+def api_summary(hours: int = 24):
     rows = _load_history_rows(hours)
     if not rows:
         return {"hours": hours, "count": 0, "metrics": {}}
@@ -683,22 +796,22 @@ async def api_summary(hours: int = 24):
 
 
 @app.get("/api/models/control")
-async def api_models_control():
+def api_models_control():
     return control_status()
 
 
 @app.get("/api/models/can-switch/{key}")
-async def api_models_can_switch(key: str):
+def api_models_can_switch(key: str):
     return can_switch(key)
 
 
 @app.get("/api/models/operations")
-async def api_models_operations(limit: int = 10):
+def api_models_operations(limit: int = 10):
     return {"operations": list_operations(limit=limit)}
 
 
 @app.get("/api/models/operations/{op_id}")
-async def api_models_operation(op_id: str):
+def api_models_operation(op_id: str):
     op = get_operation(op_id)
     if not op:
         return JSONResponse({"ok": False, "error": "Operation not found"}, status_code=404)
@@ -706,7 +819,7 @@ async def api_models_operation(op_id: str):
 
 
 @app.post("/api/models/switch")
-async def api_models_switch(req: SwitchRequest):
+def api_models_switch(req: SwitchRequest):
     result = switch_model(req.key, fast=req.fast)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
@@ -714,7 +827,7 @@ async def api_models_switch(req: SwitchRequest):
 
 
 @app.post("/api/models/stop")
-async def api_models_stop():
+def api_models_stop():
     result = stop_models()
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
@@ -722,17 +835,17 @@ async def api_models_stop():
 
 
 @app.post("/api/models/kill-orphans")
-async def api_models_kill_orphans():
+def api_models_kill_orphans():
     return kill_orphans()
 
 
 @app.post("/api/models/unload-ollama")
-async def api_models_unload_ollama():
+def api_models_unload_ollama():
     return unload_ollama()
 
 
 @app.post("/api/models/sync-hermes")
-async def api_models_sync_hermes():
+def api_models_sync_hermes():
     result = sync_hermes()
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
@@ -740,7 +853,7 @@ async def api_models_sync_hermes():
 
 
 @app.post("/api/refresh")
-async def api_refresh():
+def api_refresh():
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "collector.py")
     try:
         result = subprocess.run(
