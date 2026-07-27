@@ -1,0 +1,45 @@
+{
+  "_comment": [
+    "Copy to services.json to populate the console's service board.",
+    "Each entry needs an id plus at least one of: unit, port, probe_url.",
+    "  unit       systemd unit to report state for (must end in .service)",
+    "  port       shorthand for probe_url http://127.0.0.1:<port>/",
+    "  probe_url  URL to GET; an OpenAI-style /v1/models body shows the model id",
+    "  group      inference | agent | apps | meta   (controls sort order)",
+    "  critical   true = raise an alert when it is not running",
+    "This board is read-only. The console never starts or stops anything."
+  ],
+  "services": [
+    {
+      "id": "llama-server",
+      "label": "llama.cpp",
+      "detail": "local text model",
+      "group": "inference",
+      "unit": "llama-server.service",
+      "probe_url": "http://127.0.0.1:8080/v1/models",
+      "critical": true
+    },
+    {
+      "id": "ollama",
+      "label": "Ollama",
+      "detail": "model daemon",
+      "group": "inference",
+      "unit": "ollama.service",
+      "port": 11434
+    },
+    {
+      "id": "vllm",
+      "label": "vLLM",
+      "detail": "optional second engine",
+      "group": "inference",
+      "probe_url": "http://127.0.0.1:8000/v1/models"
+    },
+    {
+      "id": "my-app",
+      "label": "My app",
+      "detail": "anything with an HTTP port",
+      "group": "apps",
+      "port": 3000
+    }
+  ]
+}

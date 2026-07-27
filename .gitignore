@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+data/
+*.pyc
+.env
+*.bak*
+
+# your own board — start from services.example.json
+services.json
