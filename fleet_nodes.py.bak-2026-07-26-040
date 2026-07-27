@@ -75,16 +75,14 @@ echo @TAILSCALE; tailscale ip -4 2>/dev/null | head -1
 echo @END
 """
 
-# StartOS 0.4.0 (2026-07-26): services are LXC under startd, not host podman.
-# Paths moved /embassy-data → /media/startos/data; tier-3 marker lives in filebrowser.
 START9_SCRIPT = r"""
 echo @HOST; hostname
 echo @UPTIME; cat /proc/uptime
 echo @LOAD; cat /proc/loadavg
 echo @NPROC; nproc
 echo @CPU
-# RAPL energy_uj is root-only; sudo -n works. Sample across the same 1s window
-# used for CPU % — package watts, not wall (no BMC meter here).
+# RAPL energy_uj is root-only; sudo -n works (same as podman). Sample across the
+# same 1s window used for CPU % — package watts, not wall (no BMC meter here).
 E1=$(sudo -n cat /sys/class/powercap/intel-rapl:0/energy_uj 2>/dev/null || echo)
 D1=$(sudo -n cat /sys/class/powercap/intel-rapl:0:2/energy_uj 2>/dev/null || echo)
 read t1 i1 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
@@ -98,64 +96,25 @@ echo @POWER
 echo "${E1} ${E2} ${D1} ${D2}"
 echo @MEM; free -b | sed -n '2p;3p'
 echo @DISKROOT; df -B1 / | tail -1
-# Prefer 0.4 mount; fall back to 0.3 path so a mid-migrate box still reports.
-echo @DISKDATA
-df -B1 /media/startos/data/package-data 2>/dev/null | tail -1
-df -B1 /embassy-data/package-data 2>/dev/null | tail -1
+echo @DISKDATA; df -B1 /embassy-data/package-data 2>/dev/null | tail -1
 echo @TEMP
 for z in /sys/class/thermal/thermal_zone*; do
   echo "$(cat $z/type 2>/dev/null) $(cat $z/temp 2>/dev/null)"
 done 2>/dev/null
 echo @STARTD; systemctl is-active startd 2>/dev/null || echo unknown
-echo @OSVER; start-cli git-info 2>/dev/null | head -1
-echo @LXC
-# Prefer package stats. On 0.4, stats can fail entirely if ANY LXC is stopped
-# (lxc-attach error) — fall back to mountinfo mapping of RUNNING containers.
-if start-cli package stats >/tmp/s9-stats.txt 2>/tmp/s9-stats.err; then
-  awk -F'|' '
-    NR<=3 { next }
-    {
-      name=$2; id=$3;
-      gsub(/^ +| +$/,"",name); gsub(/^ +| +$/,"",id);
-      if (name=="" || name ~ /^Name/ || name ~ /^-/) next;
-      total++;
-      up = (id!="" && id!="N/A") ? 1 : 0;
-      if (up) run++;
-      print name "|" up "|" id
-    }
-    END { print "__COUNTS__|" (run+0) "|" (total+0) }
-  ' /tmp/s9-stats.txt
-else
-  # Fallback: only RUNNING LXCs (stopped packages omitted — console shows live set)
-  run=0
-  for cid in $(sudo -n lxc-ls -1 2>/dev/null); do
-    st=$(sudo -n lxc-info -n "$cid" -sH 2>/dev/null || echo ?)
-    [ "$st" = "RUNNING" ] || continue
-    pid=$(sudo -n lxc-info -n "$cid" -pH 2>/dev/null || true)
-    [ -n "$pid" ] || continue
-    pkg=$(sudo -n grep -oE '/volumes/[a-zA-Z0-9_-]+/' /proc/$pid/mountinfo 2>/dev/null | head -1 | cut -d/ -f3)
-    [ -z "$pkg" ] && pkg=$(sudo -n grep -oE '/logs/[a-zA-Z0-9_-]+' /proc/$pid/mountinfo 2>/dev/null | head -1 | cut -d/ -f3)
-    [ -z "$pkg" ] && continue
-    echo "${pkg}|1|${cid}"
-    run=$((run+1))
-  done
-  # total ≈ installed count from package list when stats broken
-  total=$(start-cli package list 2>/dev/null | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))' 2>/dev/null || echo "$run")
-  echo "__COUNTS__|${run}|${total}"
-fi
+echo @PODMAN
+sudo -n podman ps -q 2>/dev/null | wc -l
+sudo -n podman ps -a -q 2>/dev/null | wc -l
+echo @NAMES; sudo -n podman ps -a --format '{{.Names}}|{{.Status}}' 2>/dev/null
 echo @BACKUP
-BK=/media/startos/data/package-data/volumes/filebrowser/data/data/sparkmax-backup/hermes/last-backup.txt
-# legacy bind-mount path used before 0.4 migrate
-[ -f "$BK" ] || BK=/mnt/backup/hermes/last-backup.txt
-head -2 "$BK" 2>/dev/null
-stat -c %Y "$BK" 2>/dev/null
+head -2 /mnt/backup/hermes/last-backup.txt 2>/dev/null
+stat -c %Y /mnt/backup/hermes/last-backup.txt 2>/dev/null
 echo @END
 """
 
 # Containers whose absence is worth an alert (core of the self-hosted stack).
 # Lightning (lnd) and Fulcrum are optional — many installs run electrs-only or
 # no Lightning at all; treating them as core produced permanent false warnings.
-# nextcloud added to KEEP intent 2026-07-26 but not required for critical pages.
 START9_CORE = ("bitcoind", "electrs", "nextcloud",
                "gitea", "syncthing", "searxng", "vaultwarden", "mempool")
 
@@ -224,36 +183,6 @@ def _mem_block(lines: list[str]) -> tuple[dict, dict]:
         {"used_gb": round(su / GIB, 1), "total_gb": round(st / GIB, 1),
          "pct": round(su / st * 100, 1) if st else 0.0},
     )
-
-
-def temp_band(c: float | None, kind: str = "gpu") -> str | None:
-    """Map °C → cool|ok|warm|hot for console color (blue/green/yellow/red).
-
-    Cutoffs match each device's existing alert thresholds so the UI band and
-    the issues[] warning trip at the same heat, not two different stories.
-      pi  → warn ≥75   (throttle risk)
-      pkg → warn ≥90   (x86 package / Start9)
-      gpu → hot  ≥80   (GB10 comfort band)
-    """
-    if c is None:
-        return None
-    try:
-        t = float(c)
-    except (TypeError, ValueError):
-        return None
-    # (cool_lt, ok_lt, warm_lt) — anything ≥ warm_lt is hot
-    cuts = {
-        "pi": (45.0, 60.0, 75.0),
-        "pkg": (55.0, 75.0, 90.0),
-        "gpu": (50.0, 70.0, 80.0),
-    }.get(kind, (50.0, 70.0, 85.0))
-    if t < cuts[0]:
-        return "cool"
-    if t < cuts[1]:
-        return "ok"
-    if t < cuts[2]:
-        return "warm"
-    return "hot"
 
 
 def _disk_block(line: str) -> dict:
@@ -368,8 +297,6 @@ def query_pi() -> dict:
             except ValueError:
                 temp = None
         base["temp_c"] = temp
-        # cool/ok/warm/hot — console paints blue/green/yellow/red from this
-        base["temp_band"] = temp_band(temp, "pi")
         throttled = _first(s, "THROTTLE", "throttled=0x0").split("=")[-1]
         base["throttled"] = throttled
         base["throttled_ok"] = throttled in ("0x0", "")
@@ -516,57 +443,23 @@ def query_start9() -> dict:
                 hottest, hot_name = milli, parts[0]
         base["temp_c"] = round(hottest / 1000, 1) if hottest else None
         base["temp_source"] = hot_name
-        # x86 package runs hotter than Pi/GPU; band uses pkg cutoffs (≥90 = hot)
-        base["temp_band"] = temp_band(base["temp_c"], "pkg")
 
         base["startd"] = _first(s, "STARTD", "unknown")
-        base["os_git"] = _first(s, "OSVER", "")[:12] or None
-        # Prefer @LXC (0.4). Fall back to legacy @PODMAN/@NAMES if an old
-        # script somehow still runs against a 0.3 box.
+        pod = [l for l in s.get("PODMAN", []) if l.strip()]
+        running = int(pod[0]) if pod else 0
+        total = int(pod[1]) if len(pod) > 1 else running
+        base["containers"] = {"running": running, "total": total}
+
         svc_list = []
-        running = total = 0
-        lxc_lines = [l for l in s.get("LXC", []) if l.strip()]
-        if lxc_lines:
-            for line in lxc_lines:
-                parts = line.split("|")
-                if len(parts) < 2:
-                    continue
-                if parts[0] == "__COUNTS__":
-                    try:
-                        running, total = int(parts[1]), int(parts[2])
-                    except (ValueError, IndexError):
-                        pass
-                    continue
-                name = parts[0].strip()
-                try:
-                    up = parts[1].strip() == "1"
-                except IndexError:
-                    up = False
-                cid = parts[2].strip() if len(parts) > 2 else ""
-                status = f"LXC {cid}" if up else "stopped"
-                svc_list.append({"name": name, "status": status, "up": up,
-                                 "core": name in START9_CORE, "lxc_id": cid or None})
-            if not total and svc_list:
-                total = len(svc_list)
-                running = sum(1 for x in svc_list if x["up"])
-        else:
-            # 0.3.x podman path (kept for rollback diagnostics only)
-            pod = [l for l in s.get("PODMAN", []) if l.strip()]
-            running = int(pod[0]) if pod else 0
-            total = int(pod[1]) if len(pod) > 1 else running
-            for line in s.get("NAMES", []):
-                if "|" not in line:
-                    continue
-                name, status = line.split("|", 1)
-                short = name.replace(".embassy", "").strip()
-                up = status.strip().lower().startswith("up")
-                svc_list.append({"name": short, "status": status.strip(), "up": up,
-                                 "core": short in START9_CORE})
+        for line in s.get("NAMES", []):
+            if "|" not in line:
+                continue
+            name, status = line.split("|", 1)
+            short = name.replace(".embassy", "").strip()
+            up = status.strip().lower().startswith("up")
+            svc_list.append({"name": short, "status": status.strip(), "up": up,
+                             "core": short in START9_CORE})
         svc_list.sort(key=lambda x: (not x["core"], not x["up"], x["name"]))
-        base["containers"] = {"running": running, "total": total, "runtime": "lxc"}
-        # lxc_services is canonical; podman_services kept so fleet_links/console
-        # keep working without a coordinated rename.
-        base["lxc_services"] = svc_list
         base["podman_services"] = svc_list
         base["core_down"] = [x["name"] for x in svc_list if x["core"] and not x["up"]]
         missing = [c for c in START9_CORE if not any(x["name"] == c for x in svc_list)]
@@ -593,22 +486,14 @@ def query_start9() -> dict:
         if running == 0:
             issues.append({"level": "critical", "message": "Start9: no containers running"})
         elif total and running < total:
-            # KEEP pause intentionally leaves many installed packages stopped.
-            # Only warn when even the core set is incomplete — not on lean installs.
-            core_up = sum(1 for x in svc_list if x.get("core") and x.get("up"))
-            if core_up < len(START9_CORE) and running < max(8, len(START9_CORE)):
-                issues.append({"level": "warning",
-                               "message": f"Start9 only {running}/{total} containers up "
-                                          f"(core {core_up}/{len(START9_CORE)})"})
+            # Only fire when something is actually down — "9/9" is healthy, and a
+            # hard-coded floor of 20 used to warn on every lean install forever.
+            issues.append({"level": "warning",
+                           "message": f"Start9 only {running}/{total} containers up"})
         for name in base["core_down"]:
             issues.append({"level": "critical", "message": f"Start9 core service down: {name}"})
         for name in missing:
-            # Missing from live list is OK when package stats fallback only lists RUNNING;
-            # only warn if startd is up and we expected them in svc_list with up=False.
-            if any(x["name"] == name for x in svc_list):
-                issues.append({"level": "warning", "message": f"Start9 core service missing: {name}"})
-            elif running == 0:
-                issues.append({"level": "warning", "message": f"Start9 core service missing: {name}"})
+            issues.append({"level": "warning", "message": f"Start9 core service missing: {name}"})
         dd = base.get("disk_data")
         if dd and dd["pct"] >= 85:
             issues.append({"level": "warning",

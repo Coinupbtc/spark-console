@@ -21,9 +21,7 @@ from service_control import get_services_catalog
 START9_WEB = "https://cosmic-charcoal.local"
 PI_LAN = "192.168.50.152"
 
-# Start9 package id → (label, path under startd reverse proxy).
-# 0.4 also exposes unique ports on cosmic-charcoal.local — path proxies may
-# 404; Interfaces tab is authoritative. Keep common paths for one-click try.
+# Start9 podman name → (label, path under the StartOS reverse proxy)
 START9_UI = {
     "mempool": ("Mempool", "/mempool/"),
     "gitea": ("Gitea", "/gitea/"),
@@ -33,23 +31,16 @@ START9_UI = {
     "searxng": ("SearXNG", "/searxng/"),
     "jellyfin": ("Jellyfin", "/jellyfin/"),
     "photoview": ("Photoview", "/photoview/"),
-    "immich": ("Immich", "/immich/"),
     "cryptpad": ("CryptPad", "/cryptpad/"),
     "filebrowser": ("File Browser", "/filebrowser/"),
     "lnbits": ("LNbits", "/lnbits/"),
     "btcpayserver": ("BTCPay", "/btcpayserver/"),
-    "ghost-legacy": ("Ghost (legacy)", "/ghost/"),
+    "ghost": ("Ghost", "/ghost/"),
     "lndg": ("LNDg", "/lndg/"),
     "albyhub": ("Alby Hub", "/albyhub/"),
     "jam": ("JoinMarket Jam", "/jam/"),
     "sparrow-webtop": ("Sparrow", "/sparrow-webtop/"),
-    "nostr-rs-relay": ("Nostr relay", "/nostr-rs-relay/"),
-    "ntfy": ("ntfy", "/ntfy/"),
-    "start9-pages": ("Start9 Pages", "/start9-pages/"),
-    "robosats": ("RoboSats", "/robosats/"),
-    "stash": ("Stash", "/stash/"),
-    "hermes-agent": ("Hermes Agent (S9)", "/hermes-agent/"),
-    "uptime-kuma": ("Uptime Kuma", "/uptime-kuma/"),
+    "nostr": ("Nostr relay", "/nostr/"),
     "my-speed": ("MySpeed", "/my-speed/"),
     "lightning-jet": ("Lightning Jet", "/lightning-jet/"),
     "balanceofsatoshis": ("BoS", "/balanceofsatoshis/"),
@@ -101,8 +92,7 @@ def query_links(services: dict | None = None, start9: dict | None = None,
     s9: list[dict] = []
     running = {}
     if start9 and start9.get("reachable"):
-        running = {s["name"]: s for s in (
-            start9.get("lxc_services") or start9.get("podman_services") or [])}
+        running = {s["name"]: s for s in start9.get("podman_services", [])}
         s9.append({"id": "start9-dash", "label": "StartOS dashboard", "detail": "cosmic-charcoal",
                    "url": START9_WEB + "/", "status": "up" if start9.get("startd") == "active"
                    else "down", "group": "start9"})

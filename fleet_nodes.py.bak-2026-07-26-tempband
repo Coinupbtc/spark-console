@@ -226,36 +226,6 @@ def _mem_block(lines: list[str]) -> tuple[dict, dict]:
     )
 
 
-def temp_band(c: float | None, kind: str = "gpu") -> str | None:
-    """Map °C → cool|ok|warm|hot for console color (blue/green/yellow/red).
-
-    Cutoffs match each device's existing alert thresholds so the UI band and
-    the issues[] warning trip at the same heat, not two different stories.
-      pi  → warn ≥75   (throttle risk)
-      pkg → warn ≥90   (x86 package / Start9)
-      gpu → hot  ≥80   (GB10 comfort band)
-    """
-    if c is None:
-        return None
-    try:
-        t = float(c)
-    except (TypeError, ValueError):
-        return None
-    # (cool_lt, ok_lt, warm_lt) — anything ≥ warm_lt is hot
-    cuts = {
-        "pi": (45.0, 60.0, 75.0),
-        "pkg": (55.0, 75.0, 90.0),
-        "gpu": (50.0, 70.0, 80.0),
-    }.get(kind, (50.0, 70.0, 85.0))
-    if t < cuts[0]:
-        return "cool"
-    if t < cuts[1]:
-        return "ok"
-    if t < cuts[2]:
-        return "warm"
-    return "hot"
-
-
 def _disk_block(line: str) -> dict:
     p = line.split()
     total, used, free = int(p[1]), int(p[2]), int(p[3])
@@ -368,8 +338,6 @@ def query_pi() -> dict:
             except ValueError:
                 temp = None
         base["temp_c"] = temp
-        # cool/ok/warm/hot — console paints blue/green/yellow/red from this
-        base["temp_band"] = temp_band(temp, "pi")
         throttled = _first(s, "THROTTLE", "throttled=0x0").split("=")[-1]
         base["throttled"] = throttled
         base["throttled_ok"] = throttled in ("0x0", "")
@@ -516,8 +484,6 @@ def query_start9() -> dict:
                 hottest, hot_name = milli, parts[0]
         base["temp_c"] = round(hottest / 1000, 1) if hottest else None
         base["temp_source"] = hot_name
-        # x86 package runs hotter than Pi/GPU; band uses pkg cutoffs (≥90 = hot)
-        base["temp_band"] = temp_band(base["temp_c"], "pkg")
 
         base["startd"] = _first(s, "STARTD", "unknown")
         base["os_git"] = _first(s, "OSVER", "")[:12] or None

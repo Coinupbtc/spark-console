@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-26T16:11:06.834781+00:00",
+  "updated_at": "2026-07-27T00:22:26.041377+00:00",
   "services": {
     "crypto-machine-desk": {
       "label": "Crypto Machine Desk",
@@ -132,6 +132,90 @@
       "unit": "backup-model-weights.timer.service",
       "show_projects_tile": true,
       "registered_at": "2026-07-26T16:11:06.834657+00:00"
+    },
+    "start9-hermes-proxy": {
+      "label": "Start9 Hermes Proxy",
+      "detail": "SearXNG/mempool proxy \u2192 Start9 LXC",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "StartOS 0.4; listens 127.0.0.1:18080",
+      "source": "extra",
+      "unit": "start9-hermes-proxy.service",
+      "probe": [
+        "http://127.0.0.1:18080/",
+        2.0
+      ],
+      "port": 18080,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T18:38:38.893902+00:00"
+    },
+    "gitea-tunnel": {
+      "label": "Gitea Tunnel (Start9)",
+      "detail": "SSH LXC tunnel \u2192 Gitea :3000",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "oneshot RemainAfterExit; StartOS 0.4",
+      "source": "extra",
+      "unit": "gitea-tunnel.service",
+      "probe": [
+        "http://127.0.0.1:13333/",
+        2.0
+      ],
+      "port": 13333,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T18:38:39.092265+00:00"
+    },
+    "start9-syncthing-tunnel": {
+      "label": "Syncthing Tunnel (Start9)",
+      "detail": "SSH LXC tunnel \u2192 ST GUI :8384 (+12200)",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "StartOS 0.4; vault sync path",
+      "source": "extra",
+      "unit": "start9-syncthing-tunnel.service",
+      "probe": [
+        "http://127.0.0.1:18384/",
+        2.0
+      ],
+      "port": 18384,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T18:38:39.273889+00:00"
+    },
+    "engine-autoupdate": {
+      "label": "Engine Auto-Update (llama.cpp weekly)",
+      "detail": "Weekly upstream llama.cpp rebuild; APPLY=1 to A/B and apply",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "engine-autoupdate.service",
+      "show_projects_tile": true,
+      "registered_at": "2026-07-26T20:15:05.687375+00:00"
+    },
+    "portfolio-proto-8791": {
+      "label": "portfolio prototypes :8791",
+      "detail": ":8791",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8791/",
+        2.0
+      ],
+      "port": 8791,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-27T00:22:26.041185+00:00"
     }
   }
 }

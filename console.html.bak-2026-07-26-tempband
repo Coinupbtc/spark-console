@@ -10,7 +10,7 @@
 :root{
   --bg:#08090d; --panel:#12141c; --panel2:#191d27; --line:rgba(222,230,242,.14);
   --fg:#f4f2ea; --dim:#b4ad9e; --faint:#7e796f;
-  --ok:#66d27a; --warn:#f2b84b; --bad:#ff685f; --stale:#8f928f; --cool:#5aa9ff;
+  --ok:#66d27a; --warn:#f2b84b; --bad:#ff685f; --stale:#8f928f;
   --accent:#66d9e8; --accent-hi:#f4c76a; --accent-soft:rgba(102,217,232,.14);
   --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
   --page-bg:
@@ -42,7 +42,7 @@
 body:has(#theme-ocean:checked){
   --bg:#03171c; --panel:#072832; --panel2:#0a3740; --line:rgba(172,246,235,.2);
   --fg:#eafffa; --dim:#a6d9d1; --faint:#6e9e99;
-  --ok:#7df5a7; --warn:#ffd166; --bad:#ff7b72; --stale:#85a8ac; --cool:#6ec8ff;
+  --ok:#7df5a7; --warn:#ffd166; --bad:#ff7b72; --stale:#85a8ac;
   --accent:#54e7d4; --accent-hi:#a8fff3; --accent-soft:rgba(84,231,212,.18);
   --page-bg:
     radial-gradient(circle at 16% 16%,rgba(84,231,212,.2),transparent 24%),
@@ -72,7 +72,7 @@ body:has(#theme-ocean:checked){
 body:has(#theme-tokyo:checked){
   --bg:#100711; --panel:#1c0f24; --panel2:#261638; --line:rgba(255,134,224,.24);
   --fg:#fff2fb; --dim:#d9b5df; --faint:#9b7aa8;
-  --ok:#73f4c6; --warn:#ffe36e; --bad:#ff5b8a; --stale:#a88eb2; --cool:#6eb6ff;
+  --ok:#73f4c6; --warn:#ffe36e; --bad:#ff5b8a; --stale:#a88eb2;
   --accent:#ff78d8; --accent-hi:#55e6ff; --accent-soft:rgba(255,120,216,.18);
   --page-bg:
     radial-gradient(circle at 18% 12%,rgba(255,120,216,.24),transparent 24%),
@@ -120,8 +120,6 @@ body > *{position:relative;z-index:1}
 
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.stale{color:var(--stale)}
-/* Temp bands: blue=cool · green=ok · yellow=warm · red=hot */
-.cool,.temp-cool{color:var(--cool)}.temp-ok{color:var(--ok)}.temp-warm{color:var(--warn)}.temp-hot{color:var(--bad)}
 .dim{color:var(--dim)}.faint{color:var(--faint)}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;flex:none;
   vertical-align:1px;box-shadow:0 0 0 3px rgba(255,255,255,.03)}
@@ -142,9 +140,6 @@ header h1{font-size:15px;font-weight:750;letter-spacing:.3px;white-space:nowrap;
 .chip:hover{border-color:var(--accent);color:var(--accent-hi);transform:translateY(-1px)}
 .chip b{font-weight:650}
 .chip .v{font-family:var(--mono);color:var(--dim);font-size:10.5px}
-/* Beat .chip .v dim so header °C keeps cool/ok/warm/hot colors */
-.chip .v .temp-cool{color:var(--cool)}.chip .v .temp-ok{color:var(--ok)}
-.chip .v .temp-warm{color:var(--warn)}.chip .v .temp-hot{color:var(--bad)}
 header .clock{font:600 14px var(--mono);color:var(--accent-hi);white-space:nowrap}
 header .stamp{font-size:10.5px;color:var(--faint);font-family:var(--mono);white-space:nowrap}
 header .err{font-size:11.5px;color:var(--bad);max-width:24ch;overflow:hidden;text-overflow:ellipsis;
@@ -210,15 +205,6 @@ nav .hint{font-size:10.5px;color:var(--faint);padding-right:8px;white-space:nowr
   box-shadow:0 0 12px var(--accent-soft)}
 .bar i.w{background:linear-gradient(90deg,#d99430,var(--warn))}
 .bar i.b{background:linear-gradient(90deg,#e34e5c,var(--bad))}
-/* Temp bar fills mirror the text bands (cool→hot) */
-.bar i.t-cool{background:linear-gradient(90deg,#3d7fd4,var(--cool));
-  box-shadow:0 0 12px color-mix(in srgb,var(--cool) 45%,transparent)}
-.bar i.t-ok{background:linear-gradient(90deg,#3cae5a,var(--ok));
-  box-shadow:0 0 12px color-mix(in srgb,var(--ok) 45%,transparent)}
-.bar i.t-warm{background:linear-gradient(90deg,#d99430,var(--warn));
-  box-shadow:0 0 12px color-mix(in srgb,var(--warn) 42%,transparent)}
-.bar i.t-hot{background:linear-gradient(90deg,#e34e5c,var(--bad));
-  box-shadow:0 0 12px color-mix(in srgb,var(--bad) 46%,transparent)}
 .brow .v{flex:0 1 auto;min-width:96px;max-width:60%;text-align:right;font:600 12px var(--mono);
   white-space:nowrap;color:var(--fg);overflow:hidden;text-overflow:ellipsis}
 .bar{min-width:48px}
@@ -239,9 +225,6 @@ nav .hint{font-size:10.5px;color:var(--faint);padding-right:8px;white-space:nowr
 .hosttile .facts{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:7px;font-size:11px;color:var(--dim)}
 .hosttile .facts span{white-space:nowrap}
 .hosttile .facts b{font-family:var(--mono);color:var(--fg);font-weight:600}
-/* Beat .facts b fg so Temp facts keep cool/ok/warm/hot */
-.hosttile .facts b.temp-cool{color:var(--cool)}.hosttile .facts b.temp-ok{color:var(--ok)}
-.hosttile .facts b.temp-warm{color:var(--warn)}.hosttile .facts b.temp-hot{color:var(--bad)}
 .ov-mid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.85fr) minmax(0,.9fr);
   gap:10px;min-height:0;min-width:0}
 .ov-bot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);
@@ -586,31 +569,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const cls=p=>p>=90?"b":p>=70?"w":"";
 const stDot=s=>`<span class="dot ${s==='ok'?'ok':s==='warn'?'warn':s==='stale'||s==='unknown'?'stale':'bad'}"></span>`;
 const pct=(u,t)=>t?Math.round(u/t*100):0;
-/* barCls overrides util-pct coloring — used for temp rows (t-cool…t-hot) */
-const row=(l,p,v,barCls)=>`<div class="brow"><label>${l}</label><div class="bar"><i class="${barCls||cls(p)}" style="width:${Math.min(p||0,100)}%"></i></div><div class="v">${v}</div></div>`;
-
-/* Temp → cool|ok|warm|hot (blue/green/yellow/red). Cutoffs match fleet_nodes.temp_band. */
-function tempBand(c, kind="gpu"){
-  if(c==null||c===""||Number.isNaN(+c))return "";
-  const t=+c;
-  const cuts=({pi:[45,60,75],pkg:[55,75,90],gpu:[50,70,80]})[kind]||[50,70,85];
-  if(t<cuts[0])return "cool"; if(t<cuts[1])return "ok"; if(t<cuts[2])return "warm"; return "hot";
-}
-const tempCls=(c,kind)=> {const b=tempBand(c,kind); return b?`temp-${b}`:"";};
-const tempBarCls=b=>b?`t-${b}`:"";
-/* Colored °C span; keeps "?" unstyled when missing */
-const tempSpan=(c,kind)=>{
-  const b=tempBand(c,kind);
-  return `<span class="${b?`temp-${b}`:""}">${c??"?"}°C</span>`;
-};
-/* Dedicated Temp brow — bar fill + text share the same band */
-function tempRow(c, kind, extra){
-  const b=tempBand(c,kind);
-  const ceil={pi:85,pkg:100,gpu:90}[kind]||90;
-  const p=c!=null?Math.min((+c)/ceil*100,100):0;
-  const detail=extra?` · ${extra}`:"";
-  return row("Temp", p, `${tempSpan(c,kind)}${detail}`, tempBarCls(b));
-}
+const row=(l,p,v)=>`<div class="brow"><label>${l}</label><div class="bar"><i class="${cls(p)}" style="width:${Math.min(p||0,100)}%"></i></div><div class="v">${v}</div></div>`;
 let DATA={};
 
 /* ---------------------------- tabs ---------------------------- */
@@ -772,9 +731,8 @@ function fleetHosts(d){
     memTxt:`${s.mem_used_gb??"?"} / ${s.mem_total_gb??"?"} G`,
     diskTxt:`${s.disk_free_tb??"?"} TB free`,
     powerW:n1pwr, powerScale:100, powerLabel:"GPU",
-    tempC:g.temp_c, tempKind:"gpu",
     facts:[["GPU",`${g.util_gpu??"?"}%`],["Power",n1pwr!=null?`${Math.round(n1pwr*10)/10} W`:"—"],
-           ["Temp",`${g.temp_c??"?"}°C`, tempCls(g.temp_c,"gpu")],["Serving",String((n1.endpoints||[]).length)]]
+           ["Temp",`${g.temp_c??"?"}°C`],["Serving",String((n1.endpoints||[]).length)]]
   }];
   const n2=d.node2||{};
   if(n2.reachable){
@@ -786,9 +744,8 @@ function fleetHosts(d){
       memTxt:`${(n2.mem||{}).used_gb??"?"} / ${(n2.mem||{}).total_gb??"?"} G`,
       diskTxt:`${(n2.disk||{}).free_tb??"?"} TB free`,
       powerW:n2pwr, powerScale:100, powerLabel:"GPU",
-      tempC:g2.temp_c, tempKind:"gpu",
       facts:[["GPU",`${g2.util_gpu??"?"}%`],["Power",n2pwr!=null?`${Math.round(n2pwr*10)/10} W`:"—"],
-             ["Temp",`${g2.temp_c??"?"}°C`, tempCls(g2.temp_c,"gpu")],["Models",String((n2.models||[]).length)]]});
+             ["Temp",`${g2.temp_c??"?"}°C`],["Models",String((n2.models||[]).length)]]});
   }else{
     hosts.push({id:"node2",name:"sparkymaxxx-12ef",role:"DGX Spark · deep lane",
       state:booting(n2)?"stale":"bad",up:booting(n2)?"connecting…":"unreachable",
@@ -802,9 +759,7 @@ function fleetHosts(d){
     memTxt:`${(pi.mem||{}).used_gb??"?"} / ${(pi.mem||{}).total_gb??"?"} G`,
     diskTxt:`${(pi.disk||{}).free_gb??"?"} GB free`,
     powerW:pi.power_w, powerScale:pi.power_scale_w||15, powerLabel:pi.power_label||"board",
-    tempC:pi.temp_c, tempKind:"pi",
-    facts:[["Power",pi.power_w!=null?`${pi.power_w} W`:"—"],
-           ["Temp",`${pi.temp_c??"?"}°C`, pi.temp_band?`temp-${pi.temp_band}`:tempCls(pi.temp_c,"pi")],
+    facts:[["Power",pi.power_w!=null?`${pi.power_w} W`:"—"],["Temp",`${pi.temp_c??"?"}°C`],
            ["Watchdog",(pi.watchdog||{}).last_ago||"?"],["Throttle",pi.throttled_ok?"clean":pi.throttled||"?"]]
   }:{id:"pi",name:"raspberrypi",role:"Pi 5 · mirror + watchdog",state:booting(pi)?"stale":"bad",
      up:booting(pi)?"connecting…":"unreachable",cpu:0,mem:0,disk:0,memTxt:"—",diskTxt:"—",
@@ -817,11 +772,9 @@ function fleetHosts(d){
     memTxt:`${(s9.mem||{}).used_gb??"?"} / ${(s9.mem||{}).total_gb??"?"} G`,
     diskTxt:`${(s9.disk_data||{}).free_tb??"?"} TB free`,
     powerW:s9.power_w, powerScale:s9.power_scale_w||65, powerLabel:s9.power_label||"CPU+DRAM",
-    tempC:s9.temp_c, tempKind:"pkg",
     facts:[["Power",s9.power_w!=null?`${s9.power_w} W`:"—"],
            ["Apps",`${(s9.containers||{}).running??"?"}/${(s9.containers||{}).total??"?"}`],
-           ["Temp",`${s9.temp_c??"?"}°C`, s9.temp_band?`temp-${s9.temp_band}`:tempCls(s9.temp_c,"pkg")],
-           ["Backup",(s9.backup||{}).ago||"?"]]
+           ["Temp",`${s9.temp_c??"?"}°C`],["Backup",(s9.backup||{}).ago||"?"]]
   }:{id:"start9",name:"cosmic-charcoal",role:"Start9 · self-hosted stack",
      state:booting(s9)?"stale":"bad",up:booting(s9)?"connecting…":"unreachable",
      cpu:0,mem:0,disk:0,memTxt:"—",diskTxt:"—",
@@ -835,14 +788,9 @@ function renderChips(hosts){
     if(h.up==="connecting…")v="connecting";
     else if(h.up!=="unreachable"){
       // Prefer watts when we have them — that's the new per-device signal
-      const pwr=h.powerW!=null?`${Math.round(h.powerW*10)/10}W`:`${Math.round(h.cpu)}% cpu`;
-      // Colored temp when present so the header chips read heat at a glance
-      if(h.tempC!=null){
-        const b=tempBand(h.tempC,h.tempKind||"gpu");
-        v=`${pwr} · <span class="temp-${b}">${h.tempC}°</span>`;
-      }else v=pwr;
+      v=h.powerW!=null?`${Math.round(h.powerW*10)/10}W`:`${Math.round(h.cpu)}% cpu`;
     }
-    return `<div class="chip" onclick="switchTab('fleet')" title="${esc(h.role)}${h.powerLabel?" · "+esc(h.powerLabel)+" power":""}${h.tempC!=null?` · ${h.tempC}°C`:""}">
+    return `<div class="chip" onclick="switchTab('fleet')" title="${esc(h.role)}${h.powerLabel?" · "+esc(h.powerLabel)+" power":""}">
     ${stDot(h.state)}<b>${esc(h.name.split(".")[0])}</b>
     <span class="v">${v}</span></div>`;
   }).join("");
@@ -863,7 +811,7 @@ function renderHostTiles(hosts){
       ${row("Mem",h.mem,esc(h.memTxt))}
       ${row("Disk",h.disk,esc(h.diskTxt))}
       ${h.powerW!=null?row("Power",pPct,pTxt):""}
-      <div class="facts">${h.facts.map(([k,v,c])=>`<span>${esc(k)} <b class="${c||""}">${esc(v)}</b></span>`).join("")}</div>
+      <div class="facts">${h.facts.map(([k,v])=>`<span>${esc(k)} <b>${esc(v)}</b></span>`).join("")}</div>
     </div>`;
   }).join("");
 }
@@ -976,13 +924,12 @@ function node1Html(n){
     .forEach(p=>mods.push({label:p.name.split("/").pop(),sub:"proc",val:(p.mem_mb/1024).toFixed(1)+" G",status:"ok"}));
   return `<div class="node"><h2>${esc(n.hostname||"sparkmax-10ef")} <span class="role">node1 · primary</span>
     <span class="up">${new Date(n.iso_ts).toLocaleTimeString()}</span></h2>
-    ${row("GPU",g.util_gpu||0,`${g.util_gpu??"?"}% · ${tempSpan(g.temp_c,"gpu")}`)}
+    ${row("GPU",g.util_gpu||0,`${g.util_gpu??"?"}% · ${g.temp_c??"?"}°C`)}
     ${row("Power",Math.min(((g.power_w||0)/100)*100,100),`${g.power_w??"?"} W · GPU draw`)}
     ${row("CPU",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${s.load_1??"?"} / ${s.load_5??"?"} / ${s.load_15??"?"}`)}
     ${row("Mem",mp,`${s.mem_used_gb??"?"} / ${s.mem_total_gb??"?"} G (${mp}%)`)}
     ${row("Swap",sp,`${s.swap_used_gb??"?"} / ${s.swap_total_gb??"?"} G`)}
     ${row("Disk",s.disk_used_pct||0,`${s.disk_used_pct??"?"}% · ${s.disk_free_tb??"?"} TB free`)}
-    ${tempRow(g.temp_c,"gpu","GPU")}
     ${chartsBlock("node1")}
     <div class="subhead">Models · inference<span class="cnt">${mods.length}</span></div>
     <div class="scroll"><table>
@@ -1001,13 +948,12 @@ function node2Html(n){
     mods.push({label:p.name,sub:"proc",val:p.mem_gb+" G",status:"ok"}));
   return `<div class="node"><h2>${esc(n.hostname)} <span class="role">node2 · deep lane</span>
     <span class="up">up ${esc(n.uptime)}</span></h2>
-    ${row("GPU",g.util_gpu||0,`${g.util_gpu??"?"}% · ${tempSpan(g.temp_c,"gpu")}`)}
+    ${row("GPU",g.util_gpu||0,`${g.util_gpu??"?"}% · ${g.temp_c??"?"}°C`)}
     ${row("Power",Math.min(((g.power_w||0)/100)*100,100),`${g.power_w??"?"} W · GPU draw`)}
     ${row("CPU",n.cpu_pct||0,`load ${esc(n.load)}`)}
     ${row("Mem",mp,`${n.mem.used_gb} / ${n.mem.total_gb} G (${mp}%)`)}
     ${row("Swap",sp,`${n.swap.used_gb} / ${n.swap.total_gb} G`)}
     ${row("Disk",(n.disk||{}).pct||0,`${(n.disk||{}).pct??"?"}% · ${(n.disk||{}).free_tb??"?"} TB free`)}
-    ${tempRow(g.temp_c,"gpu","GPU")}
     ${chartsBlock("node2")}
     <div class="subhead">Models · inference<span class="cnt">${mods.length}</span></div>
     <div class="scroll"><table>
@@ -1032,7 +978,7 @@ function piHtml(p){
     ${p.power_w!=null?row("Power",pwrPct,`${p.power_w} W · ${esc(p.power_label||"board")} (PMIC)`):""}
     ${row("Mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G (${m.pct??"?"}%)`)}
     ${row("Disk",d.pct||0,`${d.used_gb??"?"}/${d.total_gb??"?"} G · ${d.free_gb??"?"} G free`)}
-    ${tempRow(p.temp_c,"pi",`throttle ${esc(p.throttled||"?")}`)}
+    ${row("Temp",Math.min((p.temp_c||0)/85*100,100),`${p.temp_c??"?"}°C · throttle ${esc(p.throttled||"?")}`)}
     <div class="subhead">Role<span class="cnt">${esc(p.tailscale_ip||"")}</span></div>
     <div class="kv"><span class="k">Stack watchdog (*/10m)</span>
       <span class="v ${wd.age_m>25?"warn":"ok"}">${esc(wd.last_ago||"unknown")}</span></div>
@@ -1077,11 +1023,13 @@ function start9Html(s){
     ${row("Swap",(s.swap||{}).pct||0,`${(s.swap||{}).used_gb??"?"} / ${(s.swap||{}).total_gb??"?"} G`)}
     ${row("Data",dd.pct||0,`${Math.round(dd.used_gb||0)} G · ${dd.free_tb??"?"} TB free`)}
     ${row("Root",dr.pct||0,`${dr.used_gb??"?"}/${dr.total_gb??"?"} G overlay`)}
-    ${tempRow(s.temp_c,"pkg",esc(s.temp_source||"CPU package"))}
     <div class="kv"><span class="k">startd</span>
       <span class="v ${s.startd==="active"?"ok":"bad"}">${esc(s.startd)}${s.os_git?` <span class="faint">${esc(s.os_git)}</span>`:""}</span></div>
     <div class="kv"><span class="k">Tier-3 backup marker</span>
       <span class="v">${esc(bk.ago||"unknown")}</span></div>
+    <div class="kv"><span class="k">CPU package</span>
+      <span class="v ${(s.temp_c||0)>=90?"warn":""}">${esc(s.temp_c??"?")}°C
+        <span class="faint">${esc(s.temp_source||"")}</span></span></div>
     <div class="subhead">LXC packages<span class="cnt">${c.running??"?"} / ${c.total??"?"} up · ${esc(runtime)}</span></div>
     <div class="ctr-grid">${ctrs||'<div class="empty">none</div>'}</div></div>`;
 }
