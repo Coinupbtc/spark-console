@@ -7,11 +7,19 @@ Appends one CSV row per run and overwrites latest_snapshot.json.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime, timezone
+
+logger = logging.getLogger("dgx-collector")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 from cluster_metrics import (
     CLUSTER_CSV_HEADERS,
@@ -25,7 +33,7 @@ from timeseries_schema import SCHEMA_VERSION, append_row
 try:
     import psutil
 except ImportError:
-    print("ERROR: pip install psutil", file=sys.stderr)
+    logger.error("psutil not installed — run: pip install psutil")
     sys.exit(1)
 
 # Tests can isolate writes while exercising the real collector and alert path.
@@ -389,29 +397,30 @@ def collect() -> dict | None:
     with open(JSON_SNAP, "w") as f:
         json.dump(snap, f, indent=2)
 
-    print(f"[{ts}] sparkmax performance snapshot")
-    print(f"  CPU {sys_m['cpu_pct']}% | RAM {sys_m['mem_pct']}% ({sys_m['mem_avail_gb']}G free) | "
-          f"GPU {avg_util}% {snap['total_power_watts']}W")
+    logger.info("[%s] sparkmax performance snapshot", ts)
+    logger.info("  CPU %s%% | RAM %s%% (%sG free) | GPU %s%% %sW",
+                sys_m['cpu_pct'], sys_m['mem_pct'], sys_m['mem_avail_gb'],
+                avg_util, snap['total_power_watts'])
     node2 = cluster["node2"]
     if node2["reachable"]:
         node2_gpu = (node2["gpus"] or [{}])[0]
-        print(
-            f"  Node2 CPU {node2.get('cpu_pct', 0)}% | "
-            f"RAM {node2.get('mem', {}).get('avail_gb', 0)}G free | "
-            f"GPU {node2_gpu.get('util_gpu', 0)}% {node2_gpu.get('power_w', 0)}W"
-        )
+        logger.info("  Node2 CPU %s%% | RAM %sG free | GPU %s%% %sW",
+                     node2.get('cpu_pct', 0),
+                     node2.get('mem', {}).get('avail_gb', 0),
+                     node2_gpu.get('util_gpu', 0),
+                     node2_gpu.get('power_w', 0))
     else:
-        print(f"  [WARNING] Node2 degraded: {node2.get('error', 'unreachable')}")
+        logger.warning("  [WARNING] Node2 degraded: %s", node2.get('error', 'unreachable'))
     if inv.get("active_vllm"):
         for m in inv["active_vllm"]:
-            print(f"  vLLM: {m['label']} :{m['port']} ({m['status']})")
+            logger.info("  vLLM: %s :%s (%s)", m['label'], m['port'], m['status'])
     if ollama:
         for m in ollama:
             flag = " STUCK" if m.get("stuck") else ""
-            print(f"  Ollama: {m['name']} {m['size']}{flag}")
+            logger.info("  Ollama: %s %s%s", m['name'], m['size'], flag)
     if alerts:
         for a in alerts:
-            print(f"  [{a['level'].upper()}] {a['message']}")
+            logger.info("  [%s] %s", a['level'].upper(), a['message'])
     return snap
 
 

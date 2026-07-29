@@ -82,9 +82,9 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "kind": "node2-deep",
         "critical": False,
         # Keys must match node2-deep-lane.sh / switch-deep-lane-trial.sh.
-        # Puzzle live since 2026-07-24; MiniMax deleted from disk the same day.
-        "models": ["puzzle", "mimo", "laguna", "qwen122"],
-        "default_model": "puzzle",  # start-when-stopped fallback; UI prefers live model_key
+        # qwen27 LIVE deep trial 2026-07-28 (quality-lab 97.5 vs Puzzle 68.5). MiniMax deleted 2026-07-24.
+        "models": ["qwen27", "puzzle", "mimo", "laguna", "qwen122"],
+        "default_model": "qwen27",  # start-when-stopped fallback; UI prefers live model_key
         "hint": "Deep-lane TRIAL switchable. Start dropdown = key. Full swap (serve+wire TG): switch-deep-lane-trial.sh.",
     },
     "comfyui": {
