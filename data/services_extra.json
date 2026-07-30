@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-27T00:22:26.041377+00:00",
+  "updated_at": "2026-07-29T13:14:04.471984+00:00",
   "services": {
     "crypto-machine-desk": {
       "label": "Crypto Machine Desk",
@@ -216,6 +216,24 @@
       "port": 8791,
       "show_projects_tile": true,
       "registered_at": "2026-07-27T00:22:26.041185+00:00"
+    },
+    "teachers-book": {
+      "label": "Teachers B00k",
+      "detail": "Local-first teacher gradebook (FastAPI+SQLite)",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "teachers-book.service",
+      "probe": [
+        "http://127.0.0.1:8010/",
+        2.0
+      ],
+      "port": 8010,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-29T13:14:04.471780+00:00"
     }
   }
 }
