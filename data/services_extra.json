@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-29T13:14:04.471984+00:00",
+  "updated_at": "2026-07-30T14:32:15.093307+00:00",
   "services": {
     "crypto-machine-desk": {
       "label": "Crypto Machine Desk",
@@ -234,6 +234,23 @@
       "port": 8010,
       "show_projects_tile": true,
       "registered_at": "2026-07-29T13:14:04.471780+00:00"
+    },
+    "crypto-dashboard": {
+      "label": "Crypto Dashboard",
+      "detail": ":8890",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8890/",
+        2.0
+      ],
+      "port": 8890,
+      "show_projects_tile": true,
+      "registered_at": "2026-07-30T14:32:15.092274+00:00"
     }
   }
 }
