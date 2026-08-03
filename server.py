@@ -27,7 +27,7 @@ CONSOLE_HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "console
 
 try:
     from fastapi import FastAPI, Request
-    from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
+    from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, JSONResponse
     from pydantic import BaseModel
     from starlette.middleware.trustedhost import TrustedHostMiddleware
 except ImportError:
@@ -407,6 +407,46 @@ def console():
     if os.path.exists(CONSOLE_HTML):
         return HTMLResponse(content=open(CONSOLE_HTML).read())
     return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500)
+
+
+_PWA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pwa")
+
+
+@app.get("/manifest.webmanifest")
+@app.get("/manifest.json")
+def pwa_manifest():
+    manifest = os.path.join(_PWA_DIR, "manifest.webmanifest")
+    if not os.path.exists(manifest):
+        return JSONResponse({"error": "manifest missing"}, status_code=404)
+    return FileResponse(manifest, media_type="application/manifest+json")
+
+
+@app.get("/icon-192.png")
+def icon_192():
+    return pwa_file("icon-192.png")
+
+
+@app.get("/icon-512.png")
+def icon_512():
+    return pwa_file("icon-512.png")
+
+
+@app.get("/icon-maskable-512.png")
+def icon_maskable():
+    return pwa_file("icon-maskable-512.png")
+
+
+@app.get("/sw.js")
+def sw_js():
+    return pwa_file("sw.js")
+
+
+def pwa_file(name: str):
+    """Serve a file from the pwa/ dir (icons/worker) for Add-to-Home-Screen."""
+    fp = os.path.join(_PWA_DIR, name)
+    if not os.path.exists(fp):
+        return JSONResponse({"error": f"{name} missing"}, status_code=404)
+    return FileResponse(fp)
 
 
 @app.get("/v1", response_class=HTMLResponse)

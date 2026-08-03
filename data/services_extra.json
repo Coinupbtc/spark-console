@@ -13,7 +13,7 @@
       "source": "extra",
       "unit": "crypto-machine-dashboard.service",
       "probe": [
-        "http://127.0.0.1:8787/",
+        "http://100.81.246.26:8787/",
         2.0
       ],
       "port": 8787,
