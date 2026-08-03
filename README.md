@@ -1,5 +1,7 @@
 # Spark Console
 
+![CI](https://github.com/Coinupbtc/spark-console/actions/workflows/ci.yml/badge.svg)
+
 Local **GPU + fleet dashboard** for NVIDIA DGX Spark (Grace Blackwell, unified memory) — and any Linux box with an NVIDIA GPU.
 
 Default UI: **http://127.0.0.1:8085/**
