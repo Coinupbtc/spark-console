@@ -409,6 +409,18 @@ def console():
     return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500)
 
 
+@app.get("/v1", response_class=HTMLResponse)
+def console_v1():
+    """Pre-redesign console (6 tabs, 3 themes), kept for A/B compare and instant fallback.
+
+    Same live APIs as `/` — only the page differs. Retire once v2 has proven itself.
+    """
+    legacy = CONSOLE_HTML + ".bak-2026-08-02-pre-v2"
+    if os.path.exists(legacy):
+        return HTMLResponse(content=open(legacy).read())
+    return HTMLResponse(content="<h1>v1 console not present</h1>", status_code=404)
+
+
 @app.get("/classic", response_class=HTMLResponse)
 def dashboard_retired():
     """Classic Plotly UI retired 2026-07-20 — redirect-style notice."""
