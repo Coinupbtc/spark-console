@@ -181,20 +181,26 @@ _services_cache: dict = {}
 _services_refresh = threading.Event()
 
 
-def _gpu_quick() -> tuple[float, float] | None:
-    """Return (util_pct, power_w) from one nvidia-smi call; None on failure."""
+def _gpu_quick() -> tuple[float, float, float] | None:
+    """Return (util_pct, power_w, temp_c) from one nvidia-smi call; None on failure.
+
+    Temperature rides along on a call we already make every other tick, so the
+    1 Hz ring buffer can feed /api/tick a complete host reading without the
+    phone ever paying for the full (~1 s) live snapshot.
+    """
     try:
         out = subprocess.run(
             ["nvidia-smi",
-             "--query-gpu=utilization.gpu,power.draw",
+             "--query-gpu=utilization.gpu,power.draw,temperature.gpu",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=3)
         line = out.stdout.strip().splitlines()[0]
         parts = [p.strip() for p in line.split(",")]
-        util = float(parts[0]) if parts[0] not in ("", "N/A", "[N/A]") else 0.0
+        num = lambda i: (float(parts[i])
+                         if len(parts) > i and parts[i] not in ("", "N/A", "[N/A]")
+                         else 0.0)
         # GB10 reports Instantaneous Power Draw; limit fields are N/A on this platform
-        pwr = float(parts[1]) if len(parts) > 1 and parts[1] not in ("", "N/A", "[N/A]") else 0.0
-        return util, pwr
+        return num(0), num(1), num(2)
     except Exception:
         return None
 
@@ -206,6 +212,7 @@ def _node1_sampler():
     prev_t = _time.time()
     gpu: float = 0.0
     pwr: float = 0.0
+    tmp: float = 0.0
     tick = 0
     while True:
         _time.sleep(1)
@@ -222,14 +229,14 @@ def _node1_sampler():
             if tick % 2 == 0:  # nvidia-smi spawn is ~50ms; every other tick
                 g = _gpu_quick()
                 if g is not None:
-                    gpu, pwr = g
+                    gpu, pwr, tmp = g
             tick += 1
             with _cache_lock:
                 # pwr = GPU draw watts (not wall); GB10 has no RAPL/module meter
                 _n1_hist.append({"t": round(now), "cpu": cpu, "gpu": gpu,
                                  "mem": vm.percent, "swap": sw.percent,
                                  "rx": round(rx, 1), "tx": round(tx, 1),
-                                 "pwr": round(pwr, 1)})
+                                 "pwr": round(pwr, 1), "temp": round(tmp)})
         except Exception:
             pass
 
@@ -631,6 +638,49 @@ def api_sparks():
     """1s-resolution rolling history for the System Monitor-style graphs."""
     with _cache_lock:
         return {"node1": list(_n1_hist), "node2": list(_n2_hist)}
+
+
+@app.get("/api/tick")
+def api_tick():
+    """Tiny live heartbeat — every number the console animates, nothing else.
+
+    WHY THIS EXISTS: /api/overview is ~62 kB and ~1 s (it calls nvidia-smi and
+    sweeps systemd on the request path), so a phone can only afford it every
+    ~10-15 s. This route reads ONLY already-populated caches — measured well
+    under 5 ms and ~400 bytes — so the gauges, bars and sparklines can run at
+    1 Hz on an iPhone over the tailnet without loading the box at all.
+
+    Structure (host set, alerts, service/job state) still comes from
+    /api/overview; this is values-only.
+    """
+    with _cache_lock:
+        n1 = _n1_hist[-1] if _n1_hist else {}
+        n2s = _n2_hist[-1] if _n2_hist else {}
+        n2 = dict(_node2_cache)
+        pi = dict(_pi_cache)
+        s9 = dict(_start9_cache)
+    n2gpu = (n2.get("gpus") or [{}])[0]
+
+    def appliance(h: dict) -> dict:
+        return {"reachable": bool(h.get("reachable")),
+                "cpu": h.get("cpu_pct"), "mem": (h.get("mem") or {}).get("pct"),
+                "temp": h.get("temp_c"), "pwr": h.get("power_w")}
+
+    return {
+        "t": _time.time(),
+        "node1": {"reachable": True, "t": n1.get("t"),
+                  "cpu": n1.get("cpu"), "gpu": n1.get("gpu"), "mem": n1.get("mem"),
+                  "swap": n1.get("swap"), "pwr": n1.get("pwr"), "temp": n1.get("temp"),
+                  "rx": n1.get("rx"), "tx": n1.get("tx")},
+        "node2": {"reachable": bool(n2.get("reachable")), "t": n2s.get("t"),
+                  "cpu": n2s.get("cpu", n2.get("cpu_pct")),
+                  "gpu": n2s.get("gpu", n2gpu.get("util_gpu")),
+                  "mem": n2s.get("mem", (n2.get("mem") or {}).get("pct")),
+                  "swap": n2s.get("swap"), "pwr": n2gpu.get("power_w"),
+                  "temp": n2gpu.get("temp_c")},
+        "pi": appliance(pi),
+        "start9": appliance(s9),
+    }
 
 
 @app.get("/api/node2")

@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- viewport-fit=cover is REQUIRED here: the page asks for a black-translucent
+     iOS status bar, so without it the notch/Dynamic Island eats the header and
+     the home indicator sits on top of the tab bar. Everything below pays that
+     back with env(safe-area-inset-*). -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spark Console</title>
 <meta name="theme-color" content="#080a0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,14 +44,26 @@
   --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
   --r:14px; --r-sm:9px;
   --shadow:0 18px 40px -12px rgba(0,0,0,.7);
+  /* iOS safe areas — 0 everywhere else, so desktop is unaffected */
+  --sat:env(safe-area-inset-top,0px);   --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);  --sar:env(safe-area-inset-right,0px);
+  --tabbar:0px;                          /* bottom bar height; set on mobile */
 }
 *{box-sizing:border-box;margin:0;padding:0}
+/* iOS Safari inflates text on rotation without this, which reflows the whole
+   layout when the phone turns */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%}
 body{
   background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);
   display:grid;grid-template-rows:58px minmax(0,1fr);gap:14px;padding:14px;
   height:100vh;max-width:100vw;overflow:hidden;position:relative;isolation:isolate;
+  -webkit-tap-highlight-color:transparent;
 }
+/* 100dvh tracks the *visible* viewport, so an iOS Safari tab does not hide the
+   bottom of the page behind the URL bar. Kept after the 100vh line as a
+   progressive upgrade. */
+@supports (height:100dvh){body{height:100dvh}}
 /* ── aurora: 3 blurred blobs on the compositor. transform-only, no repaint ── */
 body::before{
   content:"";position:fixed;inset:-30%;z-index:0;pointer-events:none;
@@ -123,7 +139,8 @@ nav{display:flex;gap:3px;min-width:0;overflow-x:auto;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 .tab{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;
   font-size:13px;font-weight:650;color:var(--ink-3);cursor:pointer;white-space:nowrap;
-  border:1px solid transparent;transition:.16s;position:relative}
+  border:1px solid transparent;transition:.16s;position:relative;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .tab:hover{color:var(--ink-2);background:rgba(255,255,255,.04)}
 .tab.on{color:var(--ink);background:rgba(57,135,229,.14);border-color:rgba(57,135,229,.4)}
 .tab.on::after{content:"";position:absolute;left:15px;right:15px;bottom:-1px;height:2px;
@@ -138,6 +155,21 @@ header .err{font-size:12px;color:var(--crit);max-width:30ch;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 header .stamp{font:11px var(--mono);color:var(--ink-3);white-space:nowrap}
 header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padding-right:8px}
+
+/* Liveness pill — the page animates numbers continuously, so it has to say
+   out loud whether those numbers are still arriving. Glyph + text, not colour
+   alone (same CVD rule as every other status mark on this page). */
+.live{display:inline-flex;align-items:center;gap:6px;flex:none;
+  font:700 9.5px var(--sans);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--good);border:1px solid rgba(12,163,12,.34);border-radius:999px;
+  padding:4px 9px;background:rgba(12,163,12,.09);white-space:nowrap}
+.live .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;
+  box-shadow:0 0 8px currentColor;animation:beat 1s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.72)}}
+.live.stale{color:var(--warn);border-color:rgba(250,178,25,.34);background:rgba(250,178,25,.09)}
+.live.dead{color:var(--crit);border-color:rgba(208,59,59,.4);background:rgba(208,59,59,.1)}
+.live.stale .dot,.live.dead .dot{animation:none}
+.live.dead .dot{box-shadow:none}
 
 /* ══════════════════════════ views ══════════════════════════ */
 .view{display:none;min-height:0;min-width:0;overflow:auto;gap:14px}
@@ -399,6 +431,10 @@ tr:last-child td{border-bottom:0}
 .lay.crontab{background:rgba(217,89,38,.16);color:#f0a382}
 .lay.timer{background:rgba(25,158,112,.16);color:#6fd9b2}
 
+/* Bottom tab bar + pull-to-refresh are phone-only; the ≤760px block turns them
+   on. Declared here (before that block) so the media query wins. */
+.tabbar,#ptr{display:none}
+
 /* chart tooltip */
 #tip{position:fixed;z-index:60;pointer-events:none;opacity:0;transition:opacity .12s;
   background:rgba(10,13,18,.96);border:1px solid var(--line-2);border-radius:8px;
@@ -425,11 +461,243 @@ tr:last-child td{border-bottom:0}
   .prow>:nth-child(4){grid-column:auto}}
 @media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
   .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:860px){.hosts{grid-template-columns:minmax(0,1fr)}
+@media (max-width:860px){
   .prow{grid-template-columns:minmax(0,1fr)}
   .hero{flex-wrap:wrap}.hero .stats{width:100%;justify-content:flex-start}
   body{padding:9px;gap:9px}header{padding:0 6px 0 11px}
   .tab kbd{display:none}header .stamp{display:none}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOUCH POINTERS
+   Hover styling on a touchscreen sticks after a tap, and an affordance that
+   only appears on hover (the todo ✕) is unreachable. Both fixed here rather
+   than by weakening the desktop rules. ═══════════════════════════════════ */
+@media (hover:none){
+  .host:hover,.ltile:hover{transform:none;border-color:var(--line)}
+  .btn:hover:not(:disabled){color:var(--ink-2);border-color:var(--line-2);box-shadow:none}
+  .att:hover{background:none}
+  .todo .del{opacity:.7}
+  /* press feedback replaces hover feedback */
+  .btn:active:not(:disabled){transform:scale(.96);border-color:var(--s1);
+    box-shadow:0 0 0 3px rgba(57,135,229,.16)}
+  .pill:active{transform:scale(.96)}
+  .host:active,.att:active,.ltile:active,.svc:active{background:rgba(255,255,255,.05)}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHONE  (≤760px) — iOS-shaped: bottom tab bar in the thumb arc, swipe between
+   sections, safe-area insets, 16px form text (anything smaller makes Safari
+   zoom the whole page on focus), 44px touch targets.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width:760px){
+:root{--tabbar:58px;--r:15px}
+
+body{
+  grid-template-rows:50px minmax(0,1fr);gap:9px;
+  padding:calc(var(--sat) + 8px) calc(var(--sar) + 9px) 0 calc(var(--sal) + 9px);
+}
+body::before{filter:blur(48px)}          /* fewer blur passes on a mobile GPU */
+
+/* ── top bar: identity + liveness only; navigation moved to the bottom ── */
+header{padding:0 11px;gap:9px;border-radius:13px}
+header nav#tabs,header .stamp{display:none}
+.brand{font-size:14px;gap:7px;margin-right:0}
+header .clock{font-size:13px;padding-right:0}
+
+/* errors become a toast above the tab bar instead of a truncated header chip */
+header .err{display:none}
+header .err:not(:empty){
+  display:block;position:fixed;z-index:70;
+  left:calc(var(--sal) + 10px);right:calc(var(--sar) + 10px);
+  bottom:calc(var(--sab) + var(--tabbar) + 10px);
+  max-width:none;white-space:normal;overflow:visible;text-overflow:clip;
+  background:rgba(24,12,14,.96);border:1px solid rgba(208,59,59,.5);
+  border-radius:11px;padding:9px 13px;font-size:12.5px;line-height:1.4;
+  box-shadow:var(--shadow);animation:rise .3s cubic-bezier(.22,1,.36,1)}
+
+/* ── views: one vertical scroller per section, clearing the fixed tab bar ──
+   FLEX COLUMN, not grid. The desktop views are height-constrained grids, and
+   every card here sets overflow:hidden — which zeroes its min-content size, so
+   grid happily crushes a row to fit the viewport. That is what clipped the
+   hero's subtitle and swallowed its stats row entirely on a 393px screen.
+   A flex column with non-shrinking children lets content set its own height
+   and the section scroll, which is the correct phone model anyway. */
+.view.on{display:flex;flex-direction:column}
+.view>*{flex:0 0 auto}
+.view{gap:11px;padding-bottom:calc(var(--tabbar) + var(--sab) + 14px);
+  overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.view::-webkit-scrollbar{width:0;height:0}
+.view.on>*{animation-duration:.3s}
+.view.on>*:nth-child(n+3){animation-delay:.08s}
+
+/* Cards grow to their content and the PAGE scrolls. Nested scroll panes are
+   the wrong model on a phone — you cannot tell which surface your finger is
+   dragging, and they break both the swipe and the pull-to-refresh gestures.
+   Every inner .scroll therefore flows; only the section itself scrolls. */
+.card{overflow:visible}
+.scroll{overflow:visible;max-height:none;padding:0 14px 12px}
+
+/* ── PULSE ── */
+#v-pulse{grid-template-rows:auto auto auto}
+.hero{padding:13px 15px;gap:13px;align-items:flex-start}
+.hero .mark{font-size:26px;width:28px}
+.hero .msg b{font-size:17px}
+.hero .msg span{font-size:11.5px;white-space:normal;line-height:1.35}
+.hero .stats{gap:0;width:100%;margin-top:11px;padding-top:11px;
+  border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
+.hero .stat{text-align:center}
+.hero .stat b{font-size:15px}
+.hero .stat span{font-size:8.5px;letter-spacing:.08em}
+
+/* four host cards, two up — gauge stacks over its readouts so the bars keep
+   enough width to be readable instead of collapsing to slivers */
+.hosts{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.host{padding:11px 11px 9px}
+/* Two hosts here are called sparkmax-10ef and sparkymaxxx-12ef. Sharing the
+   line with the uptime truncated them to "sparkm…"/"sparkym…" — indistinguishable,
+   which defeats the card. Uptime drops to its own line so the NAME gets the width. */
+.host .hh{flex-wrap:wrap;align-items:center}
+.host .hh b{font-size:12.5px;flex:1 1 auto;min-width:0}
+.host .hh .up{flex:1 0 100%;margin:1px 0 0;padding:0 0 0 21px;font-size:9.5px}
+.host .role{font-size:9.5px;margin:2px 0 6px}
+.gwrap{flex-direction:column;gap:6px}
+.gauge{width:80px;height:80px;align-self:center}
+.gauge .gv{font-size:27px}
+.gauge .gl{font-size:10px}
+.gside{width:100%}
+.mrow{grid-template-columns:24px 1fr auto;gap:5px}
+.mrow label{font-size:8.5px}
+.mrow .v{font-size:9.5px}
+.spark{height:26px;margin-top:6px}
+.host .foot{gap:7px;font-size:9.5px;margin-top:6px;padding-top:6px}
+
+.att{padding:11px 9px}                    /* 44px row target */
+.att .m{white-space:normal;font-size:12.5px;line-height:1.35}
+.att .sub{white-space:normal}
+.todo{padding:9px 2px}
+.todo input{width:19px;height:19px}
+.todo-add{flex-wrap:wrap;padding:10px 14px 14px}
+.todo-add input{flex:1 1 100%}
+.todo-add select{flex:1}
+.prj{padding:8px 2px}
+.prj .n{flex:0 0 52%}
+.act{padding:11px 2px}
+
+/* ── FLEET ── */
+.node{padding:13px 13px 12px}
+.node h2{font-size:14.5px;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.node h2 .up{font-size:10px}
+.charts{gap:8px;margin-top:10px}
+.chart{padding:7px 7px 4px}
+.chart h5{font-size:9px}
+.chart .cur{font-size:10px;gap:6px}
+.chart canvas{height:68px}
+.ctrs{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));max-height:none}
+
+/* ── CONTROL / JOBS ── */
+/* filter pills stay on ONE line and scroll sideways; wrapping them ate three
+   rows of vertical space on a 390px screen */
+.bar-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:10px 12px;gap:7px}
+.bar-row::-webkit-scrollbar{display:none}
+.bar-row input[type=text]{flex:0 0 auto;width:44vw;max-width:none;min-width:0}
+.bar-row .note{margin-left:0;flex:0 0 auto;padding-right:4px}
+.pill{padding:8px 14px}                   /* 36px tall, thumb-sized */
+input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom */
+
+.tiles{grid-template-columns:minmax(0,1fr);gap:9px;padding:0 12px 12px}
+.svc{padding:12px 13px}
+.svc .name{font-size:13.5px}
+.svc .acts{gap:7px;margin-top:6px}
+.svc .acts .btn{flex:1;padding:9px 10px;font-size:12px;text-align:center}
+.svc .acts select{flex:1 1 100%;font-size:16px}
+.svc .open{padding:4px 0 4px 10px}
+.launch{padding:0 12px 12px;gap:8px}
+.lt{min-width:0;width:100%;padding:10px 12px}
+.lt .btn{padding:9px 14px}
+.lgroup{padding:0 12px 4px}
+.ltiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.bks{grid-template-columns:minmax(0,1fr);gap:9px;padding:0 12px 12px}
+
+/* Jobs: a 6-column table cannot work at 390px. Same markup, re-laid out as a
+   stacked card per job — glyph pinned left, name on its own line, schedule
+   facts as a labelled wrap row underneath. */
+.jtab thead{display:none}
+.jtab,.jtab tbody,.jtab tr,.jtab td{display:block;width:auto}
+.jtab tr{position:relative;padding:10px 0 10px 24px;border-bottom:1px solid var(--line)}
+.jtab tr:last-child{border-bottom:0}
+.jtab td{padding:0;border:0;width:auto!important;white-space:normal}
+.jtab td:nth-child(1){position:absolute;left:0;top:12px;width:18px!important}
+.jtab td:nth-child(2){margin-bottom:5px}
+.jtab .jname{white-space:normal;font-size:13px}
+.jtab .jdetail{white-space:normal;font-size:10.5px;line-height:1.35}
+.jtab td:nth-child(n+3){display:inline-block;margin:0 9px 0 0;font-size:10.5px;
+  white-space:nowrap!important}
+.jtab td:nth-child(5)::before{content:"next ";color:var(--ink-3);font-family:var(--sans)}
+.jtab td:nth-child(6)::before{content:"last ";color:var(--ink-3);font-family:var(--sans)}
+.jtab td:nth-child(4){color:var(--ink-3)}
+.mtab td:nth-child(1){width:40%}
+.mtab td:nth-child(2){width:30%}
+
+/* ══════════════════ bottom tab bar (thumb arc) ══════════════════ */
+.tabbar{
+  display:flex;position:fixed;z-index:60;left:0;right:0;bottom:0;
+  padding:0 calc(var(--sar) + 6px) var(--sab) calc(var(--sal) + 6px);
+  background:rgba(10,13,19,.86);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border-top:1px solid var(--line);
+}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;height:var(--tabbar);min-width:0;background:none;border:0;cursor:pointer;
+  color:var(--ink-3);font:600 9.5px/1 var(--sans);letter-spacing:.04em;
+  position:relative;-webkit-tap-highlight-color:transparent;transition:color .18s;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.tb.on{color:var(--s1)}
+.tb.on svg{transform:translateY(-1px) scale(1.06)}
+.tb.on::before{content:"";position:absolute;top:0;left:26%;right:26%;height:2px;
+  border-radius:0 0 3px 3px;background:var(--s1);box-shadow:0 0 10px var(--s1)}
+.tb:active{color:var(--ink-2)}
+.tb .badge{position:absolute;top:5px;left:calc(50% + 6px);font:700 9px var(--mono);
+  border-radius:999px;padding:0 5px;line-height:14px;background:var(--crit);color:#fff;
+  box-shadow:0 0 0 2px rgba(10,13,19,.9)}
+.tb .badge.w{background:var(--warn);color:#241a03}
+
+/* ══════════════════ pull-to-refresh ══════════════════ */
+#ptr{position:fixed;z-index:55;top:calc(var(--sat) + 54px);left:50%;
+  display:flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:999px;font:600 11px var(--sans);color:var(--ink-2);
+  background:rgba(18,22,30,.96);border:1px solid var(--line-2);box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transform:translate(-50%,-14px)}
+#ptr.armed,#ptr.spin{opacity:1;transform:translate(-50%,0)}
+#ptr .ring{width:13px;height:13px;border-radius:50%;border:2px solid var(--line-2);
+  border-top-color:var(--s1)}
+#ptr.spin .ring{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* swipe transition between sections */
+@keyframes slideL{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+.view.on.sw-l>*{animation:slideL .26s cubic-bezier(.22,1,.36,1) backwards}
+.view.on.sw-r>*{animation:slideR .26s cubic-bezier(.22,1,.36,1) backwards}
+}
+
+/* very small phones (SE / mini) — one host card per row so the gauge and its
+   readouts both stay legible instead of both being squeezed
+   (these two blocks come AFTER the ≤760px block on purpose — they refine it) */
+@media (max-width:389px){
+  .hosts{grid-template-columns:minmax(0,1fr)}
+  .gwrap{flex-direction:row}
+  .gauge{width:84px;height:84px;align-self:auto}
+  .ltiles{grid-template-columns:minmax(0,1fr)}
+}
+
+/* landscape phone: the bar bar would eat a third of a 390px-tall viewport */
+@media (max-height:460px) and (max-width:900px){
+  :root{--tabbar:46px}
+  .tb{font-size:8.5px}
+  .tb svg{width:18px;height:18px}
+  .hosts{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
 </style>
 </head>
 <body>
@@ -444,6 +712,7 @@ tr:last-child td{border-bottom:0}
   </nav>
   <span class="sp"></span>
   <span class="err" id="err"></span>
+  <span class="live" id="live" title="live heartbeat"><i class="dot"></i><span id="live-txt">live</span></span>
   <span class="stamp" id="stamp"></span>
   <span class="clock" id="clock"></span>
 </header>
@@ -520,6 +789,26 @@ tr:last-child td{border-bottom:0}
 
 <div id="tip"></div>
 
+<!-- ═══════════════ phone chrome (hidden ≥761px) ═══════════════ -->
+<div id="ptr"><i class="ring"></i><span id="ptr-txt">pull to refresh</span></div>
+
+<nav class="tabbar" id="tabbar" aria-label="Sections">
+  <button class="tb on" data-tab="pulse" aria-label="Pulse">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3 8 5-16 3 8h5"/></svg>
+    Pulse<span class="badge" id="tb-pulse" hidden></span></button>
+  <button class="tb" data-tab="fleet" aria-label="Fleet">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="2"/>
+      <rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+    Fleet<span class="badge" id="tb-fleet" hidden></span></button>
+  <button class="tb" data-tab="control" aria-label="Control">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h10M18 18h2"/>
+      <circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+    Control<span class="badge" id="tb-control" hidden></span></button>
+  <button class="tb" data-tab="jobs" aria-label="Jobs">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+    Jobs<span class="badge" id="tb-jobs" hidden></span></button>
+</nav>
+
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -546,16 +835,43 @@ const tempSpan=(c,kind)=>{const b=tempBand(c,kind);
   return `<span class="${b?"t-"+b:""}">${c??"?"}°C</span>`;};
 
 let DATA={},TAB=(location.hash||"#pulse").slice(1);
+const TABS=["pulse","fleet","control","jobs"];
+const phone=()=>window.matchMedia("(max-width:760px)").matches;
 
-/* ══════════════════════ tabs ══════════════════════ */
-function switchTab(name){
+/* ══════════════════════ tabs ══════════════════════
+   Two tab surfaces drive the same switchTab(): the desktop strip in the header
+   and the phone bar pinned to the bottom. `dir` (+1 next / −1 previous) comes
+   from a swipe and picks the matching slide animation. */
+const SCROLLPOS={};
+function switchTab(name,dir){
   if(!$("v-"+name))name="pulse";
+  const prev=TAB;
+  if(prev&&prev!==name&&$("v-"+prev))SCROLLPOS[prev]=$("v-"+prev).scrollTop;
   TAB=name;location.hash="#"+name;
-  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+name));
-  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  document.querySelectorAll(".view").forEach(v=>{
+    const on=v.id==="v-"+name;
+    v.classList.remove("sw-l","sw-r");
+    v.classList.toggle("on",on);
+    if(on){
+      if(dir)v.classList.add(dir>0?"sw-l":"sw-r");
+      /* restore where this section was left, the way a native tab bar does */
+      if(prev!==name)v.scrollTop=SCROLLPOS[name]||0;
+    }
+  });
+  document.querySelectorAll(".tab,.tb").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
   if(name==="fleet")requestAnimationFrame(drawAll);
 }
-document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+document.querySelectorAll(".tab,.tb").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+
+/* One badge value, both tab surfaces. */
+function setBadge(name,n,warnOnly){
+  for(const el of [$("b-"+name),$("tb-"+name)]){
+    if(!el)continue;
+    el.hidden=!n;
+    el.className="badge"+(n&&warnOnly?" w":"");
+    el.textContent=n||"";
+  }
+}
 document.addEventListener("keydown",e=>{
   if(/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))return;
   const map={"1":"pulse","2":"fleet","3":"control","4":"jobs"};
@@ -580,6 +896,7 @@ function fleetHosts(d){
     up:n1.iso_ts?new Date(n1.iso_ts).toLocaleTimeString():"—",
     dial:g.util_gpu??0,dialLabel:"GPU",
     cpu:s.cpu_pct||0,mem:s.mem_pct||0,disk:s.disk_used_pct||0,
+    memTotal:s.mem_total_gb,
     memTxt:`${s.mem_used_gb??"?"}/${s.mem_total_gb??"?"}G`,
     diskTxt:`${s.disk_free_tb??"?"}TB free`,
     tempC:g.temp_c,tempKind:"gpu",powerW:n1.total_power_watts??g.power_w,
@@ -592,6 +909,7 @@ function fleetHosts(d){
       state:(n2.swap&&n2.swap.used_gb>=2)?"warn":"ok",up:"up "+(n2.uptime||"?"),
       dial:g2.util_gpu??0,dialLabel:"GPU",
       cpu:n2.cpu_pct||0,mem:(n2.mem||{}).pct||0,disk:(n2.disk||{}).pct||0,
+      memTotal:(n2.mem||{}).total_gb,
       memTxt:`${(n2.mem||{}).used_gb??"?"}/${(n2.mem||{}).total_gb??"?"}G`,
       diskTxt:`${(n2.disk||{}).free_tb??"?"}TB free`,
       tempC:g2.temp_c,tempKind:"gpu",powerW:g2.power_w,
@@ -604,6 +922,7 @@ function fleetHosts(d){
       state:worst(pi.issues),up:"up "+(pi.uptime||"?"),
       dial:pi.cpu_pct??0,dialLabel:"CPU",
       cpu:pi.cpu_pct||0,mem:(pi.mem||{}).pct||0,disk:(pi.disk||{}).pct||0,
+      memTotal:(pi.mem||{}).total_gb,
       memTxt:`${(pi.mem||{}).used_gb??"?"}/${(pi.mem||{}).total_gb??"?"}G`,
       diskTxt:`${(pi.disk||{}).free_gb??"?"}GB free`,
       tempC:pi.temp_c,tempKind:"pi",powerW:pi.power_w,
@@ -617,6 +936,7 @@ function fleetHosts(d){
       state:worst(s9.issues),up:"up "+(s9.uptime||"?"),
       dial:s9.cpu_pct??0,dialLabel:"CPU",
       cpu:s9.cpu_pct||0,mem:(s9.mem||{}).pct||0,disk:(s9.disk_data||{}).pct||0,
+      memTotal:(s9.mem||{}).total_gb,
       memTxt:`${(s9.mem||{}).used_gb??"?"}/${(s9.mem||{}).total_gb??"?"}G`,
       diskTxt:`${(s9.disk_data||{}).free_tb??"?"}TB free`,
       tempC:s9.temp_c,tempKind:"pkg",powerW:s9.power_w,
@@ -637,7 +957,8 @@ function offlineHost(id,name,role,h){
    after that only write values. ────────────────────────────────────────── */
 const ARC=216.8, CIRC=289.0;           /* 270° of r=46 · full circumference */
 let cardKeys="";
-const HIST={};                          /* client-side CPU trend per host */
+const HIST={};                          /* per-host dial trend, fed at 1 Hz */
+const HIST_N=120;                       /* 120 × 1 s tick = 2 min of trace */
 
 function hostCardHtml(h){
   return `
@@ -694,10 +1015,18 @@ function renderHosts(hosts){
     if(h.tempC!=null)bits.push(`<span>temp <b class="t-${tempBand(h.tempC,h.tempKind)}">${h.tempC}°C</b></span>`);
     h.foot.forEach(([k,v])=>bits.push(`<span>${esc(k)} <b>${esc(v)}</b></span>`));
     f("foot").innerHTML=bits.join("");
-    /* trend buffer — one sample per refresh (~10 s), 40 points ≈ 7 min */
-    if(!h.offline){(HIST[h.id]=HIST[h.id]||[]).push(+h.dial||0);
-      if(HIST[h.id].length>40)HIST[h.id].shift();}
     drawSpark(f("spark"),HIST[h.id]||[],col);
+  });
+}
+/* The trend buffer is fed by the 1 Hz tick, NOT by renderHosts — otherwise the
+   10 s structural refresh would push duplicate samples and the trace would
+   advance at two different rates depending on which call painted last. */
+function pushHist(hosts){
+  hosts.forEach(h=>{
+    if(h.offline)return;
+    const a=(HIST[h.id]=HIST[h.id]||[]);
+    a.push(+h.dial||0);
+    while(a.length>HIST_N)a.shift();
   });
 }
 function drawSpark(cv,vals,col){
@@ -798,10 +1127,7 @@ function renderAttention(items){
   const bad=items.filter(i=>i.sev==="bad").length,warn=items.filter(i=>i.sev==="warn").length;
   $("att-cnt").textContent=bad?`${bad} critical · ${warn} warning`
     :warn?`${warn} warning`:items.length?`${items.length} info`:"all clear";
-  const b=$("b-pulse");
-  if(bad){b.hidden=false;b.className="badge";b.textContent=bad;}
-  else if(warn){b.hidden=false;b.className="badge w";b.textContent=warn;}
-  else b.hidden=true;
+  setBadge("pulse",bad||warn,!bad);
   $("attention").innerHTML=items.length?items.map(i=>
     `<div class="att ${i.sev}" onclick="switchTab('${i.tab}')">
        ${st(i.sev==="info"?"stale":i.sev)}
@@ -958,7 +1284,8 @@ document.addEventListener("mouseout",e=>{
 const hideTip=()=>$("tip").classList.remove("on");
 
 async function pollSparks(){
-  if(TAB!=="fleet")return;                 /* 1 Hz charts only while visible */
+  /* charts cost 16 kB a poll — only while their tab is actually on screen */
+  if(TAB!=="fleet"||document.hidden)return;
   try{sparks=await(await fetch("/api/sparks",{cache:"no-store"})).json();drawAll();}catch(e){}
 }
 setInterval(pollSparks,2000);
@@ -972,10 +1299,8 @@ setInterval(pollSparks,2000);
     const s=await(await fetch("/api/sparks",{cache:"no-store"})).json();
     for(const nid of["node1","node2"]){
       const v=(s[nid]||[]).map(p=>p.gpu).filter(n=>typeof n==="number");
-      if(v.length>1){                       /* downsample 90 → ≤40 points */
-        const step=Math.ceil(v.length/40);
-        HIST[nid]=v.filter((_,i)=>i%step===0).slice(-40);
-      }
+      /* the ring is already 1 Hz — same cadence as our tick, so take it whole */
+      if(v.length>1)HIST[nid]=v.slice(-HIST_N);
     }
     if(DATA.node1)renderHosts(fleetHosts(DATA));
   }catch(e){}
@@ -1122,9 +1447,7 @@ function renderControl(){
   const b=DATA.services||{},list=b.services||[],op=b.active_operation;
   const q=($("svc-q").value||"").toLowerCase();
   const waste=(b.waste_ids||[]).length,up=list.filter(s=>s.active).length;
-  const badge=$("b-control");
-  badge.hidden=!waste;
-  if(waste){badge.className="badge w";badge.textContent=waste;}
+  setBadge("control",waste,true);
   $("svc-op").textContent=op&&op.status==="running"?`⏳ ${op.type} ${op.key}: ${op.message||"running…"}`
     :op&&op.status==="failed"?`✕ ${op.type} ${op.key} failed`
     :waste?`${waste} running with no recent use`:`${up}/${list.length} up`;
@@ -1203,7 +1526,6 @@ function autoLayer(el){
 function renderJobs(){
   const bk=DATA.backups||{},bc=bk.counts||{};
   $("bk-cnt").textContent=`${bc.ok??0} ok · ${bc.warn??0} warn · ${bc.fail??0} fail`;
-  const bb=$("b-jobs");
   $("backups").innerHTML=(bk.entries||[]).map(e=>{
     const s=norm(e.state);
     return `<div class="bk ${e.state==="ok"?"":e.state}">
@@ -1220,8 +1542,7 @@ function renderJobs(){
   $("auto-summary").textContent=
     `${c.hermes??0} hermes · ${c.crontab??0} crontab · ${c.timer??0} timers · ${c.paused??0} paused`;
   const probs=(c.failing||0)+(bc.fail||0)+(bc.warn||0);
-  bb.hidden=!probs;
-  if(probs){bb.className="badge"+((c.failing||bc.fail)?"":" w");bb.textContent=probs;}
+  setBadge("jobs",probs,!(c.failing||bc.fail));
   const order={fail:0,warn:1,unknown:2,running:2,ok:3,paused:9};
   const shown=[...jobs]
     .sort((a,b)=>(order[a.state]??5)-(order[b.state]??5)||(a.next_ts||9e12)-(b.next_ts||9e12))
@@ -1316,12 +1637,162 @@ async function addTodo(){
 }
 $("todo-in").addEventListener("keydown",e=>{if(e.key==="Enter")addTodo();});
 
-/* ══════════════════════ main loop ══════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   TOUCH LAYER
+   Everything below exists because a finger is not a mouse: there is no hover
+   to read a chart with, no scrollbar to reach for, and the natural way to
+   change section is to throw the page sideways.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── chart scrubbing ──────────────────────────────────────────────────────
+   The crosshair follows the finger. touchmove is NON-passive on purpose: once
+   a scrub is horizontal we must preventDefault, or the section scrolls away
+   underneath the finger while you are trying to read a value. A vertical drag
+   that starts on a chart releases the scrub and scrolls normally. */
+let scrubCv=null,scrubX0=0,scrubY0=0,scrubLocked=0;   /* 0 undecided 1 scrub 2 scroll */
+function scrubAt(cv,clientX,clientY){
+  const r=cv.getBoundingClientRect(),x=clientX-r.left;
+  hoverState[cv.id]=x;
+  const cfg=CHARTS.find(c=>c.key===cv.dataset.chart);
+  if(!cfg)return;
+  const cur=drawChart(cv,sparks[cv.dataset.node]||[],cfg,x);
+  if(!cur){hideTip();return;}
+  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926");
+  const ago=Math.max(0,Math.round(((sparks[cv.dataset.node]||[]).slice(-1)[0]||{t:cur.t}).t-cur.t));
+  const tip=$("tip");
+  tip.innerHTML=`<div class="tt">${ago?`−${ago}s`:"now"}</div>`+
+    `<div class="tr"><i style="background:${A}"></i>${cfg.an} ${fmtV(cur[cfg.a]||0,cfg.unit)}</div>`+
+    (cfg.b?`<div class="tr"><i style="background:${B}"></i>${cfg.bn} ${fmtV(cur[cfg.b]||0,cfg.unit)}</div>`:"");
+  tip.classList.add("on");
+  /* park it above the finger so the hand does not cover the answer */
+  tip.style.left=clamp(clientX-tip.offsetWidth/2,8,innerWidth-tip.offsetWidth-8)+"px";
+  tip.style.top=Math.max(8,clientY-tip.offsetHeight-26)+"px";
+}
+function endScrub(){
+  if(!scrubCv)return;
+  delete hoverState[scrubCv.id];
+  scrubCv=null;scrubLocked=0;hideTip();drawAll();
+}
+document.addEventListener("touchstart",e=>{
+  const cv=e.target;
+  if(cv.tagName!=="CANVAS"||!cv.dataset.chart||e.touches.length!==1)return;
+  scrubCv=cv;scrubLocked=0;
+  scrubX0=e.touches[0].clientX;scrubY0=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(!scrubCv||e.touches.length!==1)return;
+  const t=e.touches[0],dx=t.clientX-scrubX0,dy=t.clientY-scrubY0;
+  if(!scrubLocked&&Math.hypot(dx,dy)>8)scrubLocked=Math.abs(dx)>Math.abs(dy)?1:2;
+  if(scrubLocked===2){endScrub();return;}          /* vertical → hand it to the scroller */
+  if(e.cancelable)e.preventDefault();
+  scrubAt(scrubCv,t.clientX,t.clientY);
+},{passive:false});
+for(const ev of["touchend","touchcancel"])
+  document.addEventListener(ev,endScrub,{passive:true});
+
+/* ── swipe between sections ───────────────────────────────────────────────
+   Only fires for a horizontal-dominant flick that did NOT start inside
+   something that scrolls sideways itself (the filter-pill rows, a wide table,
+   a chart) or on a control — otherwise the gesture is ambiguous and the wrong
+   thing moves. */
+(function(){
+  let x0=0,y0=0,t0=0,live=false,decided=false;
+  const guards=/^(CANVAS|INPUT|SELECT|TEXTAREA|BUTTON|A)$/;
+  const blocked=el=>{
+    for(let n=el;n&&n!==document.body;n=n.parentElement){
+      if(guards.test(n.tagName))return true;
+      const ox=getComputedStyle(n).overflowX;
+      if(/auto|scroll/.test(ox)&&n.scrollWidth>n.clientWidth+4)return true;
+    }
+    return false;
+  };
+  addEventListener("touchstart",e=>{
+    live=false;
+    if(!phone()||e.touches.length!==1||blocked(e.target))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();
+    live=true;decided=false;
+  },{passive:true});
+  addEventListener("touchmove",e=>{
+    if(!live)return;
+    const t=e.touches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(!decided&&Math.hypot(dx,dy)>12){
+      decided=true;
+      if(Math.abs(dy)>=Math.abs(dx))live=false;      /* vertical → a scroll, not a swipe */
+    }
+  },{passive:true});
+  addEventListener("touchend",e=>{
+    if(!live)return;live=false;
+    const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(Date.now()-t0>800||Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.6)return;
+    const next=TABS.indexOf(TAB)+(dx<0?1:-1);
+    if(next<0||next>=TABS.length)return;
+    switchTab(TABS[next],dx<0?1:-1);
+  },{passive:true});
+})();
+
+/* ── pull to refresh ──────────────────────────────────────────────────────
+   Armed only at the very top of the active section, so it can never steal a
+   normal scroll. Refreshing means BOTH calls: structure and values. */
+(function(){
+  const THRESH=64;
+  let y0=0,live=false,pulling=false,dist=0,from=null;
+  const chip=()=>$("ptr"),label=()=>$("ptr-txt");
+  const view=()=>$("v-"+TAB);
+  /* "at top" means the section AND every nested scroller under the finger —
+     otherwise pulling a half-scrolled alert list would arm the refresh */
+  const atTop=()=>{
+    const v=view();
+    if(!v||v.scrollTop>0)return false;
+    for(let n=from;n&&n!==document.body;n=n.parentElement)
+      if(n.scrollTop>0&&n.scrollHeight>n.clientHeight+2)return false;
+    return true;
+  };
+  const reset=()=>{chip().className="";pulling=false;dist=0;};
+  addEventListener("touchstart",e=>{
+    from=e.target;
+    live=phone()&&e.touches.length===1&&atTop();
+    if(live){y0=e.touches[0].clientY;pulling=false;dist=0;}
+  },{passive:true});
+  addEventListener("touchmove",e=>{
+    if(!live)return;
+    dist=e.touches[0].clientY-y0;
+    if(dist<=6||!atTop()){if(pulling)reset();if(!atTop())live=false;return;}
+    pulling=true;
+    chip().className="armed";
+    label().textContent=dist>=THRESH?"release to refresh":"pull to refresh";
+  },{passive:true});
+  addEventListener("touchend",async()=>{
+    if(!live){reset();return;}
+    live=false;
+    if(!pulling||dist<THRESH){reset();return;}
+    chip().className="spin";label().textContent="refreshing…";
+    await refresh();await tickLoop();
+    label().textContent="updated";
+    setTimeout(reset,700);
+  },{passive:true});
+})();
+
+/* ══════════════════════ main loop ══════════════════════
+   TWO cadences, because the two payloads cost wildly different amounts:
+
+     /api/overview  ~62 kB, ~1 s server-side (nvidia-smi + a systemd sweep on
+                    the request path). Carries STRUCTURE: which hosts exist,
+                    alerts, services, jobs, backups.  → 10 s (20 s on a phone)
+     /api/tick      ~400 B, <5 ms (pure cache reads). Carries VALUES only.
+                    → 1 s, which is what actually makes the page feel live.
+
+   Both stop dead while the tab is hidden — on an iPhone a backgrounded PWA
+   should not be draining battery or cellular data — and both fire immediately
+   on the way back so you never stare at a stale screen. */
+let HOSTS=[];               /* last host models — patched in place by the tick */
+let LAST_TICK=0, tickBusy=false;
+
 async function refresh(){
   try{
     const d=await(await fetch("/api/overview",{cache:"no-store"})).json();
     DATA=d;
     const hosts=fleetHosts(d);
+    HOSTS=hosts;
     const items=attentionItems(d,hosts);
     renderHero(hosts,items,d);
     renderHosts(hosts);
@@ -1333,17 +1804,71 @@ async function refresh(){
     renderFleet(d);
     renderControl();
     renderJobs();
-    const down=hosts.filter(h=>h.state==="bad").length;
-    const bf=$("b-fleet");bf.hidden=!down;
-    if(down){bf.className="badge";bf.textContent=down;}
+    setBadge("fleet",hosts.filter(h=>h.state==="bad").length,false);
     $("stamp").textContent="updated "+new Date().toLocaleTimeString();
     $("err").textContent="";
   }catch(e){$("err").textContent="refresh failed: "+e.message;}
 }
-const tick=()=>$("clock").textContent=new Date().toLocaleTimeString();
-tick();setInterval(tick,1000);
+
+/* Patch the live numbers onto the host models the last refresh built, then
+   repaint. Structure (which hosts, what state, alerts) is deliberately NOT
+   touched here — that stays the 10 s call's job. */
+function applyTick(t){
+  if(!HOSTS.length)return;
+  const num=(v,cur)=>typeof v==="number"?v:cur;
+  HOSTS.forEach(h=>{
+    const s=t[h.id];
+    if(!s||h.offline||s.reachable===false)return;
+    h.dial=num(h.id==="node1"||h.id==="node2"?s.gpu:s.cpu,h.dial);
+    h.cpu=num(s.cpu,h.cpu);
+    h.mem=num(s.mem,h.mem);
+    if(h.memTotal&&typeof s.mem==="number")
+      h.memTxt=`${(s.mem/100*h.memTotal).toFixed(1)}/${h.memTotal}G`;
+    if(typeof s.temp==="number"&&s.temp>0)h.tempC=s.temp;
+    if(typeof s.pwr==="number"&&s.pwr>0)h.powerW=s.pwr;
+  });
+  pushHist(HOSTS);
+  renderHosts(HOSTS);
+}
+async function tickLoop(){
+  if(document.hidden||tickBusy)return;
+  tickBusy=true;
+  try{
+    const t=await(await fetch("/api/tick",{cache:"no-store"})).json();
+    applyTick(t);
+    LAST_TICK=Date.now();
+  }catch(e){/* the liveness pill below is the visible consequence */}
+  finally{tickBusy=false;paintLive();}
+}
+/* Says out loud whether the animating numbers are still arriving. A dashboard
+   that silently freezes on last-known-good is worse than one that admits it. */
+function paintLive(){
+  const el=$("live"),txt=$("live-txt");
+  if(!el)return;
+  if(!LAST_TICK){el.className="live stale";txt.textContent="…";return;}
+  const age=(Date.now()-LAST_TICK)/1000;
+  if(age<4){el.className="live";txt.textContent="live";}
+  else if(age<45){el.className="live stale";txt.textContent=Math.round(age)+"s ago";}
+  else{el.className="live dead";txt.textContent="no data";}
+}
+
+const clockTick=()=>$("clock").textContent=new Date().toLocaleTimeString();
+clockTick();setInterval(clockTick,1000);
+setInterval(paintLive,1000);
 switchTab(TAB);
-refresh();setInterval(refresh,10000);
+refresh();tickLoop();
+
+/* structural cadence: easier on a phone's radio, since the 1 Hz tick already
+   carries everything that visibly moves */
+setInterval(()=>{if(!document.hidden)refresh();},phone()?20000:10000);
+setInterval(tickLoop,1000);
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)return;
+  paintLive();refresh();tickLoop();
+  if(TAB==="fleet")pollSparks();
+});
+
 window.addEventListener("resize",()=>{
   if(TAB==="fleet")drawAll();
   document.querySelectorAll(".spark").forEach(cv=>{
