@@ -1,35 +1,35 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-05 10:57:16",
-  "iso_ts": "2026-08-05T10:57:16.770103+00:00",
-  "hour": 10,
+  "timestamp_utc": "2026-08-05 14:12:26",
+  "iso_ts": "2026-08-05T14:12:26.434053+00:00",
+  "hour": 14,
   "dow": 2,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 1.2,
-    "load_1": 0.4,
-    "load_5": 0.43,
-    "load_15": 0.45,
-    "mem_used_gb": 113.31,
+    "cpu_pct": 50.1,
+    "load_1": 4.72,
+    "load_5": 2.85,
+    "load_15": 1.7,
+    "mem_used_gb": 116.9,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 8.38,
-    "mem_pct": 93.1,
-    "swap_used_gb": 8.84,
+    "mem_avail_gb": 4.79,
+    "mem_pct": 96.1,
+    "swap_used_gb": 7.59,
     "swap_total_gb": 16.0,
-    "swap_pct": 55.3,
+    "swap_pct": 47.5,
     "disk_used_pct": 71.3,
     "disk_free_tb": 1.0
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.85,
-  "avg_temp_c": 46.0,
+  "total_power_watts": 20.32,
+  "avg_temp_c": 52.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.85,
-      "temp_c": 46,
+      "power_w": 20.32,
+      "temp_c": 52,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
@@ -43,13 +43,17 @@
       "mem_mb": 420
     },
     {
-      "name": "ray::RayDiffusionWorker",
-      "mem_mb": 100573
+      "name": "VLLM::Worker_TP0",
+      "mem_mb": 99859
+    },
+    {
+      "name": "python3",
+      "mem_mb": 2081
     }
   ],
   "ollama": [],
   "hermes": {
-    "orchestrator": "active",
+    "orchestrator": "deactivating",
     "light": "active",
     "dobby": "active",
     "smeagle": "active",
@@ -138,7 +142,7 @@
       "qwen35-nvfp4"
     ],
     "hermes": {
-      "orchestrator": "active",
+      "orchestrator": "deactivating",
       "light": "active",
       "dobby": "active",
       "smeagle": "active",
@@ -154,17 +158,17 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 1.2,
-        "load_1": 0.4,
-        "load_5": 0.43,
-        "load_15": 0.45,
-        "mem_used_gb": 113.31,
+        "cpu_pct": 50.1,
+        "load_1": 4.72,
+        "load_5": 2.85,
+        "load_15": 1.7,
+        "mem_used_gb": 116.9,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 8.38,
-        "mem_pct": 93.1,
-        "swap_used_gb": 8.84,
+        "mem_avail_gb": 4.79,
+        "mem_pct": 96.1,
+        "swap_used_gb": 7.59,
         "swap_total_gb": 16.0,
-        "swap_pct": 55.3,
+        "swap_pct": 47.5,
         "disk_used_pct": 71.3,
         "disk_free_tb": 1.0
       },
@@ -172,8 +176,8 @@
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.85,
-          "temp_c": 46,
+          "power_w": 20.32,
+          "temp_c": 52,
           "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
@@ -192,9 +196,10 @@
         {
           "port": 8888,
           "engine": "vLLM",
-          "status": "down",
-          "models": [],
-          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+          "status": "ok",
+          "models": [
+            "deepseek-v4-flash-0731"
+          ]
         },
         {
           "port": 11434,
@@ -216,27 +221,27 @@
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-05T10:57:17.644759+00:00",
+      "iso_ts": "2026-08-05T14:12:27.597228+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 0.9,
+      "cpu_pct": 1.8,
       "mem": {
-        "used_gb": 60.7,
+        "used_gb": 109.4,
         "total_gb": 121.7,
-        "avail_gb": 61.0,
-        "pct": 49.9
+        "avail_gb": 12.3,
+        "pct": 89.9
       },
       "swap": {
-        "used_gb": 0.8,
+        "used_gb": 3.0,
         "total_gb": 16.0,
-        "pct": 5.3
+        "pct": 18.8
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 12.19,
-          "temp_c": 45,
+          "power_w": 13.12,
+          "temp_c": 50,
           "util_gpu": 0.0
         }
       ],
@@ -258,27 +263,29 @@
           "status": "down"
         }
       ],
-      "workloads": [],
+      "workloads": [
+        "vllm"
+      ],
       "top_procs": [
         {
-          "name": "ray::RayDiffusi",
-          "mem_gb": 4.7
+          "name": "VLLM::Worker_TP",
+          "mem_gb": 4.0
         },
         {
           "name": "bluetoothd",
           "mem_gb": 0.3
         },
         {
-          "name": "ray",
-          "mem_gb": 0.1
+          "name": "vllm",
+          "mem_gb": 0.0
         },
         {
-          "name": "ray::DashboardA",
-          "mem_gb": 0.1
+          "name": "dockerd",
+          "mem_gb": 0.0
         },
         {
-          "name": "polkitd",
-          "mem_gb": 0.1
+          "name": "tailscaled",
+          "mem_gb": 0.0
         }
       ]
     }
@@ -295,9 +302,10 @@
       {
         "port": 8888,
         "engine": "vLLM",
-        "status": "down",
-        "models": [],
-        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+        "status": "ok",
+        "models": [
+          "deepseek-v4-flash-0731"
+        ]
       },
       {
         "port": 11434,
@@ -334,20 +342,22 @@
       "pokemon",
       "vllm"
     ],
-    "node2": []
+    "node2": [
+      "vllm"
+    ]
   },
   "node2_alert_state": "healthy",
   "alerts": [
     {
       "level": "critical",
       "category": "memory",
-      "message": "RAM at 93.1% \u2014 only 8.38 GB free",
+      "message": "RAM at 96.1% \u2014 only 4.79 GB free",
       "action": "Stop vLLM or Ollama: switch-model qwen OR ollama stop <model>"
     },
     {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 8.84 GB \u2014 memory pressure",
+      "message": "Swap usage 7.59 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
