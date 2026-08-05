@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spark Console</title>
+<meta name="theme-color" content="#080a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spark Console">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Spark Console v2 — 4 tabs, one theme.
+
+   Palette is NOT eyeballed. Series + status hexes come from the dataviz
+   reference palette and were run through scripts/validate_palette.js against
+   this page's own surface (#12141b, dark):
+     series  #3987e5 / #d95926 / #199e70 → ALL CHECKS PASS
+     status  good #0ca30c ↔ crit #d03b3b → CVD ΔE 4.1 (deuteranopia) = FAIL
+   That last number is why every status indicator here carries a DISTINCT
+   GLYPH (● ▲ ✕ ○) and not just a colour. Never signal state with hue alone.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* surfaces */
+  --bg:#080a0e; --surface:#12141b; --surface-2:#171b24; --raise:#1d222d;
+  --line:rgba(255,255,255,.085); --line-2:rgba(255,255,255,.14);
+  /* ink */
+  --ink:#f2f4f8; --ink-2:#a5adbb; --ink-3:#6c7484;
+  /* series (validated categorical slots 1-3) */
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  /* status (fixed, never themed) */
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --neutral:#898781;
+  --cool:#3987e5;
+  --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:14px; --r-sm:9px;
+  --shadow:0 18px 40px -12px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);
+  display:grid;grid-template-rows:58px minmax(0,1fr);gap:14px;padding:14px;
+  height:100vh;max-width:100vw;overflow:hidden;position:relative;isolation:isolate;
+}
+/* ── aurora: 3 blurred blobs on the compositor. transform-only, no repaint ── */
+body::before{
+  content:"";position:fixed;inset:-30%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(38% 42% at 18% 22%,rgba(57,135,229,.20),transparent 70%),
+    radial-gradient(34% 38% at 82% 12%,rgba(217,89,38,.13),transparent 70%),
+    radial-gradient(40% 44% at 62% 88%,rgba(25,158,112,.11),transparent 70%);
+  filter:blur(38px);animation:drift 38s ease-in-out infinite alternate;
+}
+@keyframes drift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(2.5%,-2%,0) scale(1.08)}
+}
+body>*{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){
+  body::before{animation:none}
+  *{transition:none!important;animation:none!important}
+}
+
+/* ══════════════════════════ primitives ══════════════════════════ */
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.good{color:var(--good)}.warn{color:var(--warn)}.crit{color:var(--crit)}
+.neutral{color:var(--neutral)}.dim{color:var(--ink-2)}.faint{color:var(--ink-3)}
+.t-cool{color:var(--cool)}.t-ok{color:var(--good)}.t-warm{color:var(--warn)}.t-hot{color:var(--crit)}
+
+/* Status marks: SHAPE carries the meaning, colour reinforces it.
+   ● ok · ▲ warn · ✕ bad · ○ stale — legible at 11px and under CVD. */
+.st{display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:14px;height:14px;font-size:10px;line-height:1;font-style:normal;
+  margin-right:7px;vertical-align:-1px}
+.st.ok{color:var(--good);text-shadow:0 0 9px rgba(12,163,12,.85)}
+.st.warn{color:var(--warn);text-shadow:0 0 9px rgba(250,178,25,.7)}
+.st.bad{color:var(--crit);text-shadow:0 0 10px rgba(208,59,59,.9)}
+.st.stale{color:var(--neutral)}
+.st.bad{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+.card{background:linear-gradient(160deg,var(--surface-2),var(--surface));
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
+.card::after{content:"";position:absolute;inset:0 0 auto;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)}
+.card>h3{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);padding:13px 16px 9px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;flex:none}
+.card>h3 .cnt{font:400 11px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.scroll{overflow:auto;flex:1;min-height:0;padding:0 16px 14px}
+.scroll::-webkit-scrollbar,.view::-webkit-scrollbar{width:7px;height:7px}
+.scroll::-webkit-scrollbar-thumb,.view::-webkit-scrollbar-thumb{
+  background:var(--line-2);border-radius:99px}
+.empty{color:var(--ink-3);font-size:12.5px;padding:14px 2px;font-style:italic}
+
+.btn{font:600 11.5px var(--sans);color:var(--ink-2);background:var(--raise);
+  border:1px solid var(--line-2);border-radius:7px;padding:5px 11px;cursor:pointer;
+  transition:.15s;white-space:nowrap}
+.btn:hover:not(:disabled){color:var(--ink);border-color:var(--s1);
+  box-shadow:0 0 0 3px rgba(57,135,229,.14)}
+.btn:disabled{opacity:.32;cursor:not-allowed}
+.btn.go:hover:not(:disabled){border-color:var(--good);box-shadow:0 0 0 3px rgba(12,163,12,.16)}
+.btn.stop:hover:not(:disabled){border-color:var(--crit);box-shadow:0 0 0 3px rgba(208,59,59,.16)}
+input[type=text],select{font:13px var(--sans);color:var(--ink);background:#0c0f15;
+  border:1px solid var(--line-2);border-radius:8px;padding:7px 11px;outline:none;min-width:0}
+input[type=text]:focus,select:focus{border-color:var(--s1);box-shadow:0 0 0 3px rgba(57,135,229,.16)}
+
+/* ══════════════════════════ top bar ══════════════════════════ */
+header{display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;
+  background:rgba(12,15,21,.72);backdrop-filter:blur(18px);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:750;font-size:14.5px;
+  letter-spacing:.2px;white-space:nowrap;margin-right:6px}
+.brand .bolt{font-size:17px;filter:drop-shadow(0 0 8px rgba(57,135,229,.8))}
+nav{display:flex;gap:3px;min-width:0;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;
+  font-size:13px;font-weight:650;color:var(--ink-3);cursor:pointer;white-space:nowrap;
+  border:1px solid transparent;transition:.16s;position:relative}
+.tab:hover{color:var(--ink-2);background:rgba(255,255,255,.04)}
+.tab.on{color:var(--ink);background:rgba(57,135,229,.14);border-color:rgba(57,135,229,.4)}
+.tab.on::after{content:"";position:absolute;left:15px;right:15px;bottom:-1px;height:2px;
+  border-radius:2px;background:var(--s1);box-shadow:0 0 10px var(--s1)}
+.tab kbd{font:600 9.5px var(--mono);color:var(--ink-3);border:1px solid var(--line);
+  border-radius:4px;padding:1px 4px;background:rgba(0,0,0,.35)}
+.tab .badge{font:700 10px var(--mono);border-radius:999px;padding:1px 6px;
+  background:var(--crit);color:#fff}
+.tab .badge.w{background:var(--warn);color:#241a03}
+header .sp{flex:1}
+header .err{font-size:12px;color:var(--crit);max-width:30ch;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+header .stamp{font:11px var(--mono);color:var(--ink-3);white-space:nowrap}
+header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padding-right:8px}
+
+/* ══════════════════════════ views ══════════════════════════ */
+.view{display:none;min-height:0;min-width:0;overflow:auto;gap:14px}
+.view.on{display:grid}
+
+/* ─────────────── PULSE ─────────────── */
+#v-pulse{grid-template-rows:auto auto minmax(180px,1fr)}
+
+/* hero verdict */
+.hero{display:flex;align-items:center;gap:20px;padding:16px 22px;border-radius:var(--r);
+  border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden;
+  background:linear-gradient(115deg,var(--surface-2),var(--surface) 60%)}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:radial-gradient(70% 200% at 0% 50%,var(--hero-glow,rgba(12,163,12,.24)),transparent 65%)}
+.hero.ok{--hero-glow:rgba(12,163,12,.26)}
+.hero.warn{--hero-glow:rgba(250,178,25,.24)}
+.hero.bad{--hero-glow:rgba(208,59,59,.3)}
+.hero>*{position:relative}
+.hero .mark{font-size:34px;line-height:1;flex:none;width:46px;text-align:center}
+.hero.ok .mark{color:var(--good);text-shadow:0 0 22px rgba(12,163,12,.7)}
+.hero.warn .mark{color:var(--warn);text-shadow:0 0 22px rgba(250,178,25,.6)}
+.hero.bad .mark{color:var(--crit);text-shadow:0 0 26px rgba(208,59,59,.8)}
+.hero .msg{min-width:0;flex:1}
+.hero .msg b{display:block;font-size:23px;font-weight:750;letter-spacing:-.015em;line-height:1.15}
+.hero .msg span{display:block;font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.hero .stats{display:flex;gap:26px;flex:none}
+.hero .stat{text-align:right}
+.hero .stat b{display:block;font:650 21px/1.1 var(--mono);letter-spacing:-.02em}
+.hero .stat span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-3)}
+
+/* host cards */
+.hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.host{padding:14px 16px 12px;cursor:pointer;transition:border-color .18s,transform .18s}
+.host:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.host .hh{display:flex;align-items:baseline;gap:0;min-width:0;margin-bottom:2px}
+.host .hh b{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.host .hh .up{margin-left:auto;font:10.5px var(--mono);color:var(--ink-3);white-space:nowrap;
+  padding-left:8px}
+.host .role{font-size:11px;color:var(--ink-3);margin-bottom:8px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.gwrap{display:flex;align-items:center;gap:14px}
+.gauge{width:104px;height:104px;flex:none}
+.gauge circle{fill:none;stroke-width:9;stroke-linecap:round;
+  transform:rotate(135deg);transform-origin:60px 60px}
+.gauge .track{stroke:rgba(255,255,255,.07)}
+.gauge .fill{transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1),stroke .4s;
+  filter:drop-shadow(0 0 6px currentColor)}
+.gauge text{fill:var(--ink);font-family:var(--sans);text-anchor:middle}
+.gauge .gv{font-size:26px;font-weight:700}
+.gauge .gl{font-size:9px;fill:var(--ink-3);letter-spacing:.14em;font-weight:600}
+.gside{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.mrow{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:7px;font-size:11px}
+.mrow label{color:var(--ink-3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.bar{height:5px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;min-width:0}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--s1);
+  transition:width .8s cubic-bezier(.22,1,.36,1),background .3s}
+.bar i.w{background:var(--warn)}.bar i.b{background:var(--crit)}
+.mrow .v{font:11px var(--mono);color:var(--ink-2);white-space:nowrap}
+.spark{width:100%;height:32px;display:block;margin-top:9px}
+.host .foot{display:flex;gap:12px;margin-top:8px;padding-top:8px;
+  border-top:1px solid var(--line);font-size:11px;color:var(--ink-3);flex-wrap:wrap}
+.host .foot b{color:var(--ink-2);font-family:var(--mono);font-weight:600}
+.host.bad{border-color:rgba(208,59,59,.5)}
+.host.warn{border-color:rgba(250,178,25,.38)}
+
+/* pulse bottom row */
+.prow{display:grid;gap:14px;min-height:0;
+  grid-template-columns:minmax(0,1.5fr) minmax(0,.85fr) minmax(0,.95fr) minmax(0,1.05fr)}
+
+/* projects */
+.prj{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;
+  border-bottom:1px solid var(--line);min-width:0}
+.prj:last-child{border-bottom:0}
+.prj .n{display:flex;align-items:center;min-width:0;flex:0 0 44%}
+.prj .n span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.prj .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--ink-3);font-size:11px}
+.prj .a{font:10.5px var(--mono);color:var(--ink-3);flex:none}
+
+/* attention feed — the merged "what's wrong" list */
+.att{display:flex;align-items:flex-start;gap:0;padding:9px 10px;border-radius:var(--r-sm);
+  cursor:pointer;transition:background .15s;border-left:2px solid transparent}
+.att:hover{background:rgba(255,255,255,.045)}
+.att.bad{border-left-color:var(--crit)}
+.att.warn{border-left-color:var(--warn)}
+.att.info{border-left-color:var(--neutral)}
+.att .body{min-width:0;flex:1}
+.att .m{font-size:12.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att .sub{font-size:11px;color:var(--ink-3);margin-top:2px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.att .src{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.09em;
+  color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:2px 6px;
+  margin-left:8px;flex:none;align-self:flex-start}
+.allclear{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:9px;color:var(--ink-3);text-align:center;padding:20px}
+.allclear .big{font-size:38px;color:var(--good);text-shadow:0 0 26px rgba(12,163,12,.6)}
+.allclear b{font-size:14px;color:var(--ink-2);font-weight:600}
+
+/* todo */
+.todo{display:flex;align-items:center;gap:9px;padding:6px 2px;font-size:12.5px;
+  border-bottom:1px solid var(--line)}
+.todo:last-child{border-bottom:0}
+.todo input{accent-color:var(--s1);width:14px;height:14px;flex:none;cursor:pointer}
+.todo .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo.done .txt{color:var(--ink-3);text-decoration:line-through}
+.todo .tag{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.07em;
+  color:var(--ink-3);background:var(--raise);border-radius:5px;padding:2px 6px;flex:none}
+.todo .del{color:var(--ink-3);cursor:pointer;font-size:12px;flex:none;opacity:0;transition:.15s}
+.todo:hover .del{opacity:1}
+.todo .del:hover{color:var(--crit)}
+.todo-add{display:flex;gap:6px;padding:10px 16px 14px;flex:none}
+.todo-add input{flex:1;min-width:0;padding:6px 10px;font-size:12.5px}
+.todo-add select{padding:6px 8px;font-size:11.5px}
+
+/* quick actions */
+.act{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
+.act:last-of-type{border-bottom:0}
+.act .info{min-width:0;flex:1}
+.act .info b{display:block;font-size:12.5px;font-weight:650}
+.act .info span{display:block;font-size:11px;color:var(--ink-3);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.act-out{font:10.5px/1.45 var(--mono);color:var(--ink-2);background:#0a0d12;
+  border:1px solid var(--line);border-radius:7px;padding:7px 9px;margin:0 0 8px;
+  white-space:pre-wrap;max-height:100px;overflow:auto}
+
+/* ─────────────── FLEET ─────────────── */
+#v-fleet{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+.node{padding:15px 17px 14px}
+.node h2{display:flex;align-items:baseline;gap:9px;font-size:16px;font-weight:750;
+  margin-bottom:12px;min-width:0}
+.node h2 .role{font-size:11px;font-weight:500;color:var(--ink-3);letter-spacing:.04em}
+.node h2 .up{margin-left:auto;font:11px var(--mono);color:var(--ink-3)}
+.node .offline{padding:26px 4px;color:var(--crit);font-size:13px;text-align:center}
+.node .offline.stale{color:var(--ink-3)}
+.subhead{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin:14px 0 7px;display:flex;justify-content:space-between;
+  align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:11px}
+.subhead .cnt{font:400 10.5px var(--mono);letter-spacing:0;text-transform:none}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
+.chart{background:#0a0d12;border:1px solid var(--line);border-radius:10px;padding:8px 9px 5px;
+  min-width:0;position:relative}
+.chart h5{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:5px}
+.chart .cur{display:flex;gap:9px;font:11px var(--mono);color:var(--ink-2);
+  letter-spacing:0;text-transform:none;font-weight:400}
+.chart .cur span{display:flex;align-items:center;gap:4px}
+.chart .cur i{width:7px;height:7px;border-radius:2px;flex:none}
+.chart canvas{width:100%;height:82px;display:block;cursor:crosshair}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:4px 0;
+  border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--ink-3);white-space:nowrap}
+.kv .v{font-family:var(--mono);font-size:11.5px;text-align:right;min-width:0;
+  overflow:hidden;text-overflow:ellipsis}
+.ctrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px;
+  max-height:118px;overflow:auto}
+.ctr{display:flex;align-items:center;font-size:11px;padding:4px 7px;border-radius:6px;
+  background:rgba(255,255,255,.035);min-width:0}
+.ctr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctr.down{opacity:.55}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);padding:5px 8px 5px 0;border-bottom:1px solid var(--line-2);
+  position:sticky;top:0;background:var(--surface);z-index:1}
+td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+/* model table: fixed columns so the model NAME keeps the space, not the
+   two-character status column (auto layout starved it to "de…") */
+.mtab{table-layout:fixed}
+.mtab td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtab td:nth-child(1){width:44%}
+.mtab td:nth-child(2){width:26%}
+.mtab td:nth-child(3){width:16%}
+.mtab td:nth-child(4){width:14%}
+/* jobs table: same fix — auto layout gave a third of the width to a cron
+   expression and squeezed the job NAME, the one column you actually read */
+.jtab{table-layout:fixed}
+.jtab td{overflow:hidden}
+.jtab th:nth-child(1),.jtab td:nth-child(1){width:26px}
+.jtab th:nth-child(3),.jtab td:nth-child(3){width:96px}
+.jtab th:nth-child(4),.jtab td:nth-child(4){width:186px}
+.jtab th:nth-child(5),.jtab td:nth-child(5){width:96px}
+.jtab th:nth-child(6),.jtab td:nth-child(6){width:104px}
+
+/* ─────────────── CONTROL / JOBS shared ─────────────── */
+.bar-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px;flex:none}
+.bar-row input[type=text]{flex:1;min-width:150px;max-width:320px}
+.pill{font:600 11.5px var(--sans);color:var(--ink-3);background:transparent;
+  border:1px solid var(--line-2);border-radius:999px;padding:5px 12px;cursor:pointer;
+  transition:.15s;white-space:nowrap}
+.pill:hover{color:var(--ink-2);border-color:var(--ink-3)}
+.pill.on{color:var(--ink);background:rgba(57,135,229,.16);border-color:rgba(57,135,229,.5)}
+.bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
+
+#v-control,#v-jobs{grid-template-rows:auto auto minmax(0,1fr);align-content:start}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:10px;
+  padding:0 14px 14px}
+.svc{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;display:flex;flex-direction:column;gap:5px;min-width:0;transition:.15s}
+.svc:hover{border-color:var(--line-2)}
+.svc.waste{border-color:rgba(250,178,25,.42)}
+.svc .name{display:flex;align-items:center;font-size:12.5px;font-weight:650;min-width:0}
+.svc .name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc .meta{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc .used{font:10.5px var(--mono);color:var(--ink-3)}
+.svc .used.waste{color:var(--warn)}
+.svc .acts{display:flex;gap:5px;margin-top:3px;align-items:center;flex-wrap:wrap}
+.svc .acts select{padding:4px 6px;font-size:11px;flex:1;min-width:0}
+.svc .acts .btn{padding:4px 9px;font-size:11px}
+.svc .open{margin-left:auto;padding-left:8px;font-size:11px;color:var(--s1);
+  text-decoration:none;font-weight:600;white-space:nowrap;flex:none}
+.svc .open:hover{text-decoration:underline}
+
+.launch{display:flex;gap:9px;padding:0 14px 12px;flex-wrap:wrap}
+.lt{display:flex;align-items:center;gap:9px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:8px 11px;min-width:190px;transition:.15s}
+.lt.up{border-color:rgba(12,163,12,.4)}
+.lt .ico{font-size:17px;flex:none}
+.lt .txt{min-width:0;flex:1}
+.lt .txt b{display:flex;align-items:center;font-size:12.5px;font-weight:650}
+.lt .txt span{display:block;font-size:10.5px;color:var(--ink-3);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+
+.lgroup{padding:0 14px 4px}
+.lgroup h4{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin:10px 0 8px;display:flex;gap:9px;align-items:center}
+.lgroup h4 .cnt{font:400 10.5px var(--mono);letter-spacing:0;text-transform:none}
+.ltiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:8px}
+.ltile{display:block;text-decoration:none;color:inherit;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:9px;padding:8px 11px;min-width:0;transition:.15s}
+.ltile:hover{border-color:var(--s1);transform:translateY(-1px)}
+.ltile b{display:flex;align-items:center;font-size:12px;font-weight:650}
+.ltile b span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltile>span{display:block;font-size:10.5px;color:var(--ink-3);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltile.down{opacity:.62}
+
+/* backup tiers */
+.bks{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:10px;padding:0 14px 12px}
+.bk{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+  display:flex;flex-direction:column;gap:4px;min-width:0}
+.bk.warn{border-color:rgba(250,178,25,.42)}
+.bk.fail{border-color:rgba(208,59,59,.5)}
+.bk .h{display:flex;align-items:center;gap:0;font-size:12.5px;font-weight:650;min-width:0}
+.bk .h b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk .h .age{margin-left:auto;font:11px var(--mono);padding-left:8px;white-space:nowrap}
+.bk .tier{font:600 9px var(--mono);color:var(--ink-3);border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;margin-left:7px;flex:none}
+.bk .d{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk .n{font-size:11px;color:var(--warn)}
+
+/* jobs table */
+.jname{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jdetail{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lay{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.07em;
+  border-radius:5px;padding:2px 6px;white-space:nowrap;
+  background:rgba(57,135,229,.16);color:#8fc0f5}
+.lay.crontab{background:rgba(217,89,38,.16);color:#f0a382}
+.lay.timer{background:rgba(25,158,112,.16);color:#6fd9b2}
+
+/* chart tooltip */
+#tip{position:fixed;z-index:60;pointer-events:none;opacity:0;transition:opacity .12s;
+  background:rgba(10,13,18,.96);border:1px solid var(--line-2);border-radius:8px;
+  padding:7px 10px;font:11.5px/1.5 var(--mono);color:var(--ink);box-shadow:var(--shadow);
+  white-space:nowrap}
+#tip.on{opacity:1}
+#tip .tt{color:var(--ink-3);font-size:10px;margin-bottom:3px}
+#tip .tr{display:flex;align-items:center;gap:6px}
+#tip .tr i{width:8px;height:8px;border-radius:2px;flex:none}
+
+/* entrance */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.view.on>*{animation:rise .42s cubic-bezier(.22,1,.36,1) backwards}
+.view.on>*:nth-child(2){animation-delay:.05s}
+.view.on>*:nth-child(3){animation-delay:.1s}
+
+/* responsive */
+@media (max-width:1680px){.prow{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);
+  grid-auto-rows:minmax(190px,auto)}
+  .prow>:nth-child(4){grid-column:span 3}}
+@media (max-width:1500px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #v-pulse{grid-template-rows:auto auto auto}
+  .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .prow>:nth-child(4){grid-column:auto}}
+@media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
+  .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){.hosts{grid-template-columns:minmax(0,1fr)}
+  .prow{grid-template-columns:minmax(0,1fr)}
+  .hero{flex-wrap:wrap}.hero .stats{width:100%;justify-content:flex-start}
+  body{padding:9px;gap:9px}header{padding:0 6px 0 11px}
+  .tab kbd{display:none}header .stamp{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="bolt">⚡</span>Spark Console</div>
+  <nav id="tabs">
+    <div class="tab on" data-tab="pulse"><kbd>1</kbd>Pulse <span class="badge" id="b-pulse" hidden></span></div>
+    <div class="tab" data-tab="fleet"><kbd>2</kbd>Fleet <span class="badge" id="b-fleet" hidden></span></div>
+    <div class="tab" data-tab="control"><kbd>3</kbd>Control <span class="badge" id="b-control" hidden></span></div>
+    <div class="tab" data-tab="jobs"><kbd>4</kbd>Jobs <span class="badge" id="b-jobs" hidden></span></div>
+  </nav>
+  <span class="sp"></span>
+  <span class="err" id="err"></span>
+  <span class="stamp" id="stamp"></span>
+  <span class="clock" id="clock"></span>
+</header>
+
+<!-- ═══════════════ PULSE ═══════════════ -->
+<section class="view on" id="v-pulse">
+  <div class="hero ok" id="hero">
+    <div class="mark" id="hero-mark">●</div>
+    <div class="msg"><b id="hero-title">Checking the fleet…</b><span id="hero-sub">connecting</span></div>
+    <div class="stats" id="hero-stats"></div>
+  </div>
+
+  <div class="hosts" id="hosts"></div>
+
+  <div class="prow">
+    <div class="card"><h3>Needs you <span class="cnt" id="att-cnt"></span></h3>
+      <div class="scroll" id="attention"></div></div>
+    <div class="card"><h3>Todo <span class="cnt" id="todo-cnt"></span></h3>
+      <div class="scroll" id="todos"></div>
+      <div class="todo-add">
+        <input type="text" id="todo-in" placeholder="add item…">
+        <select id="todo-tag"><option>home</option><option>stack</option><option>models</option>
+          <option>hermes</option><option>backups</option><option>fleet</option></select>
+        <button class="btn" onclick="addTodo()">Add</button></div></div>
+    <div class="card"><h3>Projects <span class="cnt" id="proj-cnt"></span></h3>
+      <div class="scroll" id="projects"></div></div>
+    <div class="card"><h3>Quick actions</h3>
+      <div class="scroll" id="actions"></div></div>
+  </div>
+</section>
+
+<!-- ═══════════════ FLEET ═══════════════ -->
+<section class="view" id="v-fleet"></section>
+
+<!-- ═══════════════ CONTROL ═══════════════ -->
+<section class="view" id="v-control">
+  <div class="card">
+    <div class="bar-row">
+      <input type="text" id="svc-q" placeholder="filter services & apps…" oninput="renderControl()">
+      <span class="pill on" data-g="all" onclick="svcGroup(this)">All</span>
+      <span class="pill" data-g="inference" onclick="svcGroup(this)">Inference</span>
+      <span class="pill" data-g="hermes" onclick="svcGroup(this)">Hermes</span>
+      <span class="pill" data-g="apps" onclick="svcGroup(this)">Apps</span>
+      <span class="pill" data-g="meta" onclick="svcGroup(this)">Meta</span>
+      <span class="note" id="svc-op"></span>
+    </div>
+  </div>
+  <div class="card"><h3>Desktop apps <span class="cnt">launch on the physical display :0</span></h3>
+    <div class="launch" id="launch-apps"></div></div>
+  <div class="card" style="overflow:auto">
+    <h3>Services <span class="cnt" id="svc-cnt"></span></h3>
+    <div class="tiles" id="services"></div>
+    <div id="remote-links"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ JOBS ═══════════════ -->
+<section class="view" id="v-jobs">
+  <div class="card"><h3>Backup tiers <span class="cnt" id="bk-cnt"></span></h3>
+    <div class="bks" id="backups"></div></div>
+  <div class="card">
+    <div class="bar-row">
+      <input type="text" id="auto-q" placeholder="filter jobs…" oninput="renderJobs()">
+      <span class="pill on" data-l="all" onclick="autoLayer(this)">All</span>
+      <span class="pill" data-l="hermes" onclick="autoLayer(this)">Hermes</span>
+      <span class="pill" data-l="crontab" onclick="autoLayer(this)">Crontab</span>
+      <span class="pill" data-l="timer" onclick="autoLayer(this)">Timers</span>
+      <span class="pill" data-l="problem" onclick="autoLayer(this)">Problems</span>
+      <span class="note" id="auto-summary"></span>
+    </div>
+  </div>
+  <div class="card" style="overflow:auto"><div class="scroll" style="padding-top:0" id="jobs"></div></div>
+</section>
+
+<div id="tip"></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+
+/* Status marks. SHAPE is the primary channel — green(#0ca30c) and red(#d03b3b)
+   measure ΔE 4.1 under deuteranopia, so colour alone would be unreadable. */
+const GLYPH={ok:"●",warn:"▲",bad:"✕",stale:"○"};
+const st=s=>{const k=GLYPH[s]?s:"stale";return `<i class="st ${k}" role="img" aria-label="${k}">${GLYPH[k]}</i>`;};
+const norm=s=>s==="ok"||s==="up"||s==="active"?"ok":s==="fail"||s==="bad"||s==="critical"||s==="down"?"bad"
+  :s==="warn"||s==="warning"?"warn":"stale";
+const barCls=p=>p>=90?"b":p>=75?"w":"";
+const pctOf=(u,t)=>t?Math.round(u/t*100):0;
+
+/* temp bands — cutoffs mirror fleet_nodes.temp_band. Always rendered beside the
+   actual °C number, so the label is the secondary channel for the colour. */
+function tempBand(c,kind="gpu"){
+  if(c==null||c===""||Number.isNaN(+c))return "";
+  const t=+c,cuts=({pi:[45,60,75],pkg:[55,75,90],gpu:[50,70,80]})[kind]||[50,70,85];
+  return t<cuts[0]?"cool":t<cuts[1]?"ok":t<cuts[2]?"warm":"hot";
+}
+const tempSpan=(c,kind)=>{const b=tempBand(c,kind);
+  return `<span class="${b?"t-"+b:""}">${c??"?"}°C</span>`;};
+
+let DATA={},TAB=(location.hash||"#pulse").slice(1);
+
+/* ══════════════════════ tabs ══════════════════════ */
+function switchTab(name){
+  if(!$("v-"+name))name="pulse";
+  TAB=name;location.hash="#"+name;
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+name));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="fleet")requestAnimationFrame(drawAll);
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+document.addEventListener("keydown",e=>{
+  if(/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))return;
+  const map={"1":"pulse","2":"fleet","3":"control","4":"jobs"};
+  if(map[e.key]){switchTab(map[e.key]);return;}
+  if(e.key==="/"){e.preventDefault();
+    const box={control:"svc-q",jobs:"auto-q"}[TAB];if(box)$(box).focus();return;}
+  if(e.key==="r")refresh();
+});
+window.addEventListener("hashchange",()=>switchTab((location.hash||"#pulse").slice(1)));
+
+/* ══════════════════════ fleet model ══════════════════════ */
+const booting=h=>!!h&&!h.reachable&&/not polled yet/.test(h.error||"");
+const worst=is=>!is||!is.length?"ok":is.some(i=>i.level==="critical")?"bad":"warn";
+
+function fleetHosts(d){
+  const out=[];
+  const n1=d.node1||{},s=n1.system||{},g=(n1.gpus||[])[0]||{};
+  const n1bad=(n1.alerts||[]).filter(a=>a.level==="critical").length;
+  const n1warn=(n1.alerts||[]).filter(a=>a.level==="warning").length;
+  out.push({id:"node1",name:n1.hostname||"sparkmax-10ef",role:"DGX Spark · primary",
+    state:n1bad?"bad":n1warn?"warn":"ok",
+    up:n1.iso_ts?new Date(n1.iso_ts).toLocaleTimeString():"—",
+    dial:g.util_gpu??0,dialLabel:"GPU",
+    cpu:s.cpu_pct||0,mem:s.mem_pct||0,disk:s.disk_used_pct||0,
+    memTxt:`${s.mem_used_gb??"?"}/${s.mem_total_gb??"?"}G`,
+    diskTxt:`${s.disk_free_tb??"?"}TB free`,
+    tempC:g.temp_c,tempKind:"gpu",powerW:n1.total_power_watts??g.power_w,
+    foot:[["serving",String((n1.endpoints||[]).length)]]});
+
+  const n2=d.node2||{};
+  if(n2.reachable){
+    const g2=(n2.gpus||[])[0]||{};
+    out.push({id:"node2",name:n2.hostname||"sparkymaxxx-12ef",role:"DGX Spark · deep lane",
+      state:(n2.swap&&n2.swap.used_gb>=2)?"warn":"ok",up:"up "+(n2.uptime||"?"),
+      dial:g2.util_gpu??0,dialLabel:"GPU",
+      cpu:n2.cpu_pct||0,mem:(n2.mem||{}).pct||0,disk:(n2.disk||{}).pct||0,
+      memTxt:`${(n2.mem||{}).used_gb??"?"}/${(n2.mem||{}).total_gb??"?"}G`,
+      diskTxt:`${(n2.disk||{}).free_tb??"?"}TB free`,
+      tempC:g2.temp_c,tempKind:"gpu",powerW:g2.power_w,
+      foot:[["models",String((n2.models||[]).length)]]});
+  }else out.push(offlineHost("node2","sparkymaxxx-12ef","DGX Spark · deep lane",n2));
+
+  const pi=d.pi||{};
+  if(pi.reachable){
+    out.push({id:"pi",name:pi.hostname||"raspberrypi",role:"Pi 5 · mirror + watchdog",
+      state:worst(pi.issues),up:"up "+(pi.uptime||"?"),
+      dial:pi.cpu_pct??0,dialLabel:"CPU",
+      cpu:pi.cpu_pct||0,mem:(pi.mem||{}).pct||0,disk:(pi.disk||{}).pct||0,
+      memTxt:`${(pi.mem||{}).used_gb??"?"}/${(pi.mem||{}).total_gb??"?"}G`,
+      diskTxt:`${(pi.disk||{}).free_gb??"?"}GB free`,
+      tempC:pi.temp_c,tempKind:"pi",powerW:pi.power_w,
+      foot:[["watchdog",(pi.watchdog||{}).last_ago||"?"]]});
+  }else out.push(offlineHost("pi","raspberrypi","Pi 5 · mirror + watchdog",pi));
+
+  const s9=d.start9||{};
+  if(s9.reachable){
+    const c=s9.containers||{};
+    out.push({id:"start9",name:s9.hostname||"cosmic-charcoal",role:"Start9 · self-hosted stack",
+      state:worst(s9.issues),up:"up "+(s9.uptime||"?"),
+      dial:s9.cpu_pct??0,dialLabel:"CPU",
+      cpu:s9.cpu_pct||0,mem:(s9.mem||{}).pct||0,disk:(s9.disk_data||{}).pct||0,
+      memTxt:`${(s9.mem||{}).used_gb??"?"}/${(s9.mem||{}).total_gb??"?"}G`,
+      diskTxt:`${(s9.disk_data||{}).free_tb??"?"}TB free`,
+      tempC:s9.temp_c,tempKind:"pkg",powerW:s9.power_w,
+      foot:[["apps",`${c.running??"?"}/${c.total??"?"}`]]});
+  }else out.push(offlineHost("start9","cosmic-charcoal","Start9 · self-hosted stack",s9));
+  return out;
+}
+function offlineHost(id,name,role,h){
+  const b=booting(h);
+  return {id,name,role,state:b?"stale":"bad",up:b?"connecting…":"unreachable",
+    dial:0,dialLabel:"—",cpu:0,mem:0,disk:0,memTxt:"—",diskTxt:"—",offline:true,
+    foot:[[b?"status":"error",b?"first poll in progress":String(h&&h.error||"no data").slice(0,34)]]};
+}
+
+/* ══════════════════════ host cards (built once, updated in place) ══════════
+   Rebuilding innerHTML every 10 s would restart every CSS transition, so the
+   gauges would snap instead of sweep. Build the DOM when the host SET changes;
+   after that only write values. ────────────────────────────────────────── */
+const ARC=216.8, CIRC=289.0;           /* 270° of r=46 · full circumference */
+let cardKeys="";
+const HIST={};                          /* client-side CPU trend per host */
+
+function hostCardHtml(h){
+  return `
+  <div class="card host" id="hc-${h.id}" onclick="switchTab('fleet')">
+    <div class="hh"><i class="st stale" data-f="mark">○</i><b data-f="name">${esc(h.name)}</b>
+      <span class="up" data-f="up"></span></div>
+    <div class="role">${esc(h.role)}</div>
+    <div class="gwrap">
+      <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="track" cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"></circle>
+        <circle class="fill"  cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"
+          stroke-dashoffset="${ARC}" data-f="arc" stroke="var(--s1)" style="color:var(--s1)"></circle>
+        <text class="gv" x="60" y="60" data-f="dv">–</text>
+        <text class="gl" x="60" y="76" data-f="dl">${esc(h.dialLabel)}</text>
+      </svg>
+      <div class="gside">
+        <div class="mrow"><label>cpu</label><div class="bar"><i data-f="bcpu"></i></div>
+          <span class="v" data-f="vcpu"></span></div>
+        <div class="mrow"><label>mem</label><div class="bar"><i data-f="bmem"></i></div>
+          <span class="v" data-f="vmem"></span></div>
+        <div class="mrow"><label>disk</label><div class="bar"><i data-f="bdisk"></i></div>
+          <span class="v" data-f="vdisk"></span></div>
+        <canvas class="spark" data-f="spark"></canvas>
+      </div>
+    </div>
+    <div class="foot" data-f="foot"></div>
+  </div>`;
+}
+function renderHosts(hosts){
+  const key=hosts.map(h=>h.id).join("|");
+  if(key!==cardKeys){$("hosts").innerHTML=hosts.map(hostCardHtml).join("");cardKeys=key;}
+  hosts.forEach(h=>{
+    const c=$("hc-"+h.id); if(!c)return;
+    const f=n=>c.querySelector(`[data-f="${n}"]`);
+    c.className="card host"+(h.state==="ok"?"":" "+h.state);
+    const mark=f("mark");mark.className="st "+h.state;mark.textContent=GLYPH[h.state]||"○";
+    f("name").textContent=h.name;
+    f("up").textContent=h.up;
+    /* gauge: colour follows load, glyph/label carries the identity */
+    const p=clamp(+h.dial||0,0,100);
+    const col=h.offline?"var(--neutral)":p>=90?"var(--crit)":p>=75?"var(--warn)":"var(--s1)";
+    const arc=f("arc");
+    arc.setAttribute("stroke-dashoffset",String(ARC*(1-p/100)));
+    arc.setAttribute("stroke",col);arc.style.color=col;
+    f("dv").textContent=h.offline?"–":Math.round(p)+"%";
+    f("dl").textContent=h.dialLabel;
+    for(const[k,val,txt]of[["cpu",h.cpu,Math.round(h.cpu)+"%"],
+                           ["mem",h.mem,h.memTxt],["disk",h.disk,h.diskTxt]]){
+      const b=f("b"+k);b.style.width=clamp(val||0,0,100)+"%";b.className=barCls(val||0);
+      f("v"+k).textContent=txt;
+    }
+    const bits=[];
+    if(h.powerW!=null)bits.push(`<span>power <b>${Math.round(h.powerW*10)/10} W</b></span>`);
+    if(h.tempC!=null)bits.push(`<span>temp <b class="t-${tempBand(h.tempC,h.tempKind)}">${h.tempC}°C</b></span>`);
+    h.foot.forEach(([k,v])=>bits.push(`<span>${esc(k)} <b>${esc(v)}</b></span>`));
+    f("foot").innerHTML=bits.join("");
+    /* trend buffer — one sample per refresh (~10 s), 40 points ≈ 7 min */
+    if(!h.offline){(HIST[h.id]=HIST[h.id]||[]).push(+h.dial||0);
+      if(HIST[h.id].length>40)HIST[h.id].shift();}
+    drawSpark(f("spark"),HIST[h.id]||[],col);
+  });
+}
+function drawSpark(cv,vals,col){
+  if(!cv)return;
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h)return;
+  if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const mono=cssVar("--mono","monospace");
+  if(vals.length<2){
+    x.fillStyle="rgba(255,255,255,.2)";x.font="9px "+mono;
+    x.fillText("collecting trend…",0,h/2+3);return;
+  }
+  const c=col.startsWith("var")?cssVar(col.slice(4,-1),"#3987e5"):col;
+  /* Autoscale to the data's OWN range. A 0-100 axis turns a flat 95 % GPU into
+     a solid slab that shows nothing; the gauge beside it already carries the
+     absolute level, so this mark's job is purely shape-of-change. Because the
+     axis floats, the range is printed — an unlabelled autoscaled spark makes
+     a ±1 % wobble look like a cliff. */
+  const lo=Math.min(...vals),hi=Math.max(...vals);
+  const pad=Math.max(1.5,(hi-lo)*.3);
+  const y0=Math.max(0,lo-pad),y1=Math.min(100,hi+pad),span=Math.max(1,y1-y0);
+  const padR=vals.length?30:0;
+  const plotW=Math.max(1,w-padR);
+  const X=i=>i/(vals.length-1)*plotW, Y=v=>h-2-((clamp(v,y0,y1)-y0)/span)*(h-5);
+  const gr=x.createLinearGradient(0,0,0,h);
+  gr.addColorStop(0,c+"4d");gr.addColorStop(1,c+"03");
+  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
+  x.lineTo(plotW,h);x.lineTo(0,h);x.closePath();x.fillStyle=gr;x.fill();
+  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
+  x.strokeStyle=c;x.lineWidth=1.6;x.lineJoin="round";x.lineCap="round";x.stroke();
+  /* live end-point + the floating range, so the scale is never implied */
+  x.beginPath();x.arc(X(vals.length-1),Y(vals[vals.length-1]),2.2,0,7);x.fillStyle=c;x.fill();
+  x.fillStyle=cssVar("--ink-3","#6c7484");x.font="8px "+mono;
+  x.textAlign="right";x.textBaseline="middle";
+  x.fillText(`${Math.round(lo)}–${Math.round(hi)}%`,w,h/2);
+}
+
+/* ══════════════════════ hero verdict ══════════════════════ */
+function renderHero(hosts,items,d){
+  const bad=items.filter(i=>i.sev==="bad").length, warn=items.filter(i=>i.sev==="warn").length;
+  const el=$("hero"),state=bad?"bad":warn?"warn":"ok";
+  el.className="hero "+state;
+  $("hero-mark").textContent=GLYPH[state];
+  if(bad){$("hero-title").textContent=`${bad} thing${bad>1?"s":""} need${bad>1?"":"s"} you`;
+    $("hero-sub").textContent=items.find(i=>i.sev==="bad").msg;}
+  else if(warn){$("hero-title").textContent=`${warn} warning${warn>1?"s":""}`;
+    $("hero-sub").textContent=items.find(i=>i.sev==="warn").msg;}
+  else{$("hero-title").textContent="All systems nominal";
+    $("hero-sub").textContent="nothing on the fleet needs you right now";}
+  const up=hosts.filter(h=>!h.offline).length;
+  const svc=(((d.services||{}).services)||[]);
+  const auto=(d.automation||{}).counts||{},bk=(d.backups||{}).counts||{};
+  const stat=(v,l,c)=>`<div class="stat"><b class="${c||""}">${v}</b><span>${l}</span></div>`;
+  $("hero-stats").innerHTML=
+    stat(`${up}/${hosts.length}`,"hosts up",up<hosts.length?"crit":"")+
+    stat(`${svc.filter(s=>s.active).length}/${svc.length}`,"services")+
+    (auto.failing?stat(`${auto.failing}`,"jobs failing","crit")
+                 :stat(`${auto.total??0}`,"jobs"))+
+    stat(`${bk.ok??0}/${bk.total??0}`,"backups",(bk.fail||bk.warn)?"warn":"");
+}
+
+/* ══════════════════════ merged attention feed ══════════════════════
+   One list answering "what is wrong?" instead of four tabs to check.
+
+   /api/overview.alerts is ALREADY the merged fleet list — server.py's
+   _fleet_alerts() folds in automation.failing, automation.failed_units,
+   backups.issues and project failures. Re-adding those here is what made a
+   single broken job appear three times and inflated the headline count.
+   So: start from the server list, and add ONLY what it does not cover. */
+const tabFor=h=>/automation|backup|job/.test(h)?"jobs":/project/.test(h)?"pulse":"fleet";
+function attentionItems(d,hosts){
+  /* the merged list carries level/host/message only — recover the remediation
+     text from the per-node alert objects, which do have .action */
+  const actionFor={};
+  ((d.node1||{}).alerts||[]).forEach(a=>{if(a.message)actionFor[a.message]=a.action||"";});
+
+  const out=(d.alerts||[]).map(a=>({
+    sev:a.level==="critical"?"bad":a.level==="warning"?"warn":"info",
+    src:a.host||a.category||"fleet",
+    msg:a.message,sub:actionFor[a.message]||"",
+    tab:tabFor(String(a.host||""))}));
+
+  const seen=out.map(o=>String(o.msg).toLowerCase()).join(" | ");
+  hosts.filter(h=>h.offline&&h.state==="bad"&&!seen.includes(h.name.toLowerCase()))
+    .forEach(h=>out.push({sev:"bad",src:"host",msg:`${h.name} unreachable`,sub:h.role,tab:"fleet"}));
+  ((d.backups||{}).entries||[]).filter(e=>e.state!=="ok"&&!seen.includes(String(e.label).toLowerCase()))
+    .forEach(e=>out.push({sev:e.state==="fail"?"bad":"warn",src:"backup",
+      msg:`${e.label} — ${e.ago}`,sub:e.note||e.detail||"",tab:"jobs"}));
+  const waste=((d.services||{}).waste_ids)||[];
+  if(waste.length)out.push({sev:"info",src:"idle",
+    msg:`${waste.length} services running with no recent use`,
+    sub:waste.slice(0,6).join(", "),tab:"control"});
+  const rank={bad:0,warn:1,info:2};
+  return out.sort((a,b)=>rank[a.sev]-rank[b.sev]);
+}
+function renderAttention(items){
+  const bad=items.filter(i=>i.sev==="bad").length,warn=items.filter(i=>i.sev==="warn").length;
+  $("att-cnt").textContent=bad?`${bad} critical · ${warn} warning`
+    :warn?`${warn} warning`:items.length?`${items.length} info`:"all clear";
+  const b=$("b-pulse");
+  if(bad){b.hidden=false;b.className="badge";b.textContent=bad;}
+  else if(warn){b.hidden=false;b.className="badge w";b.textContent=warn;}
+  else b.hidden=true;
+  $("attention").innerHTML=items.length?items.map(i=>
+    `<div class="att ${i.sev}" onclick="switchTab('${i.tab}')">
+       ${st(i.sev==="info"?"stale":i.sev)}
+       <div class="body"><div class="m" title="${esc(i.msg)}">${esc(i.msg)}</div>
+         ${i.sub?`<div class="sub" title="${esc(i.sub)}">${esc(i.sub)}</div>`:""}</div>
+       <span class="src">${esc(i.src)}</span></div>`).join("")
+    :`<div class="allclear"><div class="big">●</div><b>Fleet healthy</b>
+       <span>no alerts, no failing jobs, backups current</span></div>`;
+}
+
+/* ══════════════════════ pulse side panels ══════════════════════ */
+function renderTodos(todos){
+  const open=todos.filter(t=>!t.done).length;
+  $("todo-cnt").textContent=`${open} open`;
+  const sorted=[...todos.filter(t=>!t.done),...todos.filter(t=>t.done)];
+  $("todos").innerHTML=sorted.length?sorted.map(t=>
+    `<div class="todo ${t.done?"done":""}">
+      <input type="checkbox" ${t.done?"checked":""} onchange="todoAction('toggle','${esc(t.id)}')">
+      <span class="txt" title="${esc(t.text)}">${esc(t.text)}</span>
+      <span class="tag">${esc(t.tag)}</span>
+      <span class="del" title="delete" onclick="todoAction('delete','${esc(t.id)}')">✕</span></div>`).join("")
+    :`<div class="empty">nothing on the list</div>`;
+}
+function renderProjects(ps){
+  const list=ps||[];
+  const bad=list.filter(p=>norm(p.status)==="bad").length;
+  $("proj-cnt").textContent=bad?`${bad} down · ${list.length}`:`${list.length}`;
+  $("projects").innerHTML=list.map(p=>
+    `<div class="prj"><span class="n">${st(norm(p.status))}<span title="${esc(p.name)}">${esc(p.name)}</span></span>
+      <span class="d" title="${esc(p.detail)}">${esc(p.detail)}</span>
+      <span class="a">${esc(p.ago)}</span></div>`).join("")||`<div class="empty">no data yet</div>`;
+}
+function renderActions(actions){
+  $("actions").innerHTML=(actions||[]).map(a=>{
+    const l=a.last;
+    const state=l?(l.status==="running"?"running…":`${l.status} · ${l.took_s??"?"}s`):"";
+    return `<div class="act">
+      <div class="info"><b>${esc(a.label)}</b><span title="${esc(a.detail)}">${esc(a.detail)}</span></div>
+      <button class="btn" id="act-${esc(a.id)}" onclick="runAction('${esc(a.id)}')">Run</button></div>
+      ${l?`<div class="act-out" id="out-${esc(a.id)}">${esc(state)}${
+        l.output?"\n"+esc(l.output.slice(-500)):""}</div>`:""}`;
+  }).join("")||`<div class="empty">no actions</div>`;
+}
+
+/* ══════════════════════ charts (Fleet tab) ══════════════════════ */
+const cssVar=(n,f)=>getComputedStyle(document.body).getPropertyValue(n).trim()||f;
+const CHARTS=[
+  {key:"cpu",title:"CPU · GPU",  a:"cpu",b:"gpu", unit:"%",  max:100,an:"CPU",bn:"GPU"},
+  {key:"mem",title:"Mem · Swap", a:"mem",b:"swap",unit:"%",  max:100,an:"Mem",bn:"Swap"},
+  /* GB10 exposes no power.limit — scale to the observed ~93 W historical peak */
+  {key:"pwr",title:"GPU power",  a:"pwr",b:null,  unit:"W",  max:100,an:"Draw"},
+  {key:"net",title:"Net rx · tx",a:"rx", b:"tx",  unit:"K/s",max:0,  an:"rx",bn:"tx"}];
+const chartsBlock=nid=>`<div class="charts">${CHARTS.map(c=>`
+  <div class="chart"><h5>${c.title}<span class="cur" id="${nid}-${c.key}-cur"></span></h5>
+  <canvas id="${nid}-${c.key}" data-node="${nid}" data-chart="${c.key}"></canvas></div>`).join("")}</div>`;
+let sparks={node1:[],node2:[]};
+const niceMax=v=>{for(const s of[64,128,256,512,1024,2048,5120,10240,51200,102400,1048576])
+  if(v<=s)return s;return Math.ceil(v/1048576)*1048576;};
+const fmtK=v=>v>=1024?(v/1024).toFixed(v>=10240?0:1)+" M/s":Math.round(v)+" K/s";
+const fmtV=(v,unit)=>unit==="%"?Math.round(v)+"%":unit==="W"?(Math.round(v*10)/10)+" W":fmtK(v);
+
+const hoverState={};
+function drawChart(cv,samples,cfg,hoverX){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h)return null;
+  if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926"),
+        ink3=cssVar("--ink-3","#6c7484"),grid="rgba(255,255,255,.07)";
+  const padL=30,padR=5,padT=5,padB=14;
+  const pw=Math.max(1,w-padL-padR),ph=Math.max(1,h-padT-padB);
+  const win=60,tmax=samples.length?samples[samples.length-1].t:0,tmin=tmax-win;
+  const pts=samples.filter(s=>s.t>=tmin);
+  let ymax=cfg.max||niceMax(Math.max(64,...pts.map(p=>Math.max(p[cfg.a],cfg.b?p[cfg.b]:0))));
+  const X=t=>padL+(t-tmin)/win*pw, Y=v=>padT+ph-clamp(v,0,ymax)/ymax*ph;
+  const tick=v=>cfg.unit==="%"?Math.round(v)+"":cfg.unit==="W"?String(Math.round(v))
+    :v>=1024?(v/1024).toFixed(v>=10240?0:1)+"M":Math.round(v)+"";
+
+  x.font="9px "+cssVar("--mono","monospace");
+  for(const fr of[0,.5,1]){
+    const yy=padT+ph*(1-fr);
+    x.strokeStyle=grid;x.lineWidth=1;
+    x.beginPath();x.moveTo(padL,yy);x.lineTo(padL+pw,yy);x.stroke();
+    x.fillStyle=ink3;x.textAlign="right";x.textBaseline="middle";
+    x.fillText(tick(ymax*fr),padL-4,yy+(fr===0?-1:fr===1?1:0));
+  }
+  x.textAlign="left";x.textBaseline="top";x.fillText(cfg.unit,padL+2,padT+1);
+  x.textAlign="center";
+  for(const[t,lab,al]of[[tmin,"−60s","left"],[tmin+win/2,"−30s","center"],[tmax,"now","right"]]){
+    x.textAlign=al;x.fillStyle=ink3;x.fillText(lab,X(t),padT+ph+3);
+  }
+
+  const series=(f,color)=>{
+    if(pts.length<2)return;
+    const gr=x.createLinearGradient(0,padT,0,padT+ph);
+    gr.addColorStop(0,color+"59");gr.addColorStop(1,color+"03");
+    x.beginPath();pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
+    x.lineTo(X(pts[pts.length-1].t),padT+ph);x.lineTo(X(pts[0].t),padT+ph);x.closePath();
+    x.fillStyle=gr;x.fill();
+    x.save();x.beginPath();
+    pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
+    x.shadowColor=color;x.shadowBlur=9;x.strokeStyle=color;x.lineWidth=2;
+    x.lineJoin="round";x.lineCap="round";x.stroke();x.restore();
+  };
+  if(cfg.b)series(cfg.b,B);
+  series(cfg.a,A);
+
+  let cur=pts[pts.length-1];
+  if(hoverX!=null&&pts.length){
+    const hx=clamp(hoverX,padL,padL+pw);
+    let best=pts[0];for(const p of pts)if(Math.abs(X(p.t)-hx)<Math.abs(X(best.t)-hx))best=p;
+    cur=best;
+    x.strokeStyle="rgba(242,244,248,.4)";x.lineWidth=1;
+    x.beginPath();x.moveTo(X(cur.t),padT);x.lineTo(X(cur.t),padT+ph);x.stroke();
+    const dots=[[cfg.a,A]];if(cfg.b)dots.push([cfg.b,B]);
+    for(const[f,c]of dots){
+      x.save();x.shadowColor=c;x.shadowBlur=10;x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),3.5,0,7);
+      x.fillStyle=c;x.fill();x.strokeStyle=cssVar("--surface","#12141b");x.lineWidth=2;
+      x.stroke();x.restore();}
+  }
+  const el=$(cv.id+"-cur");
+  if(el)el.innerHTML=cur
+    ?`<span><i style="background:${A}"></i>${fmtV(cur[cfg.a]||0,cfg.unit)}</span>`+
+     (cfg.b?`<span><i style="background:${B}"></i>${fmtV(cur[cfg.b]||0,cfg.unit)}</span>`:"")
+    :"—";
+  return cur;
+}
+function drawAll(){
+  for(const nid of["node1","node2"])for(const c of CHARTS){
+    const cv=$(nid+"-"+c.key);
+    if(cv)drawChart(cv,sparks[nid]||[],c,hoverState[cv.id]);}
+}
+/* hover layer: crosshair on canvas + an HTML tooltip that names each series */
+document.addEventListener("mousemove",e=>{
+  const cv=e.target;
+  if(cv.tagName!=="CANVAS"||!cv.dataset.chart){hideTip();return;}
+  hoverState[cv.id]=e.offsetX;
+  const cfg=CHARTS.find(c=>c.key===cv.dataset.chart);
+  const cur=drawChart(cv,sparks[cv.dataset.node]||[],cfg,e.offsetX);
+  drawAll();
+  if(!cur){hideTip();return;}
+  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926");
+  const ago=Math.max(0,Math.round(((sparks[cv.dataset.node]||[]).slice(-1)[0]||{t:cur.t}).t-cur.t));
+  $("tip").innerHTML=`<div class="tt">${ago?`−${ago}s`:"now"}</div>`+
+    `<div class="tr"><i style="background:${A}"></i>${cfg.an} ${fmtV(cur[cfg.a]||0,cfg.unit)}</div>`+
+    (cfg.b?`<div class="tr"><i style="background:${B}"></i>${cfg.bn} ${fmtV(cur[cfg.b]||0,cfg.unit)}</div>`:"");
+  const t=$("tip");t.classList.add("on");
+  t.style.left=Math.min(e.clientX+14,innerWidth-t.offsetWidth-10)+"px";
+  t.style.top=Math.max(8,e.clientY-t.offsetHeight-12)+"px";
+},true);
+document.addEventListener("mouseout",e=>{
+  if(e.target.tagName==="CANVAS"&&e.target.dataset.chart){
+    delete hoverState[e.target.id];hideTip();drawAll();}});
+const hideTip=()=>$("tip").classList.remove("on");
+
+async function pollSparks(){
+  if(TAB!=="fleet")return;                 /* 1 Hz charts only while visible */
+  try{sparks=await(await fetch("/api/sparks",{cache:"no-store"})).json();drawAll();}catch(e){}
+}
+setInterval(pollSparks,2000);
+
+/* Seed the Pulse host trends from the 1 Hz ring buffer the collector already
+   keeps, so the cards show a real trace immediately instead of sitting on
+   "collecting trend…" for the first few refreshes. Pi/Start9 have no
+   timeseries source, so those genuinely start empty. */
+(async()=>{
+  try{
+    const s=await(await fetch("/api/sparks",{cache:"no-store"})).json();
+    for(const nid of["node1","node2"]){
+      const v=(s[nid]||[]).map(p=>p.gpu).filter(n=>typeof n==="number");
+      if(v.length>1){                       /* downsample 90 → ≤40 points */
+        const step=Math.ceil(v.length/40);
+        HIST[nid]=v.filter((_,i)=>i%step===0).slice(-40);
+      }
+    }
+    if(DATA.node1)renderHosts(fleetHosts(DATA));
+  }catch(e){}
+})();
+
+/* ══════════════════════ FLEET tab ══════════════════════ */
+const mrow=(l,p,v)=>`<div class="mrow"><label>${l}</label>
+  <div class="bar"><i class="${barCls(p)}" style="width:${clamp(p||0,0,100)}%"></i></div>
+  <span class="v">${v}</span></div>`;
+function tempRow(c,kind,extra){
+  const b=tempBand(c,kind),ceil={pi:85,pkg:100,gpu:90}[kind]||90;
+  const p=c!=null?clamp((+c)/ceil*100,0,100):0;
+  return `<div class="mrow"><label>temp</label>
+    <div class="bar"><i style="width:${p}%;background:var(--${
+      b==="cool"?"cool":b==="ok"?"good":b==="warm"?"warn":"crit"})"></i></div>
+    <span class="v">${tempSpan(c,kind)}${extra?" · "+extra:""}</span></div>`;
+}
+const offlineNode=(name,role,h)=>`<div class="card node"><h2>${esc(name)}
+  <span class="role">${esc(role)}</span></h2>
+  <div class="offline ${booting(h)?"stale":""}">${booting(h)
+    ?"connecting…":esc(name)+" unreachable — "+esc((h&&h.error)||"no data")}</div></div>`;
+
+function node1Html(n){
+  const s=n.system||{},g=(n.gpus||[])[0]||{};
+  const mods=(n.endpoints||[]).map(e=>({label:e.id,sub:`${e.engine} :${e.port}`,
+    val:"serving",state:norm(e.status)}));
+  (n.ollama||[]).forEach(m=>mods.push({label:m.name,sub:"ollama :11434",val:m.size||"",
+    state:m.stuck?"bad":"ok"}));
+  (n.processes||[]).filter(p=>p.mem_mb>4000&&!/llama-server/.test(p.name))
+    .forEach(p=>mods.push({label:p.name.split("/").pop(),sub:"proc",
+      val:(p.mem_mb/1024).toFixed(1)+" G",state:"ok"}));
+  return `<div class="card node"><h2>${esc(n.hostname||"sparkmax-10ef")}
+    <span class="role">node1 · primary</span>
+    <span class="up">${n.iso_ts?new Date(n.iso_ts).toLocaleTimeString():""}</span></h2>
+    ${mrow("gpu",g.util_gpu||0,`${g.util_gpu??"?"}%`)}
+    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw`)}
+    ${mrow("cpu",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${s.load_1??"?"}/${s.load_5??"?"}/${s.load_15??"?"}`)}
+    ${mrow("mem",s.mem_pct||0,`${s.mem_used_gb??"?"} / ${s.mem_total_gb??"?"} G`)}
+    ${mrow("swap",pctOf(s.swap_used_gb,s.swap_total_gb),`${s.swap_used_gb??"?"} / ${s.swap_total_gb??"?"} G`)}
+    ${mrow("disk",s.disk_used_pct||0,`${s.disk_used_pct??"?"}% · ${s.disk_free_tb??"?"} TB free`)}
+    ${tempRow(g.temp_c,"gpu","GPU")}
+    ${chartsBlock("node1")}
+    <div class="subhead">Models · inference<span class="cnt">${mods.length}</span></div>
+    ${modTable(mods)}</div>`;
+}
+function node2Html(n){
+  if(!n||!n.reachable)return offlineNode("sparkymaxxx-12ef","node2 · deep lane",n);
+  const g=(n.gpus||[])[0]||{};
+  const mods=(n.models||[]).map(m=>({label:m.id,sub:`${m.engine} :${m.port}`,val:"serving",state:"ok"}));
+  (n.top_procs||[]).filter(p=>p.mem_gb>=1).forEach(p=>
+    mods.push({label:p.name,sub:"proc",val:p.mem_gb+" G",state:"ok"}));
+  return `<div class="card node"><h2>${esc(n.hostname)}
+    <span class="role">node2 · deep lane</span><span class="up">up ${esc(n.uptime)}</span></h2>
+    ${mrow("gpu",g.util_gpu||0,`${g.util_gpu??"?"}%`)}
+    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw`)}
+    ${mrow("cpu",n.cpu_pct||0,`load ${esc(n.load)}`)}
+    ${mrow("mem",(n.mem||{}).pct||0,`${(n.mem||{}).used_gb} / ${(n.mem||{}).total_gb} G`)}
+    ${mrow("swap",n.swap?pctOf(n.swap.used_gb,n.swap.total_gb):0,
+      `${(n.swap||{}).used_gb??"?"} / ${(n.swap||{}).total_gb??"?"} G`)}
+    ${mrow("disk",(n.disk||{}).pct||0,`${(n.disk||{}).pct??"?"}% · ${(n.disk||{}).free_tb??"?"} TB free`)}
+    ${tempRow(g.temp_c,"gpu","GPU")}
+    ${chartsBlock("node2")}
+    <div class="subhead">Models · inference<span class="cnt">${mods.length}</span></div>
+    ${modTable(mods)}</div>`;
+}
+const modTable=mods=>`<table class="mtab">${mods.length?mods.map(m=>
+  `<tr><td title="${esc(m.label)}"><b>${esc(m.label)}</b></td>
+   <td class="faint">${esc(m.sub)}</td>
+   <td class="num">${esc(m.val)}</td>
+   <td>${st(m.state)}${m.state==="bad"?"stuck":"ok"}</td></tr>`).join("")
+  :`<tr><td class="faint">nothing serving</td></tr>`}</table>`;
+
+function piHtml(p){
+  if(!p||!p.reachable)return offlineNode("raspberrypi","Pi 5 · mirror",p);
+  const m=p.mem||{},d=p.disk||{},mi=p.mirror||{},wd=p.watchdog||{},hr=p.headroom||{};
+  const scale=p.power_scale_w||15;
+  return `<div class="card node"><h2>${esc(p.hostname)}
+    <span class="role">Pi 5 · mirror + watchdog</span><span class="up">up ${esc(p.uptime)}</span></h2>
+    ${mrow("cpu",p.cpu_pct||0,`${p.cpu_pct??"?"}% · ${esc(p.load)}`)}
+    ${p.power_w!=null?mrow("power",clamp(p.power_w/scale*100,0,100),
+      `${p.power_w} W · ${esc(p.power_label||"board")} (PMIC)`):""}
+    ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
+    ${mrow("disk",d.pct||0,`${d.used_gb??"?"}/${d.total_gb??"?"} G · ${d.free_gb??"?"} G free`)}
+    ${tempRow(p.temp_c,"pi",`throttle ${esc(p.throttled||"?")}`)}
+    <div class="subhead">Role<span class="cnt">${esc(p.tailscale_ip||"")}</span></div>
+    <div class="kv"><span class="k">Stack watchdog (*/10m)</span>
+      <span class="v ${wd.age_m>25?"warn":"good"}">${esc(wd.last_ago||"unknown")}</span></div>
+    <div class="kv"><span class="k">Last watchdog line</span>
+      <span class="v faint" title="${esc(wd.tail||"")}">${esc((wd.tail||"—").slice(-44))}</span></div>
+    <div class="kv"><span class="k">Spark mirror</span>
+      <span class="v">${esc(mi.size_gb??"?")} GB · ${esc(mi.files??"?")} files · ${esc(mi.newest_ago||"?")}</span></div>
+    ${mi.span_days!=null?`<div class="kv"><span class="k">Mirror retention</span>
+      <span class="v ${mi.span_days>21?"warn":"good"}">${esc(mi.span_days)}d kept
+      <span class="faint">· policy 14d</span></span></div>`:""}
+    <div class="kv"><span class="k">Headroom</span>
+      <span class="v">${esc(hr.cpu_idle_pct??"?")}% cpu · ${esc(hr.mem_free_gb??"?")} G ram
+        · ${esc(hr.disk_free_gb??"?")} G disk</span></div>
+    <div class="subhead">Services<span class="cnt">${(p.services||[]).length}</span></div>
+    <div class="ctrs">${(p.services||[]).map(s=>
+      `<div class="ctr ${s.state==="active"?"":"down"}">${st(s.state==="active"?"ok":"stale")}
+        <span>${esc(s.name)}</span></div>`).join("")||'<div class="empty">none</div>'}</div></div>`;
+}
+function start9Html(s){
+  if(!s||!s.reachable)return offlineNode("cosmic-charcoal","Start9",s);
+  const m=s.mem||{},dd=s.disk_data||{},dr=s.disk_root||{},c=s.containers||{},bk=s.backup||{};
+  const scale=s.power_scale_w||65;
+  const pd=s.power_pkg_w!=null
+    ?`pkg ${s.power_pkg_w}W${s.power_dram_w!=null?` + dram ${s.power_dram_w}W`:""}`
+    :(s.power_label||"RAPL");
+  const svcs=s.lxc_services||s.podman_services||[];
+  return `<div class="card node"><h2>${esc(s.hostname)}
+    <span class="role">Start9 · StartOS 0.4</span><span class="up">up ${esc(s.uptime)}</span></h2>
+    ${mrow("cpu",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${esc(s.load)}`)}
+    ${s.power_w!=null?mrow("power",clamp(s.power_w/scale*100,0,100),`${s.power_w} W · ${esc(pd)}`):""}
+    ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
+    ${mrow("swap",(s.swap||{}).pct||0,`${(s.swap||{}).used_gb??"?"} / ${(s.swap||{}).total_gb??"?"} G`)}
+    ${mrow("data",dd.pct||0,`${Math.round(dd.used_gb||0)} G · ${dd.free_tb??"?"} TB free`)}
+    ${mrow("root",dr.pct||0,`${dr.used_gb??"?"}/${dr.total_gb??"?"} G overlay`)}
+    ${tempRow(s.temp_c,"pkg",esc(s.temp_source||"CPU package"))}
+    <div class="kv"><span class="k">startd</span>
+      <span class="v ${s.startd==="active"?"good":"crit"}">${esc(s.startd)}
+      ${s.os_git?`<span class="faint">${esc(s.os_git)}</span>`:""}</span></div>
+    <div class="kv"><span class="k">Tier-3 backup marker</span>
+      <span class="v">${esc(bk.ago||"unknown")}</span></div>
+    <div class="subhead">LXC packages<span class="cnt">${c.running??"?"} / ${c.total??"?"} up
+      · ${esc(c.runtime||"lxc")}</span></div>
+    <div class="ctrs">${svcs.map(x=>
+      `<div class="ctr ${x.up?"":"down"}" title="${esc(x.name)} — ${esc(x.status)}">
+        ${st(x.up?"ok":"bad")}<span>${esc(x.name)}</span></div>`).join("")
+      ||'<div class="empty">none</div>'}</div></div>`;
+}
+function renderFleet(d){
+  $("v-fleet").innerHTML=node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9);
+  if(TAB==="fleet")drawAll();     /* innerHTML wipes the canvases — redraw now */
+}
+
+/* ══════════════════════ CONTROL tab ══════════════════════ */
+let SVC_GROUP="all";
+function svcGroup(el){
+  document.querySelectorAll("#v-control .pill").forEach(p=>p.classList.toggle("on",p===el));
+  SVC_GROUP=el.dataset.g;renderControl();
+}
+function renderControl(){
+  const b=DATA.services||{},list=b.services||[],op=b.active_operation;
+  const q=($("svc-q").value||"").toLowerCase();
+  const waste=(b.waste_ids||[]).length,up=list.filter(s=>s.active).length;
+  const badge=$("b-control");
+  badge.hidden=!waste;
+  if(waste){badge.className="badge w";badge.textContent=waste;}
+  $("svc-op").textContent=op&&op.status==="running"?`⏳ ${op.type} ${op.key}: ${op.message||"running…"}`
+    :op&&op.status==="failed"?`✕ ${op.type} ${op.key} failed`
+    :waste?`${waste} running with no recent use`:`${up}/${list.length} up`;
+  const busy=!!(op&&op.status==="running");
+
+  /* one URL registry for both: links are built FROM the service catalog */
+  const linkFor={};
+  ((DATA.links||{}).groups||[]).filter(g=>g.kind==="local")
+    .forEach(g=>(g.links||[]).forEach(l=>{linkFor[l.id]=l;}));
+
+  const shown=list.filter(s=>(SVC_GROUP==="all"||s.group===SVC_GROUP)
+    &&(!q||(s.label+" "+s.detail+" "+s.id).toLowerCase().includes(q)));
+  $("svc-cnt").textContent=`${shown.length} shown · ${up}/${list.length} up`;
+  $("services").innerHTML=shown.map(s=>{
+    const state=s.active?"ok":(s.state==="failed"||s.unit_missing?"bad":"stale");
+    const canStop=!s.no_stop&&s.active&&!s.unit_missing,canStart=!s.active&&!s.unit_missing;
+    let sel="";
+    if(s.id==="node2-deep"&&s.models&&s.models.length){
+      const cur=s.model_key||s.default_model||s.models[0];
+      sel=`<select id="svc-model-${esc(s.id)}" ${busy?"disabled":""}>${s.models.map(m=>
+        `<option value="${esc(m)}" ${m===cur?"selected":""}>${esc(m)}</option>`).join("")}</select>`;
+    }
+    const idle=s.idle||"unknown";
+    const used=s.active
+      ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
+      :(s.unit_missing?"no unit":"stopped");
+    const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
+    const L=linkFor[s.id];
+    const url=L?(L.url||`http://${location.hostname}:${L.port}${L.path||"/"}`):null;
+    return `<div class="svc ${idle==="waste"?"waste":""}" title="${esc(s.hint||s.detail||"")}">
+      <div class="name">${st(state)}<span>${esc(s.label)}</span>
+        ${url&&s.active?`<a class="open" href="${esc(url)}" target="_blank" rel="noopener"
+          onclick="event.stopPropagation()">open ↗</a>`:""}</div>
+      <div class="meta">${esc(s.detail)}${extra?" · "+extra:""}</div>
+      <div class="used ${idle==="waste"?"waste":""}">${used}</div>
+      <div class="acts">${sel}
+        <button class="btn go" ${canStart&&!busy?"":"disabled"}
+          onclick="svcAction('${esc(s.id)}','start')">Start</button>
+        <button class="btn stop" ${canStop&&!busy?"":"disabled"}
+          onclick="svcAction('${esc(s.id)}','stop')">Stop</button></div></div>`;
+  }).join("")||`<div class="empty" style="padding-left:14px">no services match</div>`;
+
+  /* remote hosts are report-only (read-only by design) — links, no controls */
+  $("remote-links").innerHTML=((DATA.links||{}).groups||[])
+    .filter(g=>g.kind!=="local").map(g=>{
+      const ls=(g.links||[]).filter(l=>!q||(l.label+" "+(l.detail||"")).toLowerCase().includes(q));
+      if(!ls.length)return "";
+      return `<div class="lgroup"><h4>${esc(g.label)}
+        <span class="cnt">${ls.length}${g.note?" · "+esc(g.note):""}</span></h4>
+        <div class="ltiles">${ls.map(l=>{
+          const u=l.url||`http://${location.hostname}:${l.port}${l.path||"/"}`;
+          return `<a class="ltile ${l.status==="up"?"":"down"}" href="${esc(u)}"
+            target="_blank" rel="noopener" title="${esc(u)}">
+            <b>${st(norm(l.status))}<span>${esc(l.label)}</span></b>
+            <span>${esc(l.detail||u.replace(/^https?:\/\//,""))}</span></a>`;}).join("")}</div></div>`;
+    }).join("");
+}
+function renderLaunch(apps){
+  $("launch-apps").innerHTML=(apps||[]).map(a=>{
+    const r=!!a.running;
+    const sub=r?`running · pid ${a.pid}`:(a.last?`last: ${esc(a.last.at||"")}`:esc(a.detail));
+    return `<div class="lt ${r?"up":""}" title="${esc(a.note||a.detail||"")}">
+      <span class="ico">${esc(a.icon||"▶")}</span>
+      <div class="txt"><b>${st(r?"ok":"stale")}${esc(a.label)}</b><span>${sub}</span></div>
+      <button class="btn" id="lnc-${esc(a.id)}" ${r?"disabled":""}
+        onclick="launchApp('${esc(a.id)}')">${r?"Open":"Launch"}</button></div>`;
+  }).join("")||`<div class="empty">no desktop apps</div>`;
+}
+
+/* ══════════════════════ JOBS tab ══════════════════════ */
+let AUTO_LAYER="all";
+function autoLayer(el){
+  document.querySelectorAll("#v-jobs .pill").forEach(p=>p.classList.toggle("on",p===el));
+  AUTO_LAYER=el.dataset.l;renderJobs();
+}
+function renderJobs(){
+  const bk=DATA.backups||{},bc=bk.counts||{};
+  $("bk-cnt").textContent=`${bc.ok??0} ok · ${bc.warn??0} warn · ${bc.fail??0} fail`;
+  const bb=$("b-jobs");
+  $("backups").innerHTML=(bk.entries||[]).map(e=>{
+    const s=norm(e.state);
+    return `<div class="bk ${e.state==="ok"?"":e.state}">
+      <div class="h">${st(s)}<b>${esc(e.label)}</b><span class="tier">T${esc(e.tier)}</span>
+        <span class="age ${s==="ok"?"good":s==="bad"?"crit":"warn"}">${esc(e.ago)}</span></div>
+      <div class="d" title="${esc(e.detail)}">${esc(e.detail)}</div>
+      ${e.extra?`<div class="d">${esc(e.extra)}</div>`:""}
+      ${e.note?`<div class="n">▲ ${esc(e.note)}</div>`:""}
+      <div class="d">every ${esc(e.cadence_h)}h${e.target?" · "+esc(e.target):""}</div></div>`;
+  }).join("")||`<div class="empty">no backup data yet</div>`;
+
+  const auto=DATA.automation||{},jobs=auto.jobs||[],c=auto.counts||{};
+  const q=($("auto-q").value||"").toLowerCase();
+  $("auto-summary").textContent=
+    `${c.hermes??0} hermes · ${c.crontab??0} crontab · ${c.timer??0} timers · ${c.paused??0} paused`;
+  const probs=(c.failing||0)+(bc.fail||0)+(bc.warn||0);
+  bb.hidden=!probs;
+  if(probs){bb.className="badge"+((c.failing||bc.fail)?"":" w");bb.textContent=probs;}
+  const order={fail:0,warn:1,unknown:2,running:2,ok:3,paused:9};
+  const shown=[...jobs]
+    .sort((a,b)=>(order[a.state]??5)-(order[b.state]??5)||(a.next_ts||9e12)-(b.next_ts||9e12))
+    .filter(j=>{
+      if(AUTO_LAYER==="problem"&&j.state!=="fail"&&j.state!=="paused")return false;
+      if(AUTO_LAYER!=="all"&&AUTO_LAYER!=="problem"&&j.layer!==AUTO_LAYER)return false;
+      return !q||(j.name+" "+j.detail+" "+j.schedule+" "+j.where).toLowerCase().includes(q);
+    });
+  $("jobs").innerHTML=`<table class="jtab"><thead><tr><th></th><th>Job</th>
+    <th>Layer</th><th>Schedule</th><th>Next</th><th>Last</th></tr></thead><tbody>
+    ${shown.map(j=>`<tr>
+      <td>${st(j.state==="paused"?"stale":norm(j.state))}</td>
+      <td><div class="jname" title="${esc(j.name)}">${esc(j.name)}</div>
+        <div class="jdetail" title="${esc(j.detail)}">${esc(j.where)} · ${esc(j.detail)}${
+          j.error?` · <span class="crit">${esc(j.error)}</span>`:""}</div></td>
+      <td><span class="lay ${esc(j.layer)}">${esc(j.layer)}</span></td>
+      <td class="num faint" style="white-space:nowrap">${esc(j.schedule)}</td>
+      <td class="num" style="white-space:nowrap">${esc(j.next_in)}</td>
+      <td class="num faint" style="white-space:nowrap">${esc(j.last_ago)}</td></tr>`).join("")
+    ||`<tr><td colspan="6" class="empty">no jobs match</td></tr>`}</tbody></table>`;
+}
+
+/* ══════════════════════ mutations ══════════════════════ */
+async function svcAction(id,action){
+  if(action==="stop"){
+    const critical=["llama-miaai35","hermes-orchestrator"];
+    if(critical.includes(id)&&!confirm(`Stop ${id}? Hermes / agents may fail until it is back.`))return;
+  }
+  let model=null;
+  if(id==="node2-deep"&&action==="start"){const s=$("svc-model-node2-deep");model=s?s.value:null;}
+  try{
+    $("err").textContent=`${action} ${id}…`;
+    const r=await fetch("/api/services/"+encodeURIComponent(id),{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({action,model})});
+    const d=await r.json();
+    if(!d.ok){$("err").textContent=d.error||"action failed";return;}
+    $("err").textContent=d.operation?`queued: ${d.operation.message}`:(d.message||"ok");
+    for(let i=0;i<6;i++){
+      await new Promise(res=>setTimeout(res,i===0?800:2000));
+      DATA.services=await(await fetch("/api/services",{cache:"no-store"})).json();
+      renderControl();
+    }
+    await refresh();
+  }catch(e){$("err").textContent="service action failed: "+e.message;}
+}
+async function launchApp(id){
+  const b=$("lnc-"+id);if(b){b.disabled=true;b.textContent="…";}
+  try{
+    const j=await(await fetch("/api/launch/"+encodeURIComponent(id),{method:"POST"})).json();
+    if(!j.ok)alert(j.error||"launch failed");else if(b)b.textContent="Open";
+  }catch(e){alert("launch failed: "+e);}
+  finally{setTimeout(refresh,1500);}
+}
+async function runAction(id){
+  const btn=$("act-"+id);if(btn){btn.disabled=true;btn.textContent="…";}
+  try{
+    const d=await(await fetch("/api/actions/"+encodeURIComponent(id),{method:"POST"})).json();
+    if(!d.ok){$("err").textContent=d.error||"action failed";return;}
+    for(let i=0;i<40;i++){
+      await new Promise(res=>setTimeout(res,i<3?600:1500));
+      const rr=await fetch("/api/actions/runs/"+d.run.id,{cache:"no-store"});
+      if(!rr.ok)break;
+      const run=(await rr.json()).run,out=$("out-"+id);
+      if(out)out.textContent=`${run.status}${run.took_s?" · "+run.took_s+"s":""}\n${run.output||""}`.slice(0,2000);
+      if(run.status!=="running"){
+        DATA.actions=(await(await fetch("/api/actions")).json()).actions;
+        renderActions(DATA.actions);
+        const o2=$("out-"+id);
+        if(o2)o2.textContent=`${run.status} · ${run.took_s}s\n${(run.output||"").slice(-1200)}`;
+        break;
+      }
+    }
+  }catch(e){$("err").textContent="action failed: "+e.message;}
+  finally{if($("act-"+id)){$("act-"+id).disabled=false;$("act-"+id).textContent="Run";}}
+}
+async function todoAction(action,id){
+  try{
+    const r=await fetch("/api/todos",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action,id})});
+    renderTodos((await r.json()).todos||[]);
+  }catch(e){$("err").textContent="todo failed: "+e.message;}
+}
+async function addTodo(){
+  const el=$("todo-in"),text=el.value.trim();
+  if(!text)return;
+  el.value="";
+  try{
+    const r=await fetch("/api/todos",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"add",text,tag:$("todo-tag").value})});
+    renderTodos((await r.json()).todos||[]);
+  }catch(e){$("err").textContent="todo failed: "+e.message;}
+}
+$("todo-in").addEventListener("keydown",e=>{if(e.key==="Enter")addTodo();});
+
+/* ══════════════════════ main loop ══════════════════════ */
+async function refresh(){
+  try{
+    const d=await(await fetch("/api/overview",{cache:"no-store"})).json();
+    DATA=d;
+    const hosts=fleetHosts(d);
+    const items=attentionItems(d,hosts);
+    renderHero(hosts,items,d);
+    renderHosts(hosts);
+    renderAttention(items);
+    renderTodos(d.todos||[]);
+    renderProjects(d.projects||[]);
+    renderActions(d.actions||[]);
+    renderLaunch(d.launch||[]);
+    renderFleet(d);
+    renderControl();
+    renderJobs();
+    const down=hosts.filter(h=>h.state==="bad").length;
+    const bf=$("b-fleet");bf.hidden=!down;
+    if(down){bf.className="badge";bf.textContent=down;}
+    $("stamp").textContent="updated "+new Date().toLocaleTimeString();
+    $("err").textContent="";
+  }catch(e){$("err").textContent="refresh failed: "+e.message;}
+}
+const tick=()=>$("clock").textContent=new Date().toLocaleTimeString();
+tick();setInterval(tick,1000);
+switchTab(TAB);
+refresh();setInterval(refresh,10000);
+window.addEventListener("resize",()=>{
+  if(TAB==="fleet")drawAll();
+  document.querySelectorAll(".spark").forEach(cv=>{
+    const id=(cv.closest(".host")||{}).id;
+    if(id)drawSpark(cv,HIST[id.slice(3)]||[],"var(--s1)");});
+});
+</script>
+</body>
+</html>

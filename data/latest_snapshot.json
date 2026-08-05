@@ -1,36 +1,36 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-04 11:00:01",
-  "iso_ts": "2026-08-04T11:00:01.056526+00:00",
-  "hour": 11,
-  "dow": 1,
+  "timestamp_utc": "2026-08-05 10:57:16",
+  "iso_ts": "2026-08-05T10:57:16.770103+00:00",
+  "hour": 10,
+  "dow": 2,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 33.7,
-    "load_1": 1.93,
-    "load_5": 1.9,
-    "load_15": 1.68,
-    "mem_used_gb": 107.0,
+    "cpu_pct": 1.2,
+    "load_1": 0.4,
+    "load_5": 0.43,
+    "load_15": 0.45,
+    "mem_used_gb": 113.31,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 14.69,
-    "mem_pct": 87.9,
-    "swap_used_gb": 7.8,
+    "mem_avail_gb": 8.38,
+    "mem_pct": 93.1,
+    "swap_used_gb": 8.84,
     "swap_total_gb": 16.0,
-    "swap_pct": 48.7,
-    "disk_used_pct": 71.2,
+    "swap_pct": 55.3,
+    "disk_used_pct": 71.3,
     "disk_free_tb": 1.0
   },
   "num_gpus": 1,
-  "avg_util_pct": 96.0,
-  "total_power_watts": 68.28,
-  "avg_temp_c": 78.0,
+  "avg_util_pct": 0.0,
+  "total_power_watts": 10.85,
+  "avg_temp_c": 46.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 68.28,
-      "temp_c": 78,
-      "util_gpu": 96.0,
+      "power_w": 10.85,
+      "temp_c": 46,
+      "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -40,11 +40,11 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 389
+      "mem_mb": 420
     },
     {
-      "name": "ray::RayDiffusionWorker.execute",
-      "mem_mb": 95616
+      "name": "ray::RayDiffusionWorker",
+      "mem_mb": 100573
     }
   ],
   "ollama": [],
@@ -154,27 +154,27 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 33.7,
-        "load_1": 1.93,
-        "load_5": 1.9,
-        "load_15": 1.68,
-        "mem_used_gb": 107.0,
+        "cpu_pct": 1.2,
+        "load_1": 0.4,
+        "load_5": 0.43,
+        "load_15": 0.45,
+        "mem_used_gb": 113.31,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 14.69,
-        "mem_pct": 87.9,
-        "swap_used_gb": 7.8,
+        "mem_avail_gb": 8.38,
+        "mem_pct": 93.1,
+        "swap_used_gb": 8.84,
         "swap_total_gb": 16.0,
-        "swap_pct": 48.7,
-        "disk_used_pct": 71.2,
+        "swap_pct": 55.3,
+        "disk_used_pct": 71.3,
         "disk_free_tb": 1.0
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 68.28,
-          "temp_c": 78,
-          "util_gpu": 96.0,
+          "power_w": 10.85,
+          "temp_c": 46,
+          "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
           "fan_pct": 0,
@@ -210,35 +210,34 @@
         "crypto",
         "ollama",
         "pokemon",
-        "vllm",
-        "inference-busy"
+        "vllm"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-04T11:00:02.089426+00:00",
+      "iso_ts": "2026-08-05T10:57:17.644759+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 10.4,
+      "cpu_pct": 0.9,
       "mem": {
-        "used_gb": 55.0,
+        "used_gb": 60.7,
         "total_gb": 121.7,
-        "avail_gb": 66.7,
-        "pct": 45.2
+        "avail_gb": 61.0,
+        "pct": 49.9
       },
       "swap": {
-        "used_gb": 0.9,
+        "used_gb": 0.8,
         "total_gb": 16.0,
-        "pct": 5.8
+        "pct": 5.3
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 67.06,
-          "temp_c": 83,
-          "util_gpu": 96.0
+          "power_w": 12.19,
+          "temp_c": 45,
+          "util_gpu": 0.0
         }
       ],
       "models": [],
@@ -263,7 +262,7 @@
       "top_procs": [
         {
           "name": "ray::RayDiffusi",
-          "mem_gb": 4.2
+          "mem_gb": 4.7
         },
         {
           "name": "bluetoothd",
@@ -333,8 +332,7 @@
       "crypto",
       "ollama",
       "pokemon",
-      "vllm",
-      "inference-busy"
+      "vllm"
     ],
     "node2": []
   },
@@ -343,31 +341,25 @@
     {
       "level": "critical",
       "category": "memory",
-      "message": "RAM at 87.9% \u2014 only 14.69 GB free",
+      "message": "RAM at 93.1% \u2014 only 8.38 GB free",
       "action": "Stop vLLM or Ollama: switch-model qwen OR ollama stop <model>"
     },
     {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 7.8 GB \u2014 memory pressure",
+      "message": "Swap usage 8.84 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
-    },
-    {
-      "level": "warning",
-      "category": "gpu",
-      "message": "GPU 0 hot: 96.0% util, 78\u00b0C",
-      "action": "Check if workload is expected; consider smaller model"
     },
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 389 MB VRAM",
+      "message": "gnome-remote-desktop using 420 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
   "alert_count": {
     "critical": 1,
-    "warning": 2,
+    "warning": 1,
     "info": 1
   }
 }
