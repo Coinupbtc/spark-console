@@ -1,35 +1,35 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-05 14:12:26",
-  "iso_ts": "2026-08-05T14:12:26.434053+00:00",
-  "hour": 14,
-  "dow": 2,
+  "timestamp_utc": "2026-08-06 10:58:53",
+  "iso_ts": "2026-08-06T10:58:53.484269+00:00",
+  "hour": 10,
+  "dow": 3,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 50.1,
-    "load_1": 4.72,
-    "load_5": 2.85,
-    "load_15": 1.7,
-    "mem_used_gb": 116.9,
+    "cpu_pct": 1.4,
+    "load_1": 0.33,
+    "load_5": 0.43,
+    "load_15": 0.46,
+    "mem_used_gb": 110.74,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 4.79,
-    "mem_pct": 96.1,
-    "swap_used_gb": 7.59,
+    "mem_avail_gb": 10.94,
+    "mem_pct": 91.0,
+    "swap_used_gb": 7.61,
     "swap_total_gb": 16.0,
-    "swap_pct": 47.5,
+    "swap_pct": 47.6,
     "disk_used_pct": 71.3,
     "disk_free_tb": 1.0
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 20.32,
-  "avg_temp_c": 52.0,
+  "total_power_watts": 10.76,
+  "avg_temp_c": 45.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 20.32,
-      "temp_c": 52,
+      "power_w": 10.76,
+      "temp_c": 45,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
@@ -40,20 +40,16 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 420
+      "mem_mb": 432
     },
     {
       "name": "VLLM::Worker_TP0",
-      "mem_mb": 99859
-    },
-    {
-      "name": "python3",
-      "mem_mb": 2081
+      "mem_mb": 100295
     }
   ],
   "ollama": [],
   "hermes": {
-    "orchestrator": "deactivating",
+    "orchestrator": "active",
     "light": "active",
     "dobby": "active",
     "smeagle": "active",
@@ -142,7 +138,7 @@
       "qwen35-nvfp4"
     ],
     "hermes": {
-      "orchestrator": "deactivating",
+      "orchestrator": "active",
       "light": "active",
       "dobby": "active",
       "smeagle": "active",
@@ -158,17 +154,17 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 50.1,
-        "load_1": 4.72,
-        "load_5": 2.85,
-        "load_15": 1.7,
-        "mem_used_gb": 116.9,
+        "cpu_pct": 1.4,
+        "load_1": 0.33,
+        "load_5": 0.43,
+        "load_15": 0.46,
+        "mem_used_gb": 110.74,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 4.79,
-        "mem_pct": 96.1,
-        "swap_used_gb": 7.59,
+        "mem_avail_gb": 10.94,
+        "mem_pct": 91.0,
+        "swap_used_gb": 7.61,
         "swap_total_gb": 16.0,
-        "swap_pct": 47.5,
+        "swap_pct": 47.6,
         "disk_used_pct": 71.3,
         "disk_free_tb": 1.0
       },
@@ -176,8 +172,8 @@
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 20.32,
-          "temp_c": 52,
+          "power_w": 10.76,
+          "temp_c": 45,
           "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
@@ -221,27 +217,27 @@
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-05T14:12:27.597228+00:00",
+      "iso_ts": "2026-08-06T10:58:54.409321+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 1.8,
+      "cpu_pct": 1.2,
       "mem": {
-        "used_gb": 109.4,
+        "used_gb": 110.0,
         "total_gb": 121.7,
-        "avail_gb": 12.3,
-        "pct": 89.9
+        "avail_gb": 11.7,
+        "pct": 90.4
       },
       "swap": {
         "used_gb": 3.0,
         "total_gb": 16.0,
-        "pct": 18.8
+        "pct": 18.5
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 13.12,
-          "temp_c": 50,
+          "power_w": 12.25,
+          "temp_c": 45,
           "util_gpu": 0.0
         }
       ],
@@ -269,18 +265,18 @@
       "top_procs": [
         {
           "name": "VLLM::Worker_TP",
-          "mem_gb": 4.0
+          "mem_gb": 3.8
         },
         {
           "name": "bluetoothd",
           "mem_gb": 0.3
         },
         {
-          "name": "vllm",
-          "mem_gb": 0.0
+          "name": "polkitd",
+          "mem_gb": 0.1
         },
         {
-          "name": "dockerd",
+          "name": "vllm",
           "mem_gb": 0.0
         },
         {
@@ -349,26 +345,20 @@
   "node2_alert_state": "healthy",
   "alerts": [
     {
-      "level": "critical",
-      "category": "memory",
-      "message": "RAM at 96.1% \u2014 only 4.79 GB free",
-      "action": "Stop vLLM or Ollama: switch-model qwen OR ollama stop <model>"
-    },
-    {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 7.59 GB \u2014 memory pressure",
+      "message": "Swap usage 7.61 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 420 MB VRAM",
+      "message": "gnome-remote-desktop using 432 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
   "alert_count": {
-    "critical": 1,
+    "critical": 0,
     "warning": 1,
     "info": 1
   }

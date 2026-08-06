@@ -548,7 +548,10 @@ def api_diagnostics():
     ollama = query_ollama()
     inv = query_inventory()
     inv["hermes"] = query_hermes()
-    alerts = diagnose(sys_m, gpus, ollama, procs, inv)
+    # Pass live endpoints so the memory alert knows a resident engine explains
+    # high RAM (see diagnose()). Sync handler → FastAPI threadpool, so the
+    # blocking probe cannot stall the event loop.
+    alerts = diagnose(sys_m, gpus, ollama, procs, inv, query_endpoints())
     return {
         "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
         "alerts": alerts,
@@ -572,7 +575,7 @@ def api_live_snapshot():
     hermes = query_hermes()
     inv = query_inventory()
     inv["hermes"] = hermes
-    alerts = diagnose(sys_m, gpus, ollama, procs, inv)
+    alerts = diagnose(sys_m, gpus, ollama, procs, inv, query_endpoints())
     now = datetime.now(timezone.utc)
     avg_util = round(sum(g["util_gpu"] for g in gpus) / len(gpus), 1) if gpus else 0
     return {

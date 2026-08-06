@@ -219,17 +219,33 @@ def diagnose(
     ollama: list[dict],
     procs: list[dict],
     inventory: dict | None = None,
+    endpoints: list[dict] | None = None,
 ) -> list[dict]:
     alerts: list[dict] = []
 
-    if sys_m["mem_pct"] >= 85:
+    # A resident inference engine is SUPPOSED to fill the 121GB unified pool —
+    # DS4F TP=2 parks ~118G. Flagging 85% as critical meant every healthy
+    # cluster-mode sample paged Telegram and prescribed stopping the engine,
+    # i.e. tearing down the owner's chosen mode (43 pages on 2026-08-05).
+    # When an engine is serving, high RAM is explained: only >=97% (where swap
+    # thrash actually starts) is critical. With no engine up, 85% is unexplained.
+    engine = next((e for e in (endpoints or []) if e.get("status") == "ok"), None)
+    crit_pct = 97 if engine else 85
+
+    if sys_m["mem_pct"] >= crit_pct:
+        if engine:
+            why = f" (inference resident: {engine['engine']} :{engine['port']})"
+            action = "Swap-thrash range. Free RAM only if you want this mode down: ~/scripts/dgx/spark-mode.sh status"
+        else:
+            why = " with no inference engine resident"
+            action = "Unexplained — check `ollama ps`, nvfp4-status.sh, and large procs"
         alerts.append({
             "level": "critical",
             "category": "memory",
-            "message": f"RAM at {sys_m['mem_pct']}% — only {sys_m['mem_avail_gb']} GB free",
-            "action": "Stop vLLM or Ollama: switch-model qwen OR ollama stop <model>",
+            "message": f"RAM at {sys_m['mem_pct']}% — only {sys_m['mem_avail_gb']} GB free{why}",
+            "action": action,
         })
-    elif sys_m["mem_pct"] >= 70:
+    elif sys_m["mem_pct"] >= 70 and not engine:
         alerts.append({
             "level": "warning",
             "category": "memory",
@@ -333,7 +349,8 @@ def collect() -> dict | None:
     hermes = query_hermes()
     inv = query_inventory()
     inv["hermes"] = hermes
-    alerts = diagnose(sys_m, gpus, ollama, procs, inv)
+    endpoints = query_endpoints()
+    alerts = diagnose(sys_m, gpus, ollama, procs, inv, endpoints)
     cluster = collect_cluster(sys_m, gpus)
     node2_alert_state = notify_node2_state(cluster["node2"])
 
