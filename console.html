@@ -785,6 +785,14 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     </div>
   </div>
   <div class="card" style="overflow:auto"><div class="scroll" style="padding-top:0" id="jobs"></div></div>
+  <div class="card"><h3>LLM token usage <span class="cnt" id="tok-cnt"></span></h3>
+    <div id="tokenusage" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
+      <div class="mrow"><label>24h in/out</label><span class="v" id="tok-24h">…</span></div>
+      <div class="mrow"><label>all-time in</label><span class="v" id="tok-in">…</span></div>
+      <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
+      <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
+      <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
+    </div></div>
 </section>
 
 <div id="tip"></div>
@@ -1289,6 +1297,31 @@ async function pollSparks(){
   try{sparks=await(await fetch("/api/sparks",{cache:"no-store"})).json();drawAll();}catch(e){}
 }
 setInterval(pollSparks,2000);
+
+/* Token usage card — cheap direct DB reads, polled on the 10 s heartbeat
+   along with refresh(). Compact number formatter (1.23M, 45.8k…). */
+function tokFmt(n){
+  if(n==null||isNaN(n))return "—";
+  if(Math.abs(n)>=1e9)return (n/1e9).toFixed(2)+"B";
+  if(Math.abs(n)>=1e6)return (n/1e6).toFixed(2)+"M";
+  if(Math.abs(n)>=1e3)return (n/1e3).toFixed(1)+"k";
+  return String(Math.round(n));
+}
+function setTok(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function renderTokenUsage(tu){
+  if(!tu)return;
+  const c=tu.counts||{},u=tu.last_24h||{},prof=(tu.profiles||[]).length;
+  setTok("tok-24h",`${tokFmt(u.input_tokens)} / ${tokFmt(u.output_tokens)}`);
+  setTok("tok-in",tokFmt(c.input_tokens));
+  setTok("tok-out",tokFmt(c.output_tokens));
+  setTok("tok-cache",tokFmt(c.cache_read_tokens));
+  setTok("tok-calls",`${tokFmt(c.api_calls)} / ${tokFmt(c.sessions)}`);
+  setTok("tok-cnt",`${prof} profiles`);
+}
+async function pollTokenUsage(){
+  if(document.hidden)return;
+  try{renderTokenUsage(await(await fetch("/api/token-usage",{cache:"no-store"})).json());}catch(e){}
+}
 
 /* Seed the Pulse host trends from the 1 Hz ring buffer the collector already
    keeps, so the cards show a real trace immediately instead of sitting on
@@ -1856,16 +1889,16 @@ const clockTick=()=>$("clock").textContent=new Date().toLocaleTimeString();
 clockTick();setInterval(clockTick,1000);
 setInterval(paintLive,1000);
 switchTab(TAB);
-refresh();tickLoop();
+refresh();tickLoop();pollTokenUsage();
 
 /* structural cadence: easier on a phone's radio, since the 1 Hz tick already
    carries everything that visibly moves */
-setInterval(()=>{if(!document.hidden)refresh();},phone()?20000:10000);
+setInterval(()=>{if(!document.hidden){refresh();pollTokenUsage();}},phone()?20000:10000);
 setInterval(tickLoop,1000);
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden)return;
-  paintLive();refresh();tickLoop();
+  paintLive();refresh();tickLoop();pollTokenUsage();
   if(TAB==="fleet")pollSparks();
 });
 

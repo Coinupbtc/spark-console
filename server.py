@@ -65,6 +65,7 @@ from service_control import (  # noqa: E402
 )
 import automation_status  # noqa: E402
 import backups_status  # noqa: E402
+import token_usage  # noqa: E402
 import fleet_links  # noqa: E402
 import fleet_nodes  # noqa: E402
 import quick_actions  # noqa: E402
@@ -730,6 +731,14 @@ def api_start9():
 def api_automation():
     with _cache_lock:
         return dict(_automation_cache)
+
+
+@app.get("/api/token-usage")
+def api_token_usage():
+    # Cheap direct DB reads (no agent, no LLM) — a few ms. Returns per-profile
+    # and grand totals of Hermes LLM token consumption from the gateway state
+    # DBs' session_model_usage tables.
+    return token_usage.token_summary()
 
 
 @app.get("/api/backups")

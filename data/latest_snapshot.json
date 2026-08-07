@@ -1,34 +1,34 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-06 10:58:53",
-  "iso_ts": "2026-08-06T10:58:53.484269+00:00",
+  "timestamp_utc": "2026-08-07 10:57:09",
+  "iso_ts": "2026-08-07T10:57:09.765058+00:00",
   "hour": 10,
-  "dow": 3,
+  "dow": 4,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 1.4,
-    "load_1": 0.33,
-    "load_5": 0.43,
-    "load_15": 0.46,
-    "mem_used_gb": 110.74,
+    "cpu_pct": 5.0,
+    "load_1": 0.25,
+    "load_5": 0.35,
+    "load_15": 0.35,
+    "mem_used_gb": 110.95,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 10.94,
-    "mem_pct": 91.0,
-    "swap_used_gb": 7.61,
+    "mem_avail_gb": 10.74,
+    "mem_pct": 91.2,
+    "swap_used_gb": 7.41,
     "swap_total_gb": 16.0,
-    "swap_pct": 47.6,
-    "disk_used_pct": 71.3,
-    "disk_free_tb": 1.0
+    "swap_pct": 46.3,
+    "disk_used_pct": 71.5,
+    "disk_free_tb": 0.99
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.76,
+  "total_power_watts": 10.71,
   "avg_temp_c": 45.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.76,
+      "power_w": 10.71,
       "temp_c": 45,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
@@ -154,25 +154,25 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 1.4,
-        "load_1": 0.33,
-        "load_5": 0.43,
-        "load_15": 0.46,
-        "mem_used_gb": 110.74,
+        "cpu_pct": 5.0,
+        "load_1": 0.25,
+        "load_5": 0.35,
+        "load_15": 0.35,
+        "mem_used_gb": 110.95,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 10.94,
-        "mem_pct": 91.0,
-        "swap_used_gb": 7.61,
+        "mem_avail_gb": 10.74,
+        "mem_pct": 91.2,
+        "swap_used_gb": 7.41,
         "swap_total_gb": 16.0,
-        "swap_pct": 47.6,
-        "disk_used_pct": 71.3,
-        "disk_free_tb": 1.0
+        "swap_pct": 46.3,
+        "disk_used_pct": 71.5,
+        "disk_free_tb": 0.99
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.76,
+          "power_w": 10.71,
           "temp_c": 45,
           "util_gpu": 0.0,
           "mem_used_mb": 0,
@@ -202,6 +202,7 @@
           "engine": "Ollama",
           "status": "ok",
           "models": [
+            "moondream:latest",
             "nomic-embed-text-v2-moe:latest",
             "qwen3-vl:32b"
           ]
@@ -217,26 +218,26 @@
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-06T10:58:54.409321+00:00",
+      "iso_ts": "2026-08-07T10:57:10.687491+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 1.2,
+      "cpu_pct": 1.5,
       "mem": {
-        "used_gb": 110.0,
+        "used_gb": 110.1,
         "total_gb": 121.7,
-        "avail_gb": 11.7,
+        "avail_gb": 11.6,
         "pct": 90.4
       },
       "swap": {
-        "used_gb": 3.0,
+        "used_gb": 2.9,
         "total_gb": 16.0,
-        "pct": 18.5
+        "pct": 18.4
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 12.25,
+          "power_w": 12.19,
           "temp_c": 45,
           "util_gpu": 0.0
         }
@@ -269,7 +270,7 @@
         },
         {
           "name": "bluetoothd",
-          "mem_gb": 0.3
+          "mem_gb": 0.4
         },
         {
           "name": "polkitd",
@@ -308,6 +309,7 @@
         "engine": "Ollama",
         "status": "ok",
         "models": [
+          "moondream:latest",
           "nomic-embed-text-v2-moe:latest",
           "qwen3-vl:32b"
         ]
@@ -347,7 +349,7 @@
     {
       "level": "warning",
       "category": "swap",
-      "message": "Swap usage 7.61 GB \u2014 memory pressure",
+      "message": "Swap usage 7.41 GB \u2014 memory pressure",
       "action": "Free RAM by stopping large models"
     },
     {
