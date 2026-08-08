@@ -71,6 +71,7 @@ import fleet_nodes  # noqa: E402
 import quick_actions  # noqa: E402
 import desktop_launch  # noqa: E402
 import comfy_api  # noqa: E402
+import energy_cost  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -158,6 +159,11 @@ class ServiceRegisterRequest(BaseModel):
     replace: bool = True
 
 
+class ComfyCancelRequest(BaseModel):
+    """Cancel a running ComfyUI job or remove a pending one (sparkDash 1.6)."""
+    prompt_id: str
+
+
 # ---- background refreshers: node2 + projects cached so pages never block ----
 import collections  # noqa: E402
 import threading  # noqa: E402
@@ -191,6 +197,7 @@ _comfy_offline_backoff = 10.0  # seconds between polls while ComfyUI is down
 def _gpu_quick() -> tuple[float, float, float] | None:
     """Return (util_pct, power_w, temp_c) from one nvidia-smi call; None on failure.
 
+    Prefer average power draw for energy; Instantaneous undersamples on GB10.
     Temperature rides along on a call we already make every other tick, so the
     1 Hz ring buffer can feed /api/tick a complete host reading without the
     phone ever paying for the full (~1 s) live snapshot.
@@ -198,22 +205,64 @@ def _gpu_quick() -> tuple[float, float, float] | None:
     try:
         out = subprocess.run(
             ["nvidia-smi",
-             "--query-gpu=utilization.gpu,power.draw,temperature.gpu",
+             "--query-gpu=utilization.gpu,power.draw.average,power.draw.instant,temperature.gpu",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=3)
+        if out.returncode != 0 or not out.stdout.strip():
+            out = subprocess.run(
+                ["nvidia-smi",
+                 "--query-gpu=utilization.gpu,power.draw,temperature.gpu",
+                 "--format=csv,noheader,nounits"],
+                capture_output=True, text=True, timeout=3)
+            line = out.stdout.strip().splitlines()[0]
+            parts = [p.strip() for p in line.split(",")]
+            num = lambda i: (float(parts[i])
+                             if len(parts) > i and parts[i] not in ("", "N/A", "[N/A]")
+                             else 0.0)
+            return num(0), num(1), num(2)
         line = out.stdout.strip().splitlines()[0]
         parts = [p.strip() for p in line.split(",")]
         num = lambda i: (float(parts[i])
                          if len(parts) > i and parts[i] not in ("", "N/A", "[N/A]")
                          else 0.0)
-        # GB10 reports Instantaneous Power Draw; limit fields are N/A on this platform
-        return num(0), num(1), num(2)
+        util, avg, inst, tmp = num(0), num(1), num(2), num(3)
+        return util, (avg if avg > 0 else inst), tmp
     except Exception:
         return None
 
 
+def _energy_tick_from_caches(t: float | None = None) -> None:
+    """Fold already-paid live watts into the energy log — no nvidia-smi / SSH."""
+    try:
+        with _cache_lock:
+            n1 = _n1_hist[-1] if _n1_hist else {}
+            n2 = dict(_node2_cache)
+            n2_hist_last = _n2_hist[-1] if _n2_hist else {}
+            pi = dict(_pi_cache)
+            s9 = dict(_start9_cache)
+        n1_pwr = n1.get("pwr") if n1 else None
+        n2_pwr = None
+        if n2.get("reachable"):
+            g2 = (n2.get("gpus") or [{}])[0]
+            n2_pwr = g2.get("power_w")
+            if n2_pwr is None:
+                n2_pwr = n2_hist_last.get("pwr")
+        energy_cost.record_sample({
+            "node1": n1_pwr,
+            "node2": n2_pwr,
+            "pi": pi.get("power_w") if pi.get("reachable") else None,
+            "start9": s9.get("power_w") if s9.get("reachable") else None,
+        }, t=t)
+    except Exception:
+        pass
+
+
 def _node1_sampler():
-    """1 Hz local sampler for the System Monitor-style history graphs."""
+    """1 Hz local sampler for the System Monitor-style history graphs.
+
+    Every ~30s, folds all live cache watts into the electricity log using power
+    we already paid for — no extra nvidia-smi for energy.
+    """
     psutil.cpu_percent(None)  # prime
     prev_net = psutil.net_io_counters()
     prev_t = _time.time()
@@ -244,6 +293,8 @@ def _node1_sampler():
                                  "mem": vm.percent, "swap": sw.percent,
                                  "rx": round(rx, 1), "tx": round(tx, 1),
                                  "pwr": round(pwr, 1), "temp": round(tmp)})
+            if tick % 30 == 0:
+                _energy_tick_from_caches(t=now)
         except Exception:
             pass
 
@@ -338,7 +389,12 @@ def _projects_refresher():
 
 
 def _fleet_refresher():
-    """Pi + Start9 over LAN SSH. Slow-changing appliances — 30s is plenty."""
+    """Pi + Start9 over LAN SSH. Slow-changing appliances — 30s is plenty.
+
+    Feeds Pi/Start9 (and any Spark watts already in live caches) into the
+    electricity log — never an extra nvidia-smi; Sparks are sampled from hist
+    by the node1/node2 threads.
+    """
     while True:
         for query, cache in ((fleet_nodes.query_pi, _pi_cache),
                              (fleet_nodes.query_start9, _start9_cache)):
@@ -350,6 +406,8 @@ def _fleet_refresher():
             except Exception as e:  # never let the thread die
                 with _cache_lock:
                     cache.update({"reachable": False, "error": str(e)[:200]})
+        # Energy: appliances from this poll; Sparks from hist/cache (free).
+        _energy_tick_from_caches()
         _time.sleep(30)
 
 
@@ -403,20 +461,36 @@ def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
         # First poll after a restart is not an outage — do not page for it.
         return "not polled yet" in str(host.get("error", ""))
 
+    # Optional app watchdogs (e.g. BetIntel) fail loudly when you intentionally
+    # stop the app. That is Jobs-tab noise, not "Needs you" critical.
+    def optional_noise(name: str) -> bool:
+        # Prefix match covers betintel-watchdog.service / .timer job names
+        return (name or "").lower().startswith("betintel-")
+
     for a in (node1.get("alerts") or []):
         add(a.get("level", "info"), "node1", a.get("message", ""))
     if node2 and not node2.get("reachable") and not booting(node2):
         add("critical", "node2", f"unreachable over fabric ({node2.get('error', '?')[:70]})")
     elif node2 and (node2.get("swap") or {}).get("used_gb", 0) >= 2:
-        add("warning", "node2", f"swap {node2['swap']['used_gb']} G — memory pressure")
+        # Same rule as node1 diagnose: swap while a peer model is up is expected.
+        # Only surface when swap is near full (thrash), not every multi-GB spill.
+        sw = node2.get("swap") or {}
+        used = float(sw.get("used_gb") or 0)
+        total = float(sw.get("total_gb") or 0) or 16.0
+        if (used / total) * 100 >= 90:
+            add("warning", "node2", f"swap {used} G ({int(used / total * 100)}%) — thrash risk")
     for host, data in (("pi", pi), ("start9", start9)):
         if booting(data):
             continue
         for issue in (data.get("issues") or []):
             add(issue.get("level", "warning"), host, issue.get("message", ""))
     for job in (automation.get("failing") or []):
+        if optional_noise(str(job.get("name") or "")):
+            continue
         add("critical", "automation", f"{job['name']} ({job['layer']}) failed — {job['error']}"[:150])
     for unit in (automation.get("failed_units") or []):
+        if optional_noise(str(unit)):
+            continue
         add("critical", "automation", f"systemd unit failed: {unit}")
     for issue in (backups.get("issues") or []):
         add(issue.get("level", "warning"), "backups", issue.get("message", ""))
@@ -431,6 +505,12 @@ def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
 threading.Thread(target=_node1_sampler, daemon=True).start()
 threading.Thread(target=_node2_refresher, daemon=True).start()
 threading.Thread(target=_projects_refresher, daemon=True).start()
+# Seed Sparks energy history from the 5‑min CSV once, then keep logging.
+try:
+    energy_cost.ensure_ready()
+except Exception:
+    pass
+
 threading.Thread(target=_fleet_refresher, daemon=True).start()
 threading.Thread(target=_panels_refresher, daemon=True).start()
 threading.Thread(target=_services_refresher, daemon=True).start()
@@ -595,7 +675,23 @@ def api_diagnostics():
     }
 
 
-def api_live_snapshot():
+_LIVE_SNAP_CACHE: dict = {"ts": 0.0, "payload": None}
+_LIVE_SNAP_TTL = 2.5  # overview can stampede on focus; reuse a fresh snap
+
+
+def api_live_snapshot(force: bool = False):
+    """Full node1 snapshot (smi + procs + inventory). Short-TTL cached.
+
+    The 1 Hz hist already owns present-tense GPU/CPU/mem for the UI; this
+    path is for structure (endpoints, models, alerts). Caching 2.5s avoids
+    back-to-back nvidia-smi when refresh + visibilitychange collide.
+    """
+    now = _time.time()
+    cached = _LIVE_SNAP_CACHE.get("payload")
+    if (not force and cached
+            and (now - float(_LIVE_SNAP_CACHE.get("ts") or 0)) < _LIVE_SNAP_TTL):
+        return _snap_copy(cached)
+
     sys_m = system_metrics()
     gpus = query_gpu()
     procs = query_procs()
@@ -604,11 +700,11 @@ def api_live_snapshot():
     inv = query_inventory()
     inv["hermes"] = hermes
     alerts = diagnose(sys_m, gpus, ollama, procs, inv, query_endpoints())
-    now = datetime.now(timezone.utc)
+    now_dt = datetime.now(timezone.utc)
     avg_util = round(sum(g["util_gpu"] for g in gpus) / len(gpus), 1) if gpus else 0
-    return {
-        "timestamp_utc": now.strftime("%Y-%m-%d %H:%M:%S"),
-        "iso_ts": now.isoformat(),
+    result = {
+        "timestamp_utc": now_dt.strftime("%Y-%m-%d %H:%M:%S"),
+        "iso_ts": now_dt.isoformat(),
         "hostname": os.uname().nodename,
         "system": sys_m,
         "num_gpus": len(gpus),
@@ -629,6 +725,68 @@ def api_live_snapshot():
             "info": sum(1 for a in alerts if a["level"] == "info"),
         },
     }
+    _LIVE_SNAP_CACHE["ts"] = now
+    _LIVE_SNAP_CACHE["payload"] = result
+    return _snap_copy(result)
+
+
+def _snap_copy(snap: dict) -> dict:
+    """Copy fields overview may mutate (gpus/system) without a full deepcopy."""
+    out = dict(snap)
+    out["gpus"] = [dict(g) for g in (snap.get("gpus") or [])]
+    if isinstance(snap.get("system"), dict):
+        out["system"] = dict(snap["system"])
+    return out
+
+
+def _overlay_hist_metrics(snap: dict, node2: dict) -> None:
+    """Replace overview live gauges with 1 Hz hist (present-tense, already paid)."""
+    with _cache_lock:
+        n1 = dict(_n1_hist[-1]) if _n1_hist else {}
+        n2s = dict(_n2_hist[-1]) if _n2_hist else {}
+    if n1:
+        snap["metrics_as_of"] = n1.get("t")
+        gpus = snap.get("gpus") or []
+        if gpus:
+            g = gpus[0]
+            if n1.get("gpu") is not None:
+                g["util_gpu"] = n1["gpu"]
+            if n1.get("pwr") is not None:
+                g["power_w"] = n1["pwr"]
+            if n1.get("temp") is not None:
+                g["temp_c"] = n1["temp"]
+            snap["avg_util_pct"] = g.get("util_gpu")
+            snap["total_power_watts"] = g.get("power_w")
+            snap["avg_temp_c"] = g.get("temp_c")
+        sys_m = snap.setdefault("system", {})
+        if n1.get("cpu") is not None:
+            sys_m["cpu_pct"] = n1["cpu"]
+        if n1.get("mem") is not None:
+            sys_m["mem_pct"] = n1["mem"]
+    if n2s and node2.get("reachable"):
+        node2["metrics_as_of"] = n2s.get("t")
+        # Don't mutate the live node2 cache — copy nested metrics first.
+        if node2.get("gpus"):
+            node2["gpus"] = [dict(g) for g in node2["gpus"]]
+        if isinstance(node2.get("mem"), dict):
+            node2["mem"] = dict(node2["mem"])
+        if isinstance(node2.get("swap"), dict):
+            node2["swap"] = dict(node2["swap"])
+        gpus = node2.get("gpus") or []
+        if gpus:
+            g = gpus[0]
+            if n2s.get("gpu") is not None:
+                g["util_gpu"] = n2s["gpu"]
+            if n2s.get("pwr") is not None:
+                g["power_w"] = n2s["pwr"]
+        if n2s.get("cpu") is not None:
+            node2["cpu_pct"] = n2s["cpu"]
+        mem = node2.get("mem")
+        if isinstance(mem, dict) and n2s.get("mem") is not None:
+            mem["pct"] = n2s["mem"]
+        swap = node2.get("swap")
+        if isinstance(swap, dict) and n2s.get("swap") is not None:
+            swap["pct"] = n2s["swap"]
 
 
 def _load_history_rows(hours: int) -> list[dict]:
@@ -691,9 +849,15 @@ def api_tick():
         pi = dict(_pi_cache)
         s9 = dict(_start9_cache)
     n2gpu = (n2.get("gpus") or [{}])[0]
+    # Prefer 1 Hz hist watts when present — SSH cache snapshot can lag a cycle.
+    n2_pwr = n2s.get("pwr")
+    if n2_pwr is None:
+        n2_pwr = n2gpu.get("power_w")
+    n2_temp = n2gpu.get("temp_c")  # samples loop has no temp field
 
     def appliance(h: dict) -> dict:
         return {"reachable": bool(h.get("reachable")),
+                "t": h.get("polled_at") or h.get("metrics_as_of"),
                 "cpu": h.get("cpu_pct"), "mem": (h.get("mem") or {}).get("pct"),
                 "temp": h.get("temp_c"), "pwr": h.get("power_w")}
 
@@ -703,12 +867,12 @@ def api_tick():
                   "cpu": n1.get("cpu"), "gpu": n1.get("gpu"), "mem": n1.get("mem"),
                   "swap": n1.get("swap"), "pwr": n1.get("pwr"), "temp": n1.get("temp"),
                   "rx": n1.get("rx"), "tx": n1.get("tx")},
-        "node2": {"reachable": bool(n2.get("reachable")), "t": n2s.get("t"),
+        "node2": {"reachable": bool(n2.get("reachable")), "t": n2s.get("t") or n2.get("metrics_as_of"),
                   "cpu": n2s.get("cpu", n2.get("cpu_pct")),
                   "gpu": n2s.get("gpu", n2gpu.get("util_gpu")),
                   "mem": n2s.get("mem", (n2.get("mem") or {}).get("pct")),
-                  "swap": n2s.get("swap"), "pwr": n2gpu.get("power_w"),
-                  "temp": n2gpu.get("temp_c")},
+                  "swap": n2s.get("swap"), "pwr": n2_pwr,
+                  "temp": n2_temp},
         "pi": appliance(pi),
         "start9": appliance(s9),
     }
@@ -762,9 +926,7 @@ def api_automation():
 
 @app.get("/api/token-usage")
 def api_token_usage():
-    # Cheap direct DB reads (no agent, no LLM) — a few ms. Returns per-profile
-    # and grand totals of Hermes LLM token consumption from the gateway state
-    # DBs' session_model_usage tables.
+    # Cheap direct DB reads; 20s cache keeps Jobs-tab polls from re-scanning.
     return token_usage.token_summary()
 
 
@@ -784,6 +946,58 @@ def api_comfy():
     """
     with _cache_lock:
         return dict(_comfy_cache)
+
+
+@app.get("/api/energy-cost")
+def api_energy_cost(request: Request):
+    """Historical electricity: trailing 24h/30d kWh from integrated watt samples.
+
+    Default mode=sensor (measured GPU/PMIC/RAPL). mode=wall applies optional
+    Spark idle+slope estimate. Returns kWh; UI multiplies by editable $/kWh.
+
+    Query params:
+      mode         sensor|wall (default sensor)
+      idle_wall_w  default 50 — only used when mode=wall
+      gpu_floor_w  default 8
+      slope        default 1.15
+    """
+    q = request.query_params
+    def _f(name, default):
+        raw = q.get(name)
+        if raw is None or raw == "":
+            return default
+        try:
+            return float(raw)
+        except ValueError:
+            return default
+    return energy_cost.energy_summary(
+        idle_wall_w=_f("idle_wall_w", energy_cost.DEFAULT_IDLE_WALL_W),
+        gpu_floor_w=_f("gpu_floor_w", energy_cost.DEFAULT_GPU_FLOOR_W),
+        slope=_f("slope", energy_cost.DEFAULT_SLOPE),
+        mode=(q.get("mode") or "sensor"),
+    )
+
+
+@app.post("/api/comfy/cancel")
+def api_comfy_cancel(req: ComfyCancelRequest):
+    """Cancel / remove a ComfyUI job by prompt_id (running → interrupt, pending → dequeue).
+
+    Proxies to loopback ComfyUI only — never accepts a host. After success the
+    refresher cache is invalidated so the next GET /api/comfy reflects the queue.
+    """
+    result = comfy_api.cancel_job(req.prompt_id)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    # Push a fresh snapshot into the cache so the UI updates without waiting
+    # for the next refresher tick (up to 5s while live / 10s while offline).
+    try:
+        snap = comfy_api.query_comfy()
+        with _cache_lock:
+            _comfy_cache.clear()
+            _comfy_cache.update(snap)
+    except Exception:
+        pass
+    return result
 
 
 @app.get("/api/links")
@@ -828,7 +1042,11 @@ def api_launch(app_id: str):
 
 @app.get("/api/overview")
 def api_overview():
-    """Everything the console page needs in one call."""
+    """Everything the console page needs in one call.
+
+    Live gauges (GPU/CPU/mem/power) are overlaid from the 1 Hz hist so Fleet
+    matches Pulse — overview still carries structure (services, alerts, models).
+    """
     snap = api_live_snapshot()
     with _cache_lock:
         node2 = dict(_node2_cache)
@@ -838,6 +1056,7 @@ def api_overview():
         automation = dict(_automation_cache)
         backups = dict(_backups_cache)
         links = dict(_links_cache)
+    _overlay_hist_metrics(snap, node2)
     try:
         services = _services_snapshot()
     except Exception as e:

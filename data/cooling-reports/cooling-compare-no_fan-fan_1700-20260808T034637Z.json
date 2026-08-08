@@ -1,0 +1,502 @@
+{
+  "experiment": "case-fan-cooling",
+  "generated_at": "2026-08-08T03:46:37.094090+00:00",
+  "phases": {
+    "no_fan": {
+      "label": "no fan",
+      "note": "pre case+fan; mark started ~7h before install",
+      "start": "2026-08-07T14:21:48.965644+00:00",
+      "end": "2026-08-08T00:35:57.970028+00:00",
+      "hours": 10.24,
+      "samples": 102,
+      "nodes": {
+        "node1": {
+          "temp": {
+            "n": 102,
+            "min": 42.0,
+            "p50": 49.5,
+            "mean": 52.89,
+            "p95": 70.0,
+            "max": 74.0
+          },
+          "util": {
+            "n": 102,
+            "min": 0.0,
+            "p50": 0.0,
+            "mean": 17.09,
+            "p95": 95.0,
+            "max": 96.0
+          },
+          "power_w": {
+            "n": 102,
+            "min": 10.38,
+            "p50": 11.29,
+            "mean": 17.24,
+            "p95": 41.19,
+            "max": 62.85
+          },
+          "by_util_bucket": {
+            "idle": {
+              "n": 83,
+              "min": 42.0,
+              "p50": 48.0,
+              "mean": 49.72,
+              "p95": 58.9,
+              "max": 62.0
+            },
+            "mid": {
+              "n": 1,
+              "min": 52.0,
+              "p50": 52.0,
+              "mean": 52.0,
+              "p95": 52.0,
+              "max": 52.0
+            },
+            "high": {
+              "n": 18,
+              "min": 59.0,
+              "p50": 68.0,
+              "mean": 67.56,
+              "p95": 72.3,
+              "max": 74.0
+            }
+          }
+        },
+        "node2": {
+          "temp": {
+            "n": 102,
+            "min": 39.0,
+            "p50": 47.0,
+            "mean": 51.06,
+            "p95": 68.0,
+            "max": 73.0
+          },
+          "util": {
+            "n": 102,
+            "min": 0.0,
+            "p50": 0.0,
+            "mean": 17.46,
+            "p95": 96.0,
+            "max": 96.0
+          },
+          "power_w": {
+            "n": 102,
+            "min": 5.09,
+            "p50": 12.29,
+            "mean": 17.73,
+            "p95": 41.09,
+            "max": 64.04
+          },
+          "by_util_bucket": {
+            "idle": {
+              "n": 83,
+              "min": 39.0,
+              "p50": 47.0,
+              "mean": 47.8,
+              "p95": 54.0,
+              "max": 62.0
+            },
+            "mid": {
+              "n": 1,
+              "min": 69.0,
+              "p50": 69.0,
+              "mean": 69.0,
+              "p95": 69.0,
+              "max": 69.0
+            },
+            "high": {
+              "n": 18,
+              "min": 47.0,
+              "p50": 67.0,
+              "mean": 65.11,
+              "p95": 71.3,
+              "max": 73.0
+            }
+          }
+        }
+      }
+    },
+    "fan_1700": {
+      "label": "1700 RPM",
+      "note": "case fan 1700 RPM; video/H3 load included; dual reboot 19:15/19:32 CDT install",
+      "start": "2026-08-08T00:35:57.970028+00:00",
+      "end": "2026-08-08T03:46:37.061592+00:00",
+      "hours": 3.18,
+      "samples": 39,
+      "nodes": {
+        "node1": {
+          "temp": {
+            "n": 39,
+            "min": 45.0,
+            "p50": 58.0,
+            "mean": 56.28,
+            "p95": 66.1,
+            "max": 78.0
+          },
+          "util": {
+            "n": 39,
+            "min": 0.0,
+            "p50": 93.0,
+            "mean": 54.95,
+            "p95": 96.0,
+            "max": 96.0
+          },
+          "power_w": {
+            "n": 39,
+            "min": 10.73,
+            "p50": 28.88,
+            "mean": 25.32,
+            "p95": 45.12,
+            "max": 47.74
+          },
+          "by_util_bucket": {
+            "idle": {
+              "n": 16,
+              "min": 45.0,
+              "p50": 47.0,
+              "mean": 47.94,
+              "p95": 52.25,
+              "max": 53.0
+            },
+            "mid": {
+              "n": 1,
+              "min": 64.0,
+              "p50": 64.0,
+              "mean": 64.0,
+              "p95": 64.0,
+              "max": 64.0
+            },
+            "high": {
+              "n": 22,
+              "min": 47.0,
+              "p50": 63.0,
+              "mean": 62.0,
+              "p95": 66.95,
+              "max": 78.0
+            }
+          }
+        },
+        "node2": {
+          "temp": {
+            "n": 39,
+            "min": 39.0,
+            "p50": 42.0,
+            "mean": 42.79,
+            "p95": 47.0,
+            "max": 47.0
+          },
+          "util": {
+            "n": 39,
+            "min": 0.0,
+            "p50": 94.0,
+            "mean": 51.31,
+            "p95": 96.0,
+            "max": 96.0
+          },
+          "power_w": {
+            "n": 39,
+            "min": 5.14,
+            "p50": 9.72,
+            "mean": 9.32,
+            "p95": 15.09,
+            "max": 15.52
+          },
+          "by_util_bucket": {
+            "idle": {
+              "n": 18,
+              "min": 39.0,
+              "p50": 40.0,
+              "mean": 40.28,
+              "p95": 42.15,
+              "max": 43.0
+            },
+            "mid": {
+              "n": 0,
+              "min": null,
+              "p50": null,
+              "mean": null,
+              "p95": null,
+              "max": null
+            },
+            "high": {
+              "n": 21,
+              "min": 41.0,
+              "p50": 46.0,
+              "mean": 44.95,
+              "p95": 47.0,
+              "max": 47.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "deltas_vs_baseline": {
+    "fan_1700": {
+      "vs": "no_fan",
+      "nodes": {
+        "node1": {
+          "temp_delta_c": {
+            "min": 3.0,
+            "p50": 8.5,
+            "mean": 3.39,
+            "p95": -3.9,
+            "max": 4.0
+          },
+          "by_util_bucket": {
+            "idle": {
+              "baseline": {
+                "n": 83,
+                "min": 42.0,
+                "p50": 48.0,
+                "mean": 49.72,
+                "p95": 58.9,
+                "max": 62.0
+              },
+              "phase": {
+                "n": 16,
+                "min": 45.0,
+                "p50": 47.0,
+                "mean": 47.94,
+                "p95": 52.25,
+                "max": 53.0
+              },
+              "temp_delta_c": {
+                "min": 3.0,
+                "p50": -1.0,
+                "mean": -1.78,
+                "p95": -6.65,
+                "max": -9.0
+              }
+            },
+            "mid": {
+              "baseline": {
+                "n": 1,
+                "min": 52.0,
+                "p50": 52.0,
+                "mean": 52.0,
+                "p95": 52.0,
+                "max": 52.0
+              },
+              "phase": {
+                "n": 1,
+                "min": 64.0,
+                "p50": 64.0,
+                "mean": 64.0,
+                "p95": 64.0,
+                "max": 64.0
+              },
+              "temp_delta_c": {
+                "min": 12.0,
+                "p50": 12.0,
+                "mean": 12.0,
+                "p95": 12.0,
+                "max": 12.0
+              }
+            },
+            "high": {
+              "baseline": {
+                "n": 18,
+                "min": 59.0,
+                "p50": 68.0,
+                "mean": 67.56,
+                "p95": 72.3,
+                "max": 74.0
+              },
+              "phase": {
+                "n": 22,
+                "min": 47.0,
+                "p50": 63.0,
+                "mean": 62.0,
+                "p95": 66.95,
+                "max": 78.0
+              },
+              "temp_delta_c": {
+                "min": -12.0,
+                "p50": -5.0,
+                "mean": -5.56,
+                "p95": -5.35,
+                "max": 4.0
+              }
+            }
+          },
+          "util_mean": {
+            "baseline": 17.09,
+            "phase": 54.95
+          },
+          "power_mean": {
+            "baseline": 17.24,
+            "phase": 25.32
+          }
+        },
+        "node2": {
+          "temp_delta_c": {
+            "min": 0.0,
+            "p50": -5.0,
+            "mean": -8.27,
+            "p95": -21.0,
+            "max": -26.0
+          },
+          "by_util_bucket": {
+            "idle": {
+              "baseline": {
+                "n": 83,
+                "min": 39.0,
+                "p50": 47.0,
+                "mean": 47.8,
+                "p95": 54.0,
+                "max": 62.0
+              },
+              "phase": {
+                "n": 18,
+                "min": 39.0,
+                "p50": 40.0,
+                "mean": 40.28,
+                "p95": 42.15,
+                "max": 43.0
+              },
+              "temp_delta_c": {
+                "min": 0.0,
+                "p50": -7.0,
+                "mean": -7.52,
+                "p95": -11.85,
+                "max": -19.0
+              }
+            },
+            "mid": {
+              "baseline": {
+                "n": 1,
+                "min": 69.0,
+                "p50": 69.0,
+                "mean": 69.0,
+                "p95": 69.0,
+                "max": 69.0
+              },
+              "phase": {
+                "n": 0,
+                "min": null,
+                "p50": null,
+                "mean": null,
+                "p95": null,
+                "max": null
+              },
+              "temp_delta_c": {
+                "min": null,
+                "p50": null,
+                "mean": null,
+                "p95": null,
+                "max": null
+              }
+            },
+            "high": {
+              "baseline": {
+                "n": 18,
+                "min": 47.0,
+                "p50": 67.0,
+                "mean": 65.11,
+                "p95": 71.3,
+                "max": 73.0
+              },
+              "phase": {
+                "n": 21,
+                "min": 41.0,
+                "p50": 46.0,
+                "mean": 44.95,
+                "p95": 47.0,
+                "max": 47.0
+              },
+              "temp_delta_c": {
+                "min": -6.0,
+                "p50": -21.0,
+                "mean": -20.16,
+                "p95": -24.3,
+                "max": -26.0
+              }
+            }
+          },
+          "util_mean": {
+            "baseline": 17.46,
+            "phase": 51.31
+          },
+          "power_mean": {
+            "baseline": 17.73,
+            "phase": 9.32
+          }
+        }
+      }
+    }
+  },
+  "deltas_chain": [
+    {
+      "from": "no_fan",
+      "to": "fan_1700",
+      "nodes": {
+        "node1": {
+          "temp_delta_c": {
+            "min": 3.0,
+            "p50": 8.5,
+            "mean": 3.39,
+            "p95": -3.9,
+            "max": 4.0
+          },
+          "by_util_bucket": {
+            "idle": {
+              "min": 3.0,
+              "p50": -1.0,
+              "mean": -1.78,
+              "p95": -6.65,
+              "max": -9.0
+            },
+            "mid": {
+              "min": 12.0,
+              "p50": 12.0,
+              "mean": 12.0,
+              "p95": 12.0,
+              "max": 12.0
+            },
+            "high": {
+              "min": -12.0,
+              "p50": -5.0,
+              "mean": -5.56,
+              "p95": -5.35,
+              "max": 4.0
+            }
+          }
+        },
+        "node2": {
+          "temp_delta_c": {
+            "min": 0.0,
+            "p50": -5.0,
+            "mean": -8.27,
+            "p95": -21.0,
+            "max": -26.0
+          },
+          "by_util_bucket": {
+            "idle": {
+              "min": 0.0,
+              "p50": -7.0,
+              "mean": -7.52,
+              "p95": -11.85,
+              "max": -19.0
+            },
+            "mid": {
+              "min": null,
+              "p50": null,
+              "mean": null,
+              "p95": null,
+              "max": null
+            },
+            "high": {
+              "min": -6.0,
+              "p50": -21.0,
+              "mean": -20.16,
+              "p95": -24.3,
+              "max": -26.0
+            }
+          }
+        }
+      }
+    }
+  ],
+  "reading_guide": "delta = later \u2212 earlier (\u00b0C). Negative = cooler. Prefer util-bucket deltas over overall mean when loads differ. Video/diffusion peaks are a hotter class than light LLM decode."
+}

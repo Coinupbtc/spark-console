@@ -25,7 +25,8 @@ echo @UPTIME; cat /proc/uptime
 echo @LOAD; cat /proc/loadavg
 echo @MEM; free -b | sed -n '2p;3p'
 echo @DISK; df -B1 / | tail -1
-echo @GPU; nvidia-smi --query-gpu=index,name,power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null
+# Prefer average draw (matches node1 / energy log); fall back to instant.
+echo @GPU; (nvidia-smi --query-gpu=index,name,power.draw.average,temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null || nvidia-smi --query-gpu=index,name,power.draw,temperature.gpu,utilization.gpu --format=csv,noheader,nounits 2>/dev/null)
 echo @TOPMEM; ps -eo comm,rss --sort=-rss --no-headers | head -5
 echo @WORKLOADS
 ps -eo comm,args --no-headers | awk '
@@ -53,8 +54,8 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
   sleep 1
   read tcur icur < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8+$9, $5+$6}' /proc/stat)
   read rxc txc < <(awk '/:/{sub(/^[^:]*:/,"");rx+=$1;tx+=$9} END{print rx,tx}' /proc/net/dev)
-  # util + power in one smi call (GB10 power.limit is N/A — draw only)
-  read gpu pwr < <(nvidia-smi --query-gpu=utilization.gpu,power.draw --format=csv,noheader,nounits 2>/dev/null | head -1 | tr ',' ' ')
+  # Prefer average draw for energy accuracy; fall back to instant.
+  read gpu pwr < <( (nvidia-smi --query-gpu=utilization.gpu,power.draw.average --format=csv,noheader,nounits 2>/dev/null || nvidia-smi --query-gpu=utilization.gpu,power.draw --format=csv,noheader,nounits 2>/dev/null) | head -1 | tr ',' ' ')
   read mem swap < <(awk '/MemTotal/{mt=$2}/MemAvailable/{ma=$2}/SwapTotal/{st=$2}/SwapFree/{sf=$2} END{printf "%.1f %.1f", (mt-ma)/mt*100, (st ? (st-sf)/st*100 : 0)}' /proc/meminfo)
   cpu=$(awk -v t=$((tcur-tprev)) -v i=$((icur-iprev)) 'BEGIN{if(t>0)printf "%.1f",(t-i)/t*100; else print 0}')
   rxk=$(awk -v a="$rxc" -v b="$rxp" 'BEGIN{printf "%.1f",(a-b)/1024}')

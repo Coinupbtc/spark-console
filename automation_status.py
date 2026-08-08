@@ -221,6 +221,27 @@ def os_cron_jobs() -> list[dict]:
 
 # ------------------------------------------------------------------ layer 3: systemd timers
 
+def _unit_cleanly_inactive(unit: str) -> bool:
+    """True when unit is stopped by owner (inactive), not crashed (failed)."""
+    show = _run(["systemctl", "--user", "show", unit,
+                 "-p", "ActiveState", "-p", "Result", "--value"])
+    vals = [v.strip() for v in show.splitlines() if v.strip()]
+    active = (vals[0] if vals else "").lower()
+    return active in ("inactive", "dead")
+
+
+def _optional_app_parked(job_name: str) -> bool:
+    """Apps the owner parks from Spark Console must not red-light Jobs.
+
+    BetIntel timers keep firing while backend is off; that is intentional
+    parking, not a stack failure. Mirror of server.py optional_noise.
+    """
+    name = (job_name or "").lower()
+    if name.startswith("betintel-") or name.startswith("betintel."):
+        return _unit_cleanly_inactive("betintel-backend.service")
+    return False
+
+
 def systemd_timers() -> list[dict]:
     raw = _run(["systemctl", "--user", "list-timers", "--all", "--output=json", "--no-pager"])
     try:
@@ -272,16 +293,21 @@ def systemd_timers() -> list[dict]:
         info = svc_info or timer_info
         result = (info.get("Result") or "").lower()
         active = (info.get("ActiveState") or "").lower()
+        name = unit.replace(".timer", "")
         if result in ("", "success"):
             state = "running" if active == "activating" else "ok"
         else:
             state = "fail"
         if next_ts is None and last_ts is None:
             state = "paused"
+        # Owner parked the app → show paused, not fail (Jobs badge / Problems)
+        if state == "fail" and _optional_app_parked(name):
+            state = "paused"
+            result = "parked"
         jobs.append({
             "layer": "timer",
             "id": "",
-            "name": unit.replace(".timer", ""),
+            "name": name,
             "where": "systemd --user",
             "schedule": "timer",
             "next_ts": next_ts, "next_in": _in(next_ts),
@@ -313,6 +339,9 @@ def failed_units() -> list[str]:
         load = vals[0] if vals else ""
         ufs = vals[1] if len(vals) > 1 else ""
         if load == "masked" or ufs == "masked":
+            continue
+        # Same parked-app rule as timers — don't inventory owner-stop noise
+        if _optional_app_parked(name.replace(".service", "").replace(".timer", "")):
             continue
         actionable.append(name)
     return actionable

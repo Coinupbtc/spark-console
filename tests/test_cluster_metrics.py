@@ -36,7 +36,7 @@ class ClusterMetricsTests(unittest.TestCase):
                 "cpu_pct": 12.5,
                 "mem": {"avail_gb": 70.0},
                 "swap": {"used_gb": 1.0, "pct": 2.0},
-                "gpus": [{"util_gpu": 44.0, "power_w": 65.0}],
+                "gpus": [{"util_gpu": 44.0, "power_w": 65.0, "temp_c": 62}],
                 "models": [{"port": 8100, "id": "mimo"}],
                 "endpoints": [{"port": 8100, "status": "ok"}],
                 "workloads": ["llama"],
@@ -48,6 +48,7 @@ class ClusterMetricsTests(unittest.TestCase):
         self.assertEqual(values["schema_version"], 2)
         self.assertEqual(values["node1_active_model"], "qwen")
         self.assertEqual(values["node2_active_model"], "mimo")
+        self.assertEqual(values["node2_gpu_temp_c"], 62)
         self.assertTrue(values["node2_endpoint_8100_ok"])
         self.assertIn('"pokemon"', values["workloads_json"])
 

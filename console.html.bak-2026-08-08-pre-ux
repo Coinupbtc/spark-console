@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover is REQUIRED here: the page asks for a black-translucent
+     iOS status bar, so without it the notch/Dynamic Island eats the header and
+     the home indicator sits on top of the tab bar. Everything below pays that
+     back with env(safe-area-inset-*). -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spark Console</title>
+<meta name="theme-color" content="#080a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spark Console">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Spark Console v2 — 4 tabs, one theme.
+
+   Palette is NOT eyeballed. Series + status hexes come from the dataviz
+   reference palette and were run through scripts/validate_palette.js against
+   this page's own surface (#12141b, dark):
+     series  #3987e5 / #d95926 / #199e70 → ALL CHECKS PASS
+     status  good #0ca30c ↔ crit #d03b3b → CVD ΔE 4.1 (deuteranopia) = FAIL
+   That last number is why every status indicator here carries a DISTINCT
+   GLYPH (● ▲ ✕ ○) and not just a colour. Never signal state with hue alone.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* surfaces */
+  --bg:#080a0e; --surface:#12141b; --surface-2:#171b24; --raise:#1d222d;
+  --line:rgba(255,255,255,.085); --line-2:rgba(255,255,255,.14);
+  /* ink */
+  --ink:#f2f4f8; --ink-2:#a5adbb; --ink-3:#6c7484;
+  /* series (validated categorical slots 1-3) */
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  /* status (fixed, never themed) */
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --neutral:#898781;
+  --cool:#3987e5;
+  --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:14px; --r-sm:9px;
+  --shadow:0 18px 40px -12px rgba(0,0,0,.7);
+  /* iOS safe areas — 0 everywhere else, so desktop is unaffected */
+  --sat:env(safe-area-inset-top,0px);   --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);  --sar:env(safe-area-inset-right,0px);
+  --tabbar:0px;                          /* bottom bar height; set on mobile */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+/* iOS Safari inflates text on rotation without this, which reflows the whole
+   layout when the phone turns */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);
+  display:grid;grid-template-rows:58px minmax(0,1fr);gap:14px;padding:14px;
+  height:100vh;max-width:100vw;overflow:hidden;position:relative;isolation:isolate;
+  -webkit-tap-highlight-color:transparent;
+}
+/* 100dvh tracks the *visible* viewport, so an iOS Safari tab does not hide the
+   bottom of the page behind the URL bar. Kept after the 100vh line as a
+   progressive upgrade. */
+@supports (height:100dvh){body{height:100dvh}}
+/* ── aurora: 3 blurred blobs on the compositor. transform-only, no repaint ── */
+body::before{
+  content:"";position:fixed;inset:-30%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(38% 42% at 18% 22%,rgba(57,135,229,.20),transparent 70%),
+    radial-gradient(34% 38% at 82% 12%,rgba(217,89,38,.13),transparent 70%),
+    radial-gradient(40% 44% at 62% 88%,rgba(25,158,112,.11),transparent 70%);
+  filter:blur(38px);animation:drift 38s ease-in-out infinite alternate;
+}
+@keyframes drift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(2.5%,-2%,0) scale(1.08)}
+}
+body>*{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){
+  body::before{animation:none}
+  *{transition:none!important;animation:none!important}
+}
+
+/* ══════════════════════════ primitives ══════════════════════════ */
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.good{color:var(--good)}.warn{color:var(--warn)}.crit{color:var(--crit)}
+.neutral{color:var(--neutral)}.dim{color:var(--ink-2)}.faint{color:var(--ink-3)}
+.t-cool{color:var(--cool)}.t-ok{color:var(--good)}.t-warm{color:var(--warn)}.t-hot{color:var(--crit)}
+
+/* Status marks: SHAPE carries the meaning, colour reinforces it.
+   ● ok · ▲ warn · ✕ bad · ○ stale — legible at 11px and under CVD. */
+.st{display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:14px;height:14px;font-size:10px;line-height:1;font-style:normal;
+  margin-right:7px;vertical-align:-1px}
+.st.ok{color:var(--good);text-shadow:0 0 9px rgba(12,163,12,.85)}
+.st.warn{color:var(--warn);text-shadow:0 0 9px rgba(250,178,25,.7)}
+.st.bad{color:var(--crit);text-shadow:0 0 10px rgba(208,59,59,.9)}
+.st.stale{color:var(--neutral)}
+.st.bad{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+.card{background:linear-gradient(160deg,var(--surface-2),var(--surface));
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
+.card::after{content:"";position:absolute;inset:0 0 auto;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)}
+.card>h3{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);padding:13px 16px 9px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;flex:none}
+.card>h3 .cnt{font:400 11px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.scroll{overflow:auto;flex:1;min-height:0;padding:0 16px 14px}
+.scroll::-webkit-scrollbar,.view::-webkit-scrollbar{width:7px;height:7px}
+.scroll::-webkit-scrollbar-thumb,.view::-webkit-scrollbar-thumb{
+  background:var(--line-2);border-radius:99px}
+.empty{color:var(--ink-3);font-size:12.5px;padding:14px 2px;font-style:italic}
+
+.btn{font:600 11.5px var(--sans);color:var(--ink-2);background:var(--raise);
+  border:1px solid var(--line-2);border-radius:7px;padding:5px 11px;cursor:pointer;
+  transition:.15s;white-space:nowrap}
+.btn:hover:not(:disabled){color:var(--ink);border-color:var(--s1);
+  box-shadow:0 0 0 3px rgba(57,135,229,.14)}
+.btn:disabled{opacity:.32;cursor:not-allowed}
+.btn.go:hover:not(:disabled){border-color:var(--good);box-shadow:0 0 0 3px rgba(12,163,12,.16)}
+.btn.stop:hover:not(:disabled){border-color:var(--crit);box-shadow:0 0 0 3px rgba(208,59,59,.16)}
+input[type=text],select{font:13px var(--sans);color:var(--ink);background:#0c0f15;
+  border:1px solid var(--line-2);border-radius:8px;padding:7px 11px;outline:none;min-width:0}
+input[type=text]:focus,select:focus{border-color:var(--s1);box-shadow:0 0 0 3px rgba(57,135,229,.16)}
+
+/* ══════════════════════════ top bar ══════════════════════════ */
+header{display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;
+  background:rgba(12,15,21,.72);backdrop-filter:blur(18px);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:750;font-size:14.5px;
+  letter-spacing:.2px;white-space:nowrap;margin-right:6px}
+.brand .bolt{font-size:17px;filter:drop-shadow(0 0 8px rgba(57,135,229,.8))}
+nav{display:flex;gap:3px;min-width:0;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;
+  font-size:13px;font-weight:650;color:var(--ink-3);cursor:pointer;white-space:nowrap;
+  border:1px solid transparent;transition:.16s;position:relative;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.tab:hover{color:var(--ink-2);background:rgba(255,255,255,.04)}
+.tab.on{color:var(--ink);background:rgba(57,135,229,.14);border-color:rgba(57,135,229,.4)}
+.tab.on::after{content:"";position:absolute;left:15px;right:15px;bottom:-1px;height:2px;
+  border-radius:2px;background:var(--s1);box-shadow:0 0 10px var(--s1)}
+.tab kbd{font:600 9.5px var(--mono);color:var(--ink-3);border:1px solid var(--line);
+  border-radius:4px;padding:1px 4px;background:rgba(0,0,0,.35)}
+.tab .badge{font:700 10px var(--mono);border-radius:999px;padding:1px 6px;
+  background:var(--crit);color:#fff}
+.tab .badge.w{background:var(--warn);color:#241a03}
+header .sp{flex:1}
+header .err{font-size:12px;color:var(--crit);max-width:30ch;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+header .stamp{font:11px var(--mono);color:var(--ink-3);white-space:nowrap}
+header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padding-right:8px}
+
+/* Liveness pill — the page animates numbers continuously, so it has to say
+   out loud whether those numbers are still arriving. Glyph + text, not colour
+   alone (same CVD rule as every other status mark on this page). */
+.live{display:inline-flex;align-items:center;gap:6px;flex:none;
+  font:700 9.5px var(--sans);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--good);border:1px solid rgba(12,163,12,.34);border-radius:999px;
+  padding:4px 9px;background:rgba(12,163,12,.09);white-space:nowrap}
+.live .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;
+  box-shadow:0 0 8px currentColor;animation:beat 1s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.72)}}
+.live.stale{color:var(--warn);border-color:rgba(250,178,25,.34);background:rgba(250,178,25,.09)}
+.live.dead{color:var(--crit);border-color:rgba(208,59,59,.4);background:rgba(208,59,59,.1)}
+.live.stale .dot,.live.dead .dot{animation:none}
+.live.dead .dot{box-shadow:none}
+
+/* ══════════════════════════ views ══════════════════════════ */
+.view{display:none;min-height:0;min-width:0;overflow:auto;gap:14px}
+.view.on{display:grid}
+
+/* ─────────────── PULSE ─────────────── */
+#v-pulse{grid-template-rows:auto auto minmax(180px,1fr)}
+
+/* hero verdict */
+.hero{display:flex;align-items:center;gap:20px;padding:16px 22px;border-radius:var(--r);
+  border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden;
+  background:linear-gradient(115deg,var(--surface-2),var(--surface) 60%)}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:radial-gradient(70% 200% at 0% 50%,var(--hero-glow,rgba(12,163,12,.24)),transparent 65%)}
+.hero.ok{--hero-glow:rgba(12,163,12,.26)}
+.hero.warn{--hero-glow:rgba(250,178,25,.24)}
+.hero.bad{--hero-glow:rgba(208,59,59,.3)}
+.hero>*{position:relative}
+.hero .mark{font-size:34px;line-height:1;flex:none;width:46px;text-align:center}
+.hero.ok .mark{color:var(--good);text-shadow:0 0 22px rgba(12,163,12,.7)}
+.hero.warn .mark{color:var(--warn);text-shadow:0 0 22px rgba(250,178,25,.6)}
+.hero.bad .mark{color:var(--crit);text-shadow:0 0 26px rgba(208,59,59,.8)}
+.hero .msg{min-width:0;flex:1}
+.hero .msg b{display:block;font-size:23px;font-weight:750;letter-spacing:-.015em;line-height:1.15}
+.hero .msg span{display:block;font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.hero .stats{display:flex;gap:26px;flex:none}
+.hero .stat{text-align:right}
+.hero .stat b{display:block;font:650 21px/1.1 var(--mono);letter-spacing:-.02em}
+.hero .stat span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-3)}
+
+/* host cards */
+.hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.host{padding:14px 16px 12px;cursor:pointer;transition:border-color .18s,transform .18s}
+.host:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.host .hh{display:flex;align-items:baseline;gap:0;min-width:0;margin-bottom:2px}
+.host .hh b{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.host .hh .up{margin-left:auto;font:10.5px var(--mono);color:var(--ink-3);white-space:nowrap;
+  padding-left:8px}
+.host .role{font-size:11px;color:var(--ink-3);margin-bottom:8px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.gwrap{display:flex;align-items:center;gap:14px}
+.gauge{width:104px;height:104px;flex:none}
+.gauge circle{fill:none;stroke-width:9;stroke-linecap:round;
+  transform:rotate(135deg);transform-origin:60px 60px}
+.gauge .track{stroke:rgba(255,255,255,.07)}
+.gauge .fill{transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1),stroke .4s;
+  filter:drop-shadow(0 0 6px currentColor)}
+.gauge text{fill:var(--ink);font-family:var(--sans);text-anchor:middle}
+.gauge .gv{font-size:26px;font-weight:700}
+.gauge .gl{font-size:9px;fill:var(--ink-3);letter-spacing:.14em;font-weight:600}
+.gside{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.mrow{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:7px;font-size:11px}
+.mrow label{color:var(--ink-3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.bar{height:5px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;min-width:0}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--s1);
+  transition:width .8s cubic-bezier(.22,1,.36,1),background .3s}
+.bar i.w{background:var(--warn)}.bar i.b{background:var(--crit)}
+/* ComfyUI progress: determinate % when we have an estimate; indeterminate
+   sweep only when percent is unknown (no create_time / avg yet). */
+.cfy-indet{background:linear-gradient(90deg,var(--s1) 0%,var(--s1) 40%,var(--s2) 60%,var(--s1) 100%)!important;background-size:200% 100%!important;width:60%!important;animation:cfySweep 1.1s linear infinite}
+@keyframes cfySweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.cfy-job{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 9px;margin:6px 0 0;background:rgba(255,255,255,.02)}
+.cfy-job .cfy-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.cfy-job .cfy-title{font:600 12px/1.3 var(--sans);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+.cfy-job .cfy-meta{font:10.5px/1.4 var(--mono);color:var(--ink-3);margin-top:2px}
+.cfy-job .cfy-foot{font:10.5px/1.4 var(--mono);color:var(--ink-3);margin-top:5px}
+.cfy-job .cfy-models{margin:5px 0 0;padding:0;list-style:none}
+.cfy-job .cfy-models li{font:11px/1.35 var(--mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cfy-badge{display:inline-flex;align-items:center;gap:5px;font:10px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:99px;padding:3px 7px}
+.cfy-badge i{width:6px;height:6px;border-radius:50%;background:var(--ink-3);display:inline-block}
+.cfy-badge.run i{background:var(--s1)}
+.cfy-btn{flex:none;font:10.5px/1 var(--sans);color:var(--ink-3);border:1px solid var(--line);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer}
+.cfy-btn:hover{border-color:var(--crit);color:var(--crit)}
+.cfy-btn:disabled{opacity:.45;cursor:default}
+.cfy-idle{border:1px dashed var(--line);border-radius:var(--r-sm);padding:10px 9px;margin-top:6px;color:var(--ink-3);font:12px/1.4 var(--sans)}
+.cfy-prog{margin-top:6px}
+.cfy-prog .cfy-prog-h{display:flex;justify-content:space-between;gap:8px;font:10.5px/1 var(--mono);color:var(--ink-3);margin-bottom:3px}
+.cfy-prog .bar{height:6px}
+.cfy-sub{font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:10px 0 2px;display:flex;justify-content:space-between;gap:8px}
+.cfy-sub b{font:10.5px/1 var(--mono);letter-spacing:0;text-transform:none;font-weight:500;color:var(--ink-3)}
+.cfy-inv{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.cfy-inv summary{cursor:pointer;font:11px/1.3 var(--sans);color:var(--ink-3);list-style:none}
+.cfy-inv summary::-webkit-details-marker{display:none}
+.cfy-inv ul{margin:6px 0 0;padding:0;list-style:none;columns:2;gap:12px}
+.cfy-inv li{font:10.5px/1.35 var(--mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;break-inside:avoid}
+/* LLM token usage — 14d chart + mean/median/mode */
+.tok-card{font:400 11px/1.5 var(--mono);padding:6px 4px 2px}
+.tok-chart-wrap{margin:8px 0 6px;padding:8px 8px 4px;border:1px solid var(--line);
+  border-radius:var(--r-sm);background:rgba(255,255,255,.02)}
+.tok-chart-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  margin-bottom:4px}
+.tok-chart-h b{font:10.5px/1 var(--mono);letter-spacing:0;text-transform:none;font-weight:500;color:var(--ink-2)}
+.tok-chart-h .leg{display:flex;gap:10px;text-transform:none;letter-spacing:0;font:10px var(--mono)}
+.tok-chart-h .leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#tok-chart{width:100%;height:72px;display:block}
+.tok-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin:6px 0 4px}
+.tok-stat{border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;background:rgba(255,255,255,.015)}
+.tok-stat .lbl{font:9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.tok-stat .row{display:flex;justify-content:space-between;gap:6px;font:11px/1.45 var(--mono);color:var(--ink-2)}
+.tok-stat .row span:first-child{color:var(--ink-3)}
+.mrow .v{font:11px var(--mono);color:var(--ink-2);white-space:nowrap}
+.spark{width:100%;height:32px;display:block;margin-top:9px}
+.host .foot{display:flex;gap:12px;margin-top:8px;padding-top:8px;
+  border-top:1px solid var(--line);font-size:11px;color:var(--ink-3);flex-wrap:wrap}
+.host .foot b{color:var(--ink-2);font-family:var(--mono);font-weight:600}
+.host.bad{border-color:rgba(208,59,59,.5)}
+.host.warn{border-color:rgba(250,178,25,.38)}
+
+/* pulse bottom row — Needs you | Projects | Quick actions */
+.prow{display:grid;gap:14px;min-height:0;
+  grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.05fr)}
+
+/* projects */
+.prj{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;
+  border-bottom:1px solid var(--line);min-width:0}
+.prj:last-child{border-bottom:0}
+.prj .n{display:flex;align-items:center;min-width:0;flex:0 0 44%}
+.prj .n span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.prj .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--ink-3);font-size:11px}
+.prj .a{font:10.5px var(--mono);color:var(--ink-3);flex:none}
+
+/* attention feed — the merged "what's wrong" list */
+.att{display:flex;align-items:flex-start;gap:0;padding:9px 10px;border-radius:var(--r-sm);
+  cursor:pointer;transition:background .15s;border-left:2px solid transparent}
+.att:hover{background:rgba(255,255,255,.045)}
+.att.bad{border-left-color:var(--crit)}
+.att.warn{border-left-color:var(--warn)}
+.att.info{border-left-color:var(--neutral)}
+.att .body{min-width:0;flex:1}
+.att .m{font-size:12.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att .sub{font-size:11px;color:var(--ink-3);margin-top:2px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.att .src{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.09em;
+  color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:2px 6px;
+  margin-left:8px;flex:none;align-self:flex-start}
+.allclear{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:9px;color:var(--ink-3);text-align:center;padding:20px}
+.allclear .big{font-size:38px;color:var(--good);text-shadow:0 0 26px rgba(12,163,12,.6)}
+.allclear b{font-size:14px;color:var(--ink-2);font-weight:600}
+
+/* quick actions */
+.act{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
+.act:last-of-type{border-bottom:0}
+.act .info{min-width:0;flex:1}
+.act .info b{display:block;font-size:12.5px;font-weight:650}
+.act .info span{display:block;font-size:11px;color:var(--ink-3);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.act-out{font:10.5px/1.45 var(--mono);color:var(--ink-2);background:#0a0d12;
+  border:1px solid var(--line);border-radius:7px;padding:7px 9px;margin:0 0 8px;
+  white-space:pre-wrap;max-height:100px;overflow:auto}
+
+/* ─────────────── FLEET ─────────────── */
+#v-fleet{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+#elec-panel{grid-column:1/-1}
+.elec-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px}
+.elec-rate{display:inline-flex;align-items:center;gap:6px;font:11px var(--mono);color:var(--ink-2)}
+.elec-rate label{font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.elec-rate input,.elec-rate select{width:5.5rem;padding:5px 8px;font:12px var(--mono);text-align:right;
+  background:var(--raise);border:1px solid var(--line-2);border-radius:7px;color:var(--ink)}
+.elec-rate select{width:8.5rem;text-align:left;cursor:pointer}
+.elec-rate input:focus,.elec-rate select:focus{outline:0;border-color:var(--s1);box-shadow:0 0 0 3px rgba(57,135,229,.18)}
+.elec-note{font:10.5px/1.35 var(--sans);color:var(--ink-3);margin-left:auto;max-width:48ch}
+.elec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.elec-cell{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;background:rgba(255,255,255,.02)}
+.elec-cell.tot{border-color:rgba(57,135,229,.35);background:rgba(57,135,229,.06)}
+.elec-cell .n{font:600 12px/1.2 var(--sans);color:var(--ink);margin-bottom:2px}
+.elec-cell .src{font:10px/1.2 var(--mono);color:var(--ink-3);margin-bottom:6px}
+.elec-cell .w{font:12px/1.3 var(--mono);color:var(--ink-2)}
+.elec-cell .c{font:11px/1.35 var(--mono);color:var(--ink-3);margin-top:3px}
+.elec-cell .c b{color:var(--ink-2);font-weight:600}
+.node{padding:15px 17px 14px}
+.node h2{display:flex;align-items:baseline;gap:9px;font-size:16px;font-weight:750;
+  margin-bottom:12px;min-width:0}
+.node h2 .role{font-size:11px;font-weight:500;color:var(--ink-3);letter-spacing:.04em}
+.node h2 .up{margin-left:auto;font:11px var(--mono);color:var(--ink-3)}
+.node .offline{padding:26px 4px;color:var(--crit);font-size:13px;text-align:center}
+.node .offline.stale{color:var(--ink-3)}
+.subhead{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin:14px 0 7px;display:flex;justify-content:space-between;
+  align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:11px}
+.subhead .cnt{font:400 10.5px var(--mono);letter-spacing:0;text-transform:none}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
+.chart{background:#0a0d12;border:1px solid var(--line);border-radius:10px;padding:8px 9px 5px;
+  min-width:0;position:relative}
+.chart h5{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:5px}
+.chart .cur{display:flex;gap:9px;font:11px var(--mono);color:var(--ink-2);
+  letter-spacing:0;text-transform:none;font-weight:400}
+.chart .cur span{display:flex;align-items:center;gap:4px}
+.chart .cur i{width:7px;height:7px;border-radius:2px;flex:none}
+.chart canvas{width:100%;height:82px;display:block;cursor:crosshair}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:4px 0;
+  border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--ink-3);white-space:nowrap}
+.kv .v{font-family:var(--mono);font-size:11.5px;text-align:right;min-width:0;
+  overflow:hidden;text-overflow:ellipsis}
+.ctrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px;
+  max-height:118px;overflow:auto}
+.ctr{display:flex;align-items:center;font-size:11px;padding:4px 7px;border-radius:6px;
+  background:rgba(255,255,255,.035);min-width:0}
+.ctr span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctr.down{opacity:.55}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);padding:5px 8px 5px 0;border-bottom:1px solid var(--line-2);
+  position:sticky;top:0;background:var(--surface);z-index:1}
+td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+/* model table: fixed columns so the model NAME keeps the space, not the
+   two-character status column (auto layout starved it to "de…") */
+.mtab{table-layout:fixed}
+.mtab td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtab td:nth-child(1){width:44%}
+.mtab td:nth-child(2){width:26%}
+.mtab td:nth-child(3){width:16%}
+.mtab td:nth-child(4){width:14%}
+/* jobs table: same fix — auto layout gave a third of the width to a cron
+   expression and squeezed the job NAME, the one column you actually read */
+.jtab{table-layout:fixed}
+.jtab td{overflow:hidden}
+.jtab th:nth-child(1),.jtab td:nth-child(1){width:26px}
+.jtab th:nth-child(3),.jtab td:nth-child(3){width:96px}
+.jtab th:nth-child(4),.jtab td:nth-child(4){width:186px}
+.jtab th:nth-child(5),.jtab td:nth-child(5){width:96px}
+.jtab th:nth-child(6),.jtab td:nth-child(6){width:104px}
+
+/* ─────────────── CONTROL / JOBS shared ─────────────── */
+.bar-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px;flex:none}
+.bar-row input[type=text]{flex:1;min-width:150px;max-width:320px}
+.pill{font:600 11.5px var(--sans);color:var(--ink-3);background:transparent;
+  border:1px solid var(--line-2);border-radius:999px;padding:5px 12px;cursor:pointer;
+  transition:.15s;white-space:nowrap}
+.pill:hover{color:var(--ink-2);border-color:var(--ink-3)}
+.pill.on{color:var(--ink);background:rgba(57,135,229,.16);border-color:rgba(57,135,229,.5)}
+.bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
+
+#v-control,#v-jobs{grid-template-rows:auto auto minmax(0,1fr);align-content:start}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:10px;
+  padding:0 14px 14px}
+.svc{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;display:flex;flex-direction:column;gap:5px;min-width:0;transition:.15s}
+.svc:hover{border-color:var(--line-2)}
+.svc.waste{border-color:rgba(250,178,25,.42)}
+.svc .name{display:flex;align-items:center;font-size:12.5px;font-weight:650;min-width:0}
+.svc .name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc .meta{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc .used{font:10.5px var(--mono);color:var(--ink-3)}
+.svc .used.waste{color:var(--warn)}
+.svc .acts{display:flex;gap:5px;margin-top:3px;align-items:center;flex-wrap:wrap}
+.svc .acts select{padding:4px 6px;font-size:11px;flex:1;min-width:0}
+.svc .acts .btn{padding:4px 9px;font-size:11px}
+.svc .open{margin-left:auto;padding-left:8px;font-size:11px;color:var(--s1);
+  text-decoration:none;font-weight:600;white-space:nowrap;flex:none}
+.svc .open:hover{text-decoration:underline}
+
+.launch{display:flex;gap:9px;padding:0 14px 12px;flex-wrap:wrap}
+.lt{display:flex;align-items:center;gap:9px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:8px 11px;min-width:190px;transition:.15s}
+.lt.up{border-color:rgba(12,163,12,.4)}
+.lt .ico{font-size:17px;flex:none}
+.lt .txt{min-width:0;flex:1}
+.lt .txt b{display:flex;align-items:center;font-size:12.5px;font-weight:650}
+.lt .txt span{display:block;font-size:10.5px;color:var(--ink-3);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+
+.lgroup{padding:0 14px 4px}
+.lgroup h4{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin:10px 0 8px;display:flex;gap:9px;align-items:center}
+.lgroup h4 .cnt{font:400 10.5px var(--mono);letter-spacing:0;text-transform:none}
+.ltiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:8px}
+.ltile{display:block;text-decoration:none;color:inherit;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:9px;padding:8px 11px;min-width:0;transition:.15s}
+.ltile:hover{border-color:var(--s1);transform:translateY(-1px)}
+.ltile b{display:flex;align-items:center;font-size:12px;font-weight:650}
+.ltile b span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltile>span{display:block;font-size:10.5px;color:var(--ink-3);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltile.down{opacity:.62}
+
+/* backup tiers */
+.bks{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:10px;padding:0 14px 12px}
+.bk{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+  display:flex;flex-direction:column;gap:4px;min-width:0}
+.bk.warn{border-color:rgba(250,178,25,.42)}
+.bk.fail{border-color:rgba(208,59,59,.5)}
+.bk .h{display:flex;align-items:center;gap:0;font-size:12.5px;font-weight:650;min-width:0}
+.bk .h b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk .h .age{margin-left:auto;font:11px var(--mono);padding-left:8px;white-space:nowrap}
+.bk .tier{font:600 9px var(--mono);color:var(--ink-3);border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;margin-left:7px;flex:none}
+.bk .d{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk .n{font-size:11px;color:var(--warn)}
+
+/* jobs table */
+.jname{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jdetail{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lay{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.07em;
+  border-radius:5px;padding:2px 6px;white-space:nowrap;
+  background:rgba(57,135,229,.16);color:#8fc0f5}
+.lay.crontab{background:rgba(217,89,38,.16);color:#f0a382}
+.lay.timer{background:rgba(25,158,112,.16);color:#6fd9b2}
+
+/* Bottom tab bar + pull-to-refresh are phone-only; the ≤760px block turns them
+   on. Declared here (before that block) so the media query wins. */
+.tabbar,#ptr{display:none}
+
+/* chart tooltip */
+#tip{position:fixed;z-index:60;pointer-events:none;opacity:0;transition:opacity .12s;
+  background:rgba(10,13,18,.96);border:1px solid var(--line-2);border-radius:8px;
+  padding:7px 10px;font:11.5px/1.5 var(--mono);color:var(--ink);box-shadow:var(--shadow);
+  white-space:nowrap}
+#tip.on{opacity:1}
+#tip .tt{color:var(--ink-3);font-size:10px;margin-bottom:3px}
+#tip .tr{display:flex;align-items:center;gap:6px}
+#tip .tr i{width:8px;height:8px;border-radius:2px;flex:none}
+
+/* entrance */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.view.on>*{animation:rise .42s cubic-bezier(.22,1,.36,1) backwards}
+.view.on>*:nth-child(2){animation-delay:.05s}
+.view.on>*:nth-child(3){animation-delay:.1s}
+
+/* responsive */
+@media (max-width:1680px){.prow{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);
+  grid-auto-rows:minmax(190px,auto)}}
+@media (max-width:1500px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #v-pulse{grid-template-rows:auto auto auto}
+  .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
+  .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){
+  .prow{grid-template-columns:minmax(0,1fr)}
+  .hero{flex-wrap:wrap}.hero .stats{width:100%;justify-content:flex-start}
+  body{padding:9px;gap:9px}header{padding:0 6px 0 11px}
+  .tab kbd{display:none}header .stamp{display:none}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOUCH POINTERS
+   Hover styling on a touchscreen sticks after a tap — fixed here rather than
+   by weakening the desktop rules. ═══════════════════════════════════════════ */
+@media (hover:none){
+  .host:hover,.ltile:hover{transform:none;border-color:var(--line)}
+  .btn:hover:not(:disabled){color:var(--ink-2);border-color:var(--line-2);box-shadow:none}
+  .att:hover{background:none}
+  /* press feedback replaces hover feedback */
+  .btn:active:not(:disabled){transform:scale(.96);border-color:var(--s1);
+    box-shadow:0 0 0 3px rgba(57,135,229,.16)}
+  .pill:active{transform:scale(.96)}
+  .host:active,.att:active,.ltile:active,.svc:active{background:rgba(255,255,255,.05)}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHONE  (≤760px) — iOS-shaped: bottom tab bar in the thumb arc, swipe between
+   sections, safe-area insets, 16px form text (anything smaller makes Safari
+   zoom the whole page on focus), 44px touch targets.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width:760px){
+:root{--tabbar:58px;--r:15px}
+
+body{
+  grid-template-rows:50px minmax(0,1fr);gap:9px;
+  padding:calc(var(--sat) + 8px) calc(var(--sar) + 9px) 0 calc(var(--sal) + 9px);
+}
+body::before{filter:blur(48px)}          /* fewer blur passes on a mobile GPU */
+
+/* ── top bar: identity + liveness only; navigation moved to the bottom ── */
+header{padding:0 11px;gap:9px;border-radius:13px}
+header nav#tabs,header .stamp{display:none}
+.brand{font-size:14px;gap:7px;margin-right:0}
+header .clock{font-size:13px;padding-right:0}
+
+/* errors become a toast above the tab bar instead of a truncated header chip */
+header .err{display:none}
+header .err:not(:empty){
+  display:block;position:fixed;z-index:70;
+  left:calc(var(--sal) + 10px);right:calc(var(--sar) + 10px);
+  bottom:calc(var(--sab) + var(--tabbar) + 10px);
+  max-width:none;white-space:normal;overflow:visible;text-overflow:clip;
+  background:rgba(24,12,14,.96);border:1px solid rgba(208,59,59,.5);
+  border-radius:11px;padding:9px 13px;font-size:12.5px;line-height:1.4;
+  box-shadow:var(--shadow);animation:rise .3s cubic-bezier(.22,1,.36,1)}
+
+/* ── views: one vertical scroller per section, clearing the fixed tab bar ──
+   FLEX COLUMN, not grid. The desktop views are height-constrained grids, and
+   every card here sets overflow:hidden — which zeroes its min-content size, so
+   grid happily crushes a row to fit the viewport. That is what clipped the
+   hero's subtitle and swallowed its stats row entirely on a 393px screen.
+   A flex column with non-shrinking children lets content set its own height
+   and the section scroll, which is the correct phone model anyway. */
+.view.on{display:flex;flex-direction:column}
+.view>*{flex:0 0 auto}
+.view{gap:11px;padding-bottom:calc(var(--tabbar) + var(--sab) + 14px);
+  overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.view::-webkit-scrollbar{width:0;height:0}
+.view.on>*{animation-duration:.3s}
+.view.on>*:nth-child(n+3){animation-delay:.08s}
+
+/* Cards grow to their content and the PAGE scrolls. Nested scroll panes are
+   the wrong model on a phone — you cannot tell which surface your finger is
+   dragging, and they break both the swipe and the pull-to-refresh gestures.
+   Every inner .scroll therefore flows; only the section itself scrolls. */
+.card{overflow:visible}
+.scroll{overflow:visible;max-height:none;padding:0 14px 12px}
+
+/* ── PULSE ── */
+#v-pulse{grid-template-rows:auto auto auto}
+.hero{padding:13px 15px;gap:13px;align-items:flex-start}
+.hero .mark{font-size:26px;width:28px}
+.hero .msg b{font-size:17px}
+.hero .msg span{font-size:11.5px;white-space:normal;line-height:1.35}
+.hero .stats{gap:0;width:100%;margin-top:11px;padding-top:11px;
+  border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
+.hero .stat{text-align:center}
+.hero .stat b{font-size:15px}
+.hero .stat span{font-size:8.5px;letter-spacing:.08em}
+
+/* four host cards, two up — gauge stacks over its readouts so the bars keep
+   enough width to be readable instead of collapsing to slivers */
+.hosts{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.host{padding:11px 11px 9px}
+/* Two hosts here are called sparkmax-10ef and sparkymaxxx-12ef. Sharing the
+   line with the uptime truncated them to "sparkm…"/"sparkym…" — indistinguishable,
+   which defeats the card. Uptime drops to its own line so the NAME gets the width. */
+.host .hh{flex-wrap:wrap;align-items:center}
+.host .hh b{font-size:12.5px;flex:1 1 auto;min-width:0}
+.host .hh .up{flex:1 0 100%;margin:1px 0 0;padding:0 0 0 21px;font-size:9.5px}
+.host .role{font-size:9.5px;margin:2px 0 6px}
+.gwrap{flex-direction:column;gap:6px}
+.gauge{width:80px;height:80px;align-self:center}
+.gauge .gv{font-size:27px}
+.gauge .gl{font-size:10px}
+.gside{width:100%}
+.mrow{grid-template-columns:24px 1fr auto;gap:5px}
+.mrow label{font-size:8.5px}
+.mrow .v{font-size:9.5px}
+.spark{height:26px;margin-top:6px}
+.host .foot{gap:7px;font-size:9.5px;margin-top:6px;padding-top:6px}
+
+.att{padding:11px 9px}                    /* 44px row target */
+.att .m{white-space:normal;font-size:12.5px;line-height:1.35}
+.att .sub{white-space:normal}
+.prj{padding:8px 2px}
+.prj .n{flex:0 0 52%}
+.act{padding:11px 2px}
+
+/* ── FLEET ── */
+.node{padding:13px 13px 12px}
+.node h2{font-size:14.5px;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.node h2 .up{font-size:10px}
+.charts{gap:8px;margin-top:10px}
+.chart{padding:7px 7px 4px}
+.chart h5{font-size:9px}
+.chart .cur{font-size:10px;gap:6px}
+.chart canvas{height:68px}
+.ctrs{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));max-height:none}
+
+/* ── CONTROL / JOBS ── */
+/* filter pills stay on ONE line and scroll sideways; wrapping them ate three
+   rows of vertical space on a 390px screen */
+.bar-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:10px 12px;gap:7px}
+.bar-row::-webkit-scrollbar{display:none}
+.bar-row input[type=text]{flex:0 0 auto;width:44vw;max-width:none;min-width:0}
+.bar-row .note{margin-left:0;flex:0 0 auto;padding-right:4px}
+.pill{padding:8px 14px}                   /* 36px tall, thumb-sized */
+input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom */
+
+.tiles{grid-template-columns:minmax(0,1fr);gap:9px;padding:0 12px 12px}
+.svc{padding:12px 13px}
+.svc .name{font-size:13.5px}
+.svc .acts{gap:7px;margin-top:6px}
+.svc .acts .btn{flex:1;padding:9px 10px;font-size:12px;text-align:center}
+.svc .acts select{flex:1 1 100%;font-size:16px}
+.svc .open{padding:4px 0 4px 10px}
+.launch{padding:0 12px 12px;gap:8px}
+.lt{min-width:0;width:100%;padding:10px 12px}
+.lt .btn{padding:9px 14px}
+.lgroup{padding:0 12px 4px}
+.ltiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.bks{grid-template-columns:minmax(0,1fr);gap:9px;padding:0 12px 12px}
+
+/* Jobs: a 6-column table cannot work at 390px. Same markup, re-laid out as a
+   stacked card per job — glyph pinned left, name on its own line, schedule
+   facts as a labelled wrap row underneath. */
+.jtab thead{display:none}
+.jtab,.jtab tbody,.jtab tr,.jtab td{display:block;width:auto}
+.jtab tr{position:relative;padding:10px 0 10px 24px;border-bottom:1px solid var(--line)}
+.jtab tr:last-child{border-bottom:0}
+.jtab td{padding:0;border:0;width:auto!important;white-space:normal}
+.jtab td:nth-child(1){position:absolute;left:0;top:12px;width:18px!important}
+.jtab td:nth-child(2){margin-bottom:5px}
+.jtab .jname{white-space:normal;font-size:13px}
+.jtab .jdetail{white-space:normal;font-size:10.5px;line-height:1.35}
+.jtab td:nth-child(n+3){display:inline-block;margin:0 9px 0 0;font-size:10.5px;
+  white-space:nowrap!important}
+.jtab td:nth-child(5)::before{content:"next ";color:var(--ink-3);font-family:var(--sans)}
+.jtab td:nth-child(6)::before{content:"last ";color:var(--ink-3);font-family:var(--sans)}
+.jtab td:nth-child(4){color:var(--ink-3)}
+.mtab td:nth-child(1){width:40%}
+.mtab td:nth-child(2){width:30%}
+
+/* ══════════════════ bottom tab bar (thumb arc) ══════════════════ */
+.tabbar{
+  display:flex;position:fixed;z-index:60;left:0;right:0;bottom:0;
+  padding:0 calc(var(--sar) + 6px) var(--sab) calc(var(--sal) + 6px);
+  background:rgba(10,13,19,.86);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  border-top:1px solid var(--line);
+}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;height:var(--tabbar);min-width:0;background:none;border:0;cursor:pointer;
+  color:var(--ink-3);font:600 9.5px/1 var(--sans);letter-spacing:.04em;
+  position:relative;-webkit-tap-highlight-color:transparent;transition:color .18s;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.tb.on{color:var(--s1)}
+.tb.on svg{transform:translateY(-1px) scale(1.06)}
+.tb.on::before{content:"";position:absolute;top:0;left:26%;right:26%;height:2px;
+  border-radius:0 0 3px 3px;background:var(--s1);box-shadow:0 0 10px var(--s1)}
+.tb:active{color:var(--ink-2)}
+.tb .badge{position:absolute;top:5px;left:calc(50% + 6px);font:700 9px var(--mono);
+  border-radius:999px;padding:0 5px;line-height:14px;background:var(--crit);color:#fff;
+  box-shadow:0 0 0 2px rgba(10,13,19,.9)}
+.tb .badge.w{background:var(--warn);color:#241a03}
+
+/* ══════════════════ pull-to-refresh ══════════════════ */
+#ptr{position:fixed;z-index:55;top:calc(var(--sat) + 54px);left:50%;
+  display:flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:999px;font:600 11px var(--sans);color:var(--ink-2);
+  background:rgba(18,22,30,.96);border:1px solid var(--line-2);box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transform:translate(-50%,-14px)}
+#ptr.armed,#ptr.spin{opacity:1;transform:translate(-50%,0)}
+#ptr .ring{width:13px;height:13px;border-radius:50%;border:2px solid var(--line-2);
+  border-top-color:var(--s1)}
+#ptr.spin .ring{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* swipe transition between sections */
+@keyframes slideL{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+.view.on.sw-l>*{animation:slideL .26s cubic-bezier(.22,1,.36,1) backwards}
+.view.on.sw-r>*{animation:slideR .26s cubic-bezier(.22,1,.36,1) backwards}
+}
+
+/* very small phones (SE / mini) — one host card per row so the gauge and its
+   readouts both stay legible instead of both being squeezed
+   (these two blocks come AFTER the ≤760px block on purpose — they refine it) */
+@media (max-width:389px){
+  .hosts{grid-template-columns:minmax(0,1fr)}
+  .gwrap{flex-direction:row}
+  .gauge{width:84px;height:84px;align-self:auto}
+  .ltiles{grid-template-columns:minmax(0,1fr)}
+}
+
+/* landscape phone: the bar bar would eat a third of a 390px-tall viewport */
+@media (max-height:460px) and (max-width:900px){
+  :root{--tabbar:46px}
+  .tb{font-size:8.5px}
+  .tb svg{width:18px;height:18px}
+  .hosts{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="bolt">⚡</span>Spark Console</div>
+  <nav id="tabs">
+    <div class="tab on" data-tab="pulse"><kbd>1</kbd>Pulse <span class="badge" id="b-pulse" hidden></span></div>
+    <div class="tab" data-tab="fleet"><kbd>2</kbd>Fleet <span class="badge" id="b-fleet" hidden></span></div>
+    <div class="tab" data-tab="control"><kbd>3</kbd>Control <span class="badge" id="b-control" hidden></span></div>
+    <div class="tab" data-tab="jobs"><kbd>4</kbd>Jobs <span class="badge" id="b-jobs" hidden></span></div>
+  </nav>
+  <span class="sp"></span>
+  <span class="err" id="err"></span>
+  <span class="live" id="live" title="live heartbeat"><i class="dot"></i><span id="live-txt">live</span></span>
+  <span class="stamp" id="stamp"></span>
+  <span class="clock" id="clock"></span>
+</header>
+
+<!-- ═══════════════ PULSE ═══════════════ -->
+<section class="view on" id="v-pulse">
+  <div class="hero ok" id="hero">
+    <div class="mark" id="hero-mark">●</div>
+    <div class="msg"><b id="hero-title">Checking the fleet…</b><span id="hero-sub">connecting</span></div>
+    <div class="stats" id="hero-stats"></div>
+  </div>
+
+  <div class="hosts" id="hosts"></div>
+
+  <div class="prow">
+    <div class="card"><h3>Needs you <span class="cnt" id="att-cnt"></span></h3>
+      <div class="scroll" id="attention"></div></div>
+    <div class="card"><h3>Projects <span class="cnt" id="proj-cnt"></span></h3>
+      <div class="scroll" id="projects"></div></div>
+    <div class="card"><h3>Quick actions</h3>
+      <div class="scroll" id="actions"></div></div>
+  </div>
+</section>
+
+<!-- ═══════════════ FLEET ═══════════════ -->
+<section class="view" id="v-fleet">
+  <div class="card elec" id="elec-panel">
+    <div class="elec-top">
+      <h3 style="margin:0">Electricity</h3>
+      <div class="elec-rate">
+        <label for="elec-rate">$/kWh</label>
+        <input id="elec-rate" type="number" min="0" max="5" step="0.001" inputmode="decimal"
+               title="Your electricity rate — edits save in this browser">
+      </div>
+      <div class="elec-rate">
+        <label for="elec-mode">Bill basis</label>
+        <select id="elec-mode" title="Measured = GPU/PMIC/RAPL sensors. Wall est = optional Spark calibration.">
+          <option value="sensor">Measured</option>
+          <option value="wall">Wall estimate</option>
+        </select>
+      </div>
+      <div class="elec-rate" id="elec-idle-wrap" hidden>
+        <label for="elec-idle">Spark idle wall W</label>
+        <input id="elec-idle" type="number" min="10" max="200" step="1" inputmode="decimal"
+               title="Outlet watts at idle (USB-C / Kill-A-Watt). Only used for Wall estimate.">
+      </div>
+      <span class="elec-note" id="elec-note">Measured sensor kWh × rate — not a live projection.</span>
+    </div>
+    <div class="elec-grid" id="elec-grid"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ CONTROL ═══════════════ -->
+<section class="view" id="v-control">
+  <div class="card">
+    <div class="bar-row">
+      <input type="text" id="svc-q" placeholder="filter services & apps…" oninput="renderControl()">
+      <span class="pill on" data-g="all" onclick="svcGroup(this)">All</span>
+      <span class="pill" data-g="inference" onclick="svcGroup(this)">Inference</span>
+      <span class="pill" data-g="hermes" onclick="svcGroup(this)">Hermes</span>
+      <span class="pill" data-g="apps" onclick="svcGroup(this)">Apps</span>
+      <span class="pill" data-g="meta" onclick="svcGroup(this)">Meta</span>
+      <span class="note" id="svc-op"></span>
+    </div>
+  </div>
+  <div class="card"><h3>Desktop apps <span class="cnt">launch on the physical display :0</span></h3>
+    <div class="launch" id="launch-apps"></div></div>
+  <div class="card" style="overflow:auto">
+    <h3>Services <span class="cnt" id="svc-cnt"></span></h3>
+    <div class="tiles" id="services"></div>
+    <div id="remote-links"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ JOBS ═══════════════ -->
+<section class="view" id="v-jobs">
+  <div class="card"><h3>Backup tiers <span class="cnt" id="bk-cnt"></span></h3>
+    <div class="bks" id="backups"></div></div>
+  <div class="card">
+    <div class="bar-row">
+      <input type="text" id="auto-q" placeholder="filter jobs…" oninput="renderJobs()">
+      <span class="pill on" data-l="all" onclick="autoLayer(this)">All</span>
+      <span class="pill" data-l="hermes" onclick="autoLayer(this)">Hermes</span>
+      <span class="pill" data-l="crontab" onclick="autoLayer(this)">Crontab</span>
+      <span class="pill" data-l="timer" onclick="autoLayer(this)">Timers</span>
+      <span class="pill" data-l="problem" onclick="autoLayer(this)">Problems</span>
+      <span class="note" id="auto-summary"></span>
+    </div>
+  </div>
+  <div class="card" style="overflow:auto"><div class="scroll" style="padding-top:0" id="jobs"></div></div>
+  <div class="card"><h3>LLM token usage <span class="cnt" id="tok-cnt"></span></h3>
+    <div id="tokenusage" class="tok-card">
+      <div class="tok-chart-wrap">
+        <div class="tok-chart-h">
+          <span>14-day tokens</span>
+          <span class="leg"><i style="background:var(--s1)"></i>in <i style="background:var(--good)"></i>out</span>
+          <b id="tok-chart-sum">…</b>
+        </div>
+        <canvas id="tok-chart" aria-label="14-day input and output tokens"></canvas>
+      </div>
+      <div class="tok-stats">
+        <div class="tok-stat">
+          <div class="lbl">Per session · in+out</div>
+          <div class="row"><span>mean</span><span id="tok-s-mean">…</span></div>
+          <div class="row"><span>median</span><span id="tok-s-median">…</span></div>
+          <div class="row"><span>mode</span><span id="tok-s-mode">…</span></div>
+          <div class="row"><span>p90 / n</span><span id="tok-s-p90">…</span></div>
+        </div>
+        <div class="tok-stat">
+          <div class="lbl">Per API call · in+out</div>
+          <div class="row"><span>mean</span><span id="tok-c-mean">…</span></div>
+          <div class="row"><span>median</span><span id="tok-c-median">…</span></div>
+          <div class="row"><span>mode</span><span id="tok-c-mode">…</span></div>
+          <div class="row"><span>p90 / n</span><span id="tok-c-p90">…</span></div>
+        </div>
+      </div>
+      <div class="mrow"><label>24h in/out</label><span class="v" id="tok-24h">…</span></div>
+      <div class="mrow"><label>all-time in</label><span class="v" id="tok-in">…</span></div>
+      <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
+      <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
+      <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
+    </div></div>
+  <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
+    <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
+      <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
+      <div class="mrow" style="border:0"><label>open</label>
+        <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
+      <div id="comfy-body">
+        <div class="cfy-idle" id="comfy-empty">offline / on-demand</div>
+      </div>
+      <div class="mrow" id="comfy-vram-row" style="margin-top:8px"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
+      <div id="comfy-inv-wrap"></div>
+    </div></div>
+</section>
+
+<div id="tip"></div>
+
+<!-- ═══════════════ phone chrome (hidden ≥761px) ═══════════════ -->
+<div id="ptr"><i class="ring"></i><span id="ptr-txt">pull to refresh</span></div>
+
+<nav class="tabbar" id="tabbar" aria-label="Sections">
+  <button class="tb on" data-tab="pulse" aria-label="Pulse">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3 8 5-16 3 8h5"/></svg>
+    Pulse<span class="badge" id="tb-pulse" hidden></span></button>
+  <button class="tb" data-tab="fleet" aria-label="Fleet">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="2"/>
+      <rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+    Fleet<span class="badge" id="tb-fleet" hidden></span></button>
+  <button class="tb" data-tab="control" aria-label="Control">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h10M18 18h2"/>
+      <circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+    Control<span class="badge" id="tb-control" hidden></span></button>
+  <button class="tb" data-tab="jobs" aria-label="Jobs">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+    Jobs<span class="badge" id="tb-jobs" hidden></span></button>
+</nav>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+
+/* Status marks. SHAPE is the primary channel — green(#0ca30c) and red(#d03b3b)
+   measure ΔE 4.1 under deuteranopia, so colour alone would be unreadable. */
+const GLYPH={ok:"●",warn:"▲",bad:"✕",stale:"○"};
+const st=s=>{const k=GLYPH[s]?s:"stale";return `<i class="st ${k}" role="img" aria-label="${k}">${GLYPH[k]}</i>`;};
+const norm=s=>s==="ok"||s==="up"||s==="active"?"ok":s==="fail"||s==="bad"||s==="critical"||s==="down"?"bad"
+  :s==="warn"||s==="warning"?"warn":"stale";
+const barCls=p=>p>=90?"b":p>=75?"w":"";
+const pctOf=(u,t)=>t?Math.round(u/t*100):0;
+
+/* temp bands — cutoffs mirror fleet_nodes.temp_band. Always rendered beside the
+   actual °C number, so the label is the secondary channel for the colour. */
+function tempBand(c,kind="gpu"){
+  if(c==null||c===""||Number.isNaN(+c))return "";
+  const t=+c,cuts=({pi:[45,60,75],pkg:[55,75,90],gpu:[50,70,80]})[kind]||[50,70,85];
+  return t<cuts[0]?"cool":t<cuts[1]?"ok":t<cuts[2]?"warm":"hot";
+}
+const tempSpan=(c,kind)=>{const b=tempBand(c,kind);
+  return `<span class="${b?"t-"+b:""}">${c??"?"}°C</span>`;};
+
+let DATA={},TAB=(location.hash||"#pulse").slice(1);
+const TABS=["pulse","fleet","control","jobs"];
+const phone=()=>window.matchMedia("(max-width:760px)").matches;
+
+/* ══════════════════════ tabs ══════════════════════
+   Two tab surfaces drive the same switchTab(): the desktop strip in the header
+   and the phone bar pinned to the bottom. `dir` (+1 next / −1 previous) comes
+   from a swipe and picks the matching slide animation. */
+const SCROLLPOS={};
+function switchTab(name,dir){
+  if(!$("v-"+name))name="pulse";
+  const prev=TAB;
+  if(prev&&prev!==name&&$("v-"+prev))SCROLLPOS[prev]=$("v-"+prev).scrollTop;
+  TAB=name;location.hash="#"+name;
+  document.querySelectorAll(".view").forEach(v=>{
+    const on=v.id==="v-"+name;
+    v.classList.remove("sw-l","sw-r");
+    v.classList.toggle("on",on);
+    if(on){
+      if(dir)v.classList.add(dir>0?"sw-l":"sw-r");
+      /* restore where this section was left, the way a native tab bar does */
+      if(prev!==name)v.scrollTop=SCROLLPOS[name]||0;
+    }
+  });
+  document.querySelectorAll(".tab,.tb").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  if(name==="fleet")requestAnimationFrame(drawAll);
+  // Token chart lives on Jobs — canvas has no width while the tab is display:none.
+  if(name==="jobs")requestAnimationFrame(()=>drawTokChart(_tokSeries));
+}
+document.querySelectorAll(".tab,.tb").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+
+/* One badge value, both tab surfaces. */
+function setBadge(name,n,warnOnly){
+  for(const el of [$("b-"+name),$("tb-"+name)]){
+    if(!el)continue;
+    el.hidden=!n;
+    el.className="badge"+(n&&warnOnly?" w":"");
+    el.textContent=n||"";
+  }
+}
+document.addEventListener("keydown",e=>{
+  if(/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))return;
+  const map={"1":"pulse","2":"fleet","3":"control","4":"jobs"};
+  if(map[e.key]){switchTab(map[e.key]);return;}
+  if(e.key==="/"){e.preventDefault();
+    const box={control:"svc-q",jobs:"auto-q"}[TAB];if(box)$(box).focus();return;}
+  if(e.key==="r")refresh();
+});
+window.addEventListener("hashchange",()=>switchTab((location.hash||"#pulse").slice(1)));
+
+/* ══════════════════════ fleet model ══════════════════════ */
+const booting=h=>!!h&&!h.reachable&&/not polled yet/.test(h.error||"");
+const worst=is=>!is||!is.length?"ok":is.some(i=>i.level==="critical")?"bad":"warn";
+
+function fleetHosts(d){
+  const out=[];
+  const n1=d.node1||{},s=n1.system||{},g=(n1.gpus||[])[0]||{};
+  const n1bad=(n1.alerts||[]).filter(a=>a.level==="critical").length;
+  const n1warn=(n1.alerts||[]).filter(a=>a.level==="warning").length;
+  out.push({id:"node1",name:n1.hostname||"sparkmax-10ef",role:"DGX Spark · primary",
+    state:n1bad?"bad":n1warn?"warn":"ok",
+    up:n1.iso_ts?new Date(n1.iso_ts).toLocaleTimeString():"—",
+    dial:g.util_gpu??0,dialLabel:"GPU",
+    cpu:s.cpu_pct||0,mem:s.mem_pct||0,disk:s.disk_used_pct||0,
+    memTotal:s.mem_total_gb,
+    memTxt:`${s.mem_used_gb??"?"}/${s.mem_total_gb??"?"}G`,
+    diskTxt:`${s.disk_free_tb??"?"}TB free`,
+    tempC:g.temp_c,tempKind:"gpu",powerW:n1.total_power_watts??g.power_w,
+    foot:[["serving",String((n1.endpoints||[]).length)]]});
+
+  const n2=d.node2||{};
+  if(n2.reachable){
+    const g2=(n2.gpus||[])[0]||{};
+    out.push({id:"node2",name:n2.hostname||"sparkymaxxx-12ef",role:"DGX Spark · deep lane",
+      state:(n2.swap&&n2.swap.used_gb>=2)?"warn":"ok",up:"up "+(n2.uptime||"?"),
+      dial:g2.util_gpu??0,dialLabel:"GPU",
+      cpu:n2.cpu_pct||0,mem:(n2.mem||{}).pct||0,disk:(n2.disk||{}).pct||0,
+      memTotal:(n2.mem||{}).total_gb,
+      memTxt:`${(n2.mem||{}).used_gb??"?"}/${(n2.mem||{}).total_gb??"?"}G`,
+      diskTxt:`${(n2.disk||{}).free_tb??"?"}TB free`,
+      tempC:g2.temp_c,tempKind:"gpu",powerW:g2.power_w,
+      foot:[["models",String((n2.models||[]).length)]]});
+  }else out.push(offlineHost("node2","sparkymaxxx-12ef","DGX Spark · deep lane",n2));
+
+  const pi=d.pi||{};
+  if(pi.reachable){
+    out.push({id:"pi",name:pi.hostname||"raspberrypi",role:"Pi 5 · mirror + watchdog",
+      state:worst(pi.issues),up:"up "+(pi.uptime||"?"),
+      dial:pi.cpu_pct??0,dialLabel:"CPU",
+      cpu:pi.cpu_pct||0,mem:(pi.mem||{}).pct||0,disk:(pi.disk||{}).pct||0,
+      memTotal:(pi.mem||{}).total_gb,
+      memTxt:`${(pi.mem||{}).used_gb??"?"}/${(pi.mem||{}).total_gb??"?"}G`,
+      diskTxt:`${(pi.disk||{}).free_gb??"?"}GB free`,
+      tempC:pi.temp_c,tempKind:"pi",powerW:pi.power_w,
+      foot:[["watchdog",(pi.watchdog||{}).last_ago||"?"]]});
+  }else out.push(offlineHost("pi","raspberrypi","Pi 5 · mirror + watchdog",pi));
+
+  const s9=d.start9||{};
+  if(s9.reachable){
+    const c=s9.containers||{};
+    out.push({id:"start9",name:s9.hostname||"cosmic-charcoal",role:"Start9 · self-hosted stack",
+      state:worst(s9.issues),up:"up "+(s9.uptime||"?"),
+      dial:s9.cpu_pct??0,dialLabel:"CPU",
+      cpu:s9.cpu_pct||0,mem:(s9.mem||{}).pct||0,disk:(s9.disk_data||{}).pct||0,
+      memTotal:(s9.mem||{}).total_gb,
+      memTxt:`${(s9.mem||{}).used_gb??"?"}/${(s9.mem||{}).total_gb??"?"}G`,
+      diskTxt:`${(s9.disk_data||{}).free_tb??"?"}TB free`,
+      tempC:s9.temp_c,tempKind:"pkg",powerW:s9.power_w,
+      foot:[["apps",`${c.running??"?"}/${c.total??"?"}`]]});
+  }else out.push(offlineHost("start9","cosmic-charcoal","Start9 · self-hosted stack",s9));
+  return out;
+}
+function offlineHost(id,name,role,h){
+  const b=booting(h);
+  return {id,name,role,state:b?"stale":"bad",up:b?"connecting…":"unreachable",
+    dial:0,dialLabel:"—",cpu:0,mem:0,disk:0,memTxt:"—",diskTxt:"—",offline:true,
+    foot:[[b?"status":"error",b?"first poll in progress":String(h&&h.error||"no data").slice(0,34)]]};
+}
+
+/* ══════════════════════ host cards (built once, updated in place) ══════════
+   Rebuilding innerHTML every 10 s would restart every CSS transition, so the
+   gauges would snap instead of sweep. Build the DOM when the host SET changes;
+   after that only write values. ────────────────────────────────────────── */
+const ARC=216.8, CIRC=289.0;           /* 270° of r=46 · full circumference */
+let cardKeys="";
+const HIST={};                          /* per-host dial trend, fed at 1 Hz */
+const HIST_N=120;                       /* 120 × 1 s tick = 2 min of trace */
+
+function hostCardHtml(h){
+  return `
+  <div class="card host" id="hc-${h.id}" onclick="switchTab('fleet')">
+    <div class="hh"><i class="st stale" data-f="mark">○</i><b data-f="name">${esc(h.name)}</b>
+      <span class="up" data-f="up"></span></div>
+    <div class="role">${esc(h.role)}</div>
+    <div class="gwrap">
+      <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="track" cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"></circle>
+        <circle class="fill"  cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"
+          stroke-dashoffset="${ARC}" data-f="arc" stroke="var(--s1)" style="color:var(--s1)"></circle>
+        <text class="gv" x="60" y="60" data-f="dv">–</text>
+        <text class="gl" x="60" y="76" data-f="dl">${esc(h.dialLabel)}</text>
+      </svg>
+      <div class="gside">
+        <div class="mrow"><label>cpu</label><div class="bar"><i data-f="bcpu"></i></div>
+          <span class="v" data-f="vcpu"></span></div>
+        <div class="mrow"><label>mem</label><div class="bar"><i data-f="bmem"></i></div>
+          <span class="v" data-f="vmem"></span></div>
+        <div class="mrow"><label>disk</label><div class="bar"><i data-f="bdisk"></i></div>
+          <span class="v" data-f="vdisk"></span></div>
+        <canvas class="spark" data-f="spark"></canvas>
+      </div>
+    </div>
+    <div class="foot" data-f="foot"></div>
+  </div>`;
+}
+function renderHosts(hosts){
+  const key=hosts.map(h=>h.id).join("|");
+  if(key!==cardKeys){$("hosts").innerHTML=hosts.map(hostCardHtml).join("");cardKeys=key;}
+  hosts.forEach(h=>{
+    const c=$("hc-"+h.id); if(!c)return;
+    const f=n=>c.querySelector(`[data-f="${n}"]`);
+    c.className="card host"+(h.state==="ok"?"":" "+h.state);
+    const mark=f("mark");mark.className="st "+h.state;mark.textContent=GLYPH[h.state]||"○";
+    f("name").textContent=h.name;
+    f("up").textContent=h.up;
+    /* gauge: colour follows load, glyph/label carries the identity */
+    const p=clamp(+h.dial||0,0,100);
+    const col=h.offline?"var(--neutral)":p>=90?"var(--crit)":p>=75?"var(--warn)":"var(--s1)";
+    const arc=f("arc");
+    arc.setAttribute("stroke-dashoffset",String(ARC*(1-p/100)));
+    arc.setAttribute("stroke",col);arc.style.color=col;
+    f("dv").textContent=h.offline?"–":Math.round(p)+"%";
+    f("dl").textContent=h.dialLabel;
+    for(const[k,val,txt]of[["cpu",h.cpu,Math.round(h.cpu)+"%"],
+                           ["mem",h.mem,h.memTxt],["disk",h.disk,h.diskTxt]]){
+      const b=f("b"+k);b.style.width=clamp(val||0,0,100)+"%";b.className=barCls(val||0);
+      f("v"+k).textContent=txt;
+    }
+    const bits=[];
+    if(h.powerW!=null){
+      const c=nodeHistCost(h.id);
+      bits.push(`<span>power <b>${Math.round(h.powerW*10)/10} W</b>${
+        c?` · <b>${c.complete?"":"~"}${fmtUsd(c.usd)}/24h</b>`:""}</span>`);
+    }
+    if(h.tempC!=null)bits.push(`<span>temp <b class="t-${tempBand(h.tempC,h.tempKind)}">${h.tempC}°C</b></span>`);
+    h.foot.forEach(([k,v])=>bits.push(`<span>${esc(k)} <b>${esc(v)}</b></span>`));
+    f("foot").innerHTML=bits.join("");
+    drawSpark(f("spark"),HIST[h.id]||[],col);
+  });
+}
+/* The trend buffer is fed by the 1 Hz tick, NOT by renderHosts — otherwise the
+   10 s structural refresh would push duplicate samples and the trace would
+   advance at two different rates depending on which call painted last. */
+function pushHist(hosts){
+  hosts.forEach(h=>{
+    if(h.offline)return;
+    const a=(HIST[h.id]=HIST[h.id]||[]);
+    a.push(+h.dial||0);
+    while(a.length>HIST_N)a.shift();
+  });
+}
+function drawSpark(cv,vals,col){
+  if(!cv)return;
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h)return;
+  if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const mono=cssVar("--mono","monospace");
+  if(vals.length<2){
+    x.fillStyle="rgba(255,255,255,.2)";x.font="9px "+mono;
+    x.fillText("collecting trend…",0,h/2+3);return;
+  }
+  const c=col.startsWith("var")?cssVar(col.slice(4,-1),"#3987e5"):col;
+  /* Autoscale to the data's OWN range. A 0-100 axis turns a flat 95 % GPU into
+     a solid slab that shows nothing; the gauge beside it already carries the
+     absolute level, so this mark's job is purely shape-of-change. Because the
+     axis floats, the range is printed — an unlabelled autoscaled spark makes
+     a ±1 % wobble look like a cliff. */
+  const lo=Math.min(...vals),hi=Math.max(...vals);
+  const pad=Math.max(1.5,(hi-lo)*.3);
+  const y0=Math.max(0,lo-pad),y1=Math.min(100,hi+pad),span=Math.max(1,y1-y0);
+  const padR=vals.length?30:0;
+  const plotW=Math.max(1,w-padR);
+  const X=i=>i/(vals.length-1)*plotW, Y=v=>h-2-((clamp(v,y0,y1)-y0)/span)*(h-5);
+  const gr=x.createLinearGradient(0,0,0,h);
+  gr.addColorStop(0,c+"4d");gr.addColorStop(1,c+"03");
+  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
+  x.lineTo(plotW,h);x.lineTo(0,h);x.closePath();x.fillStyle=gr;x.fill();
+  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
+  x.strokeStyle=c;x.lineWidth=1.6;x.lineJoin="round";x.lineCap="round";x.stroke();
+  /* live end-point + the floating range, so the scale is never implied */
+  x.beginPath();x.arc(X(vals.length-1),Y(vals[vals.length-1]),2.2,0,7);x.fillStyle=c;x.fill();
+  x.fillStyle=cssVar("--ink-3","#6c7484");x.font="8px "+mono;
+  x.textAlign="right";x.textBaseline="middle";
+  x.fillText(`${Math.round(lo)}–${Math.round(hi)}%`,w,h/2);
+}
+
+/* ══════════════════════ hero verdict ══════════════════════ */
+function renderHero(hosts,items,d){
+  const bad=items.filter(i=>i.sev==="bad").length, warn=items.filter(i=>i.sev==="warn").length;
+  const el=$("hero"),state=bad?"bad":warn?"warn":"ok";
+  el.className="hero "+state;
+  $("hero-mark").textContent=GLYPH[state];
+  if(bad){$("hero-title").textContent=`${bad} thing${bad>1?"s":""} need${bad>1?"":"s"} you`;
+    $("hero-sub").textContent=items.find(i=>i.sev==="bad").msg;}
+  else if(warn){$("hero-title").textContent=`${warn} warning${warn>1?"s":""}`;
+    $("hero-sub").textContent=items.find(i=>i.sev==="warn").msg;}
+  else{$("hero-title").textContent="All systems nominal";
+    $("hero-sub").textContent="nothing on the fleet needs you right now";}
+  const up=hosts.filter(h=>!h.offline).length;
+  const svc=(((d.services||{}).services)||[]);
+  const auto=(d.automation||{}).counts||{},bk=(d.backups||{}).counts||{};
+  const stat=(v,l,c)=>`<div class="stat"><b class="${c||""}">${v}</b><span>${l}</span></div>`;
+  $("hero-stats").innerHTML=
+    stat(`${up}/${hosts.length}`,"hosts up",up<hosts.length?"crit":"")+
+    stat(`${svc.filter(s=>s.active).length}/${svc.length}`,"services")+
+    (auto.failing?stat(`${auto.failing}`,"jobs failing","crit")
+                 :stat(`${auto.total??0}`,"jobs"))+
+    stat(`${bk.ok??0}/${bk.total??0}`,"backups",(bk.fail||bk.warn)?"warn":"");
+}
+
+/* ══════════════════════ merged attention feed ══════════════════════
+   One list answering "what is wrong?" instead of four tabs to check.
+
+   /api/overview.alerts is ALREADY the merged fleet list — server.py's
+   _fleet_alerts() folds in automation.failing, automation.failed_units,
+   backups.issues and project failures. Re-adding those here is what made a
+   single broken job appear three times and inflated the headline count.
+   So: start from the server list, and add ONLY what it does not cover. */
+const tabFor=h=>/automation|backup|job/.test(h)?"jobs":/project/.test(h)?"pulse":"fleet";
+function attentionItems(d,hosts){
+  /* the merged list carries level/host/message only — recover the remediation
+     text from the per-node alert objects, which do have .action */
+  const actionFor={};
+  ((d.node1||{}).alerts||[]).forEach(a=>{if(a.message)actionFor[a.message]=a.action||"";});
+
+  const out=(d.alerts||[]).map(a=>({
+    sev:a.level==="critical"?"bad":a.level==="warning"?"warn":"info",
+    src:a.host||a.category||"fleet",
+    msg:a.message,sub:actionFor[a.message]||"",
+    tab:tabFor(String(a.host||""))}));
+
+  const seen=out.map(o=>String(o.msg).toLowerCase()).join(" | ");
+  hosts.filter(h=>h.offline&&h.state==="bad"&&!seen.includes(h.name.toLowerCase()))
+    .forEach(h=>out.push({sev:"bad",src:"host",msg:`${h.name} unreachable`,sub:h.role,tab:"fleet"}));
+  ((d.backups||{}).entries||[]).filter(e=>e.state!=="ok"&&!seen.includes(String(e.label).toLowerCase()))
+    .forEach(e=>out.push({sev:e.state==="fail"?"bad":"warn",src:"backup",
+      msg:`${e.label} — ${e.ago}`,sub:e.note||e.detail||"",tab:"jobs"}));
+  const waste=((d.services||{}).waste_ids)||[];
+  if(waste.length)out.push({sev:"info",src:"idle",
+    msg:`${waste.length} services running with no recent use`,
+    sub:waste.slice(0,6).join(", "),tab:"control"});
+  const rank={bad:0,warn:1,info:2};
+  return out.sort((a,b)=>rank[a.sev]-rank[b.sev]);
+}
+function renderAttention(items){
+  const bad=items.filter(i=>i.sev==="bad").length,warn=items.filter(i=>i.sev==="warn").length;
+  $("att-cnt").textContent=bad?`${bad} critical · ${warn} warning`
+    :warn?`${warn} warning`:items.length?`${items.length} info`:"all clear";
+  setBadge("pulse",bad||warn,!bad);
+  $("attention").innerHTML=items.length?items.map(i=>
+    `<div class="att ${i.sev}" onclick="switchTab('${i.tab}')">
+       ${st(i.sev==="info"?"stale":i.sev)}
+       <div class="body"><div class="m" title="${esc(i.msg)}">${esc(i.msg)}</div>
+         ${i.sub?`<div class="sub" title="${esc(i.sub)}">${esc(i.sub)}</div>`:""}</div>
+       <span class="src">${esc(i.src)}</span></div>`).join("")
+    :`<div class="allclear"><div class="big">●</div><b>Fleet healthy</b>
+       <span>no alerts, no failing jobs, backups current</span></div>`;
+}
+
+/* ══════════════════════ pulse side panels ══════════════════════ */
+function renderProjects(ps){
+  const list=ps||[];
+  const bad=list.filter(p=>norm(p.status)==="bad").length;
+  $("proj-cnt").textContent=bad?`${bad} down · ${list.length}`:`${list.length}`;
+  $("projects").innerHTML=list.map(p=>
+    `<div class="prj"><span class="n">${st(norm(p.status))}<span title="${esc(p.name)}">${esc(p.name)}</span></span>
+      <span class="d" title="${esc(p.detail)}">${esc(p.detail)}</span>
+      <span class="a">${esc(p.ago)}</span></div>`).join("")||`<div class="empty">no data yet</div>`;
+}
+function renderActions(actions){
+  $("actions").innerHTML=(actions||[]).map(a=>{
+    const l=a.last;
+    const state=l?(l.status==="running"?"running…":`${l.status} · ${l.took_s??"?"}s`):"";
+    return `<div class="act">
+      <div class="info"><b>${esc(a.label)}</b><span title="${esc(a.detail)}">${esc(a.detail)}</span></div>
+      <button class="btn" id="act-${esc(a.id)}" onclick="runAction('${esc(a.id)}')">Run</button></div>
+      ${l?`<div class="act-out" id="out-${esc(a.id)}">${esc(state)}${
+        l.output?"\n"+esc(l.output.slice(-500)):""}</div>`:""}`;
+  }).join("")||`<div class="empty">no actions</div>`;
+}
+
+/* ══════════════════════ charts (Fleet tab) ══════════════════════ */
+const cssVar=(n,f)=>getComputedStyle(document.body).getPropertyValue(n).trim()||f;
+const CHARTS=[
+  {key:"cpu",title:"CPU · GPU",  a:"cpu",b:"gpu", unit:"%",  max:100,an:"CPU",bn:"GPU"},
+  {key:"mem",title:"Mem · Swap", a:"mem",b:"swap",unit:"%",  max:100,an:"Mem",bn:"Swap"},
+  /* GB10 exposes no power.limit — scale to the observed ~93 W historical peak */
+  {key:"pwr",title:"GPU power",  a:"pwr",b:null,  unit:"W",  max:100,an:"Draw"},
+  {key:"net",title:"Net rx · tx",a:"rx", b:"tx",  unit:"K/s",max:0,  an:"rx",bn:"tx"}];
+const chartsBlock=nid=>`<div class="charts">${CHARTS.map(c=>`
+  <div class="chart"><h5>${c.title}<span class="cur" id="${nid}-${c.key}-cur"></span></h5>
+  <canvas id="${nid}-${c.key}" data-node="${nid}" data-chart="${c.key}"></canvas></div>`).join("")}</div>`;
+let sparks={node1:[],node2:[]};
+const niceMax=v=>{for(const s of[64,128,256,512,1024,2048,5120,10240,51200,102400,1048576])
+  if(v<=s)return s;return Math.ceil(v/1048576)*1048576;};
+const fmtK=v=>v>=1024?(v/1024).toFixed(v>=10240?0:1)+" M/s":Math.round(v)+" K/s";
+const fmtV=(v,unit)=>unit==="%"?Math.round(v)+"%":unit==="W"?(Math.round(v*10)/10)+" W":fmtK(v);
+
+const hoverState={};
+function drawChart(cv,samples,cfg,hoverX){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h)return null;
+  if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;}
+  const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926"),
+        ink3=cssVar("--ink-3","#6c7484"),grid="rgba(255,255,255,.07)";
+  const padL=30,padR=5,padT=5,padB=14;
+  const pw=Math.max(1,w-padL-padR),ph=Math.max(1,h-padT-padB);
+  const win=60,tmax=samples.length?samples[samples.length-1].t:0,tmin=tmax-win;
+  const pts=samples.filter(s=>s.t>=tmin);
+  let ymax=cfg.max||niceMax(Math.max(64,...pts.map(p=>Math.max(p[cfg.a],cfg.b?p[cfg.b]:0))));
+  const X=t=>padL+(t-tmin)/win*pw, Y=v=>padT+ph-clamp(v,0,ymax)/ymax*ph;
+  const tick=v=>cfg.unit==="%"?Math.round(v)+"":cfg.unit==="W"?String(Math.round(v))
+    :v>=1024?(v/1024).toFixed(v>=10240?0:1)+"M":Math.round(v)+"";
+
+  x.font="9px "+cssVar("--mono","monospace");
+  for(const fr of[0,.5,1]){
+    const yy=padT+ph*(1-fr);
+    x.strokeStyle=grid;x.lineWidth=1;
+    x.beginPath();x.moveTo(padL,yy);x.lineTo(padL+pw,yy);x.stroke();
+    x.fillStyle=ink3;x.textAlign="right";x.textBaseline="middle";
+    x.fillText(tick(ymax*fr),padL-4,yy+(fr===0?-1:fr===1?1:0));
+  }
+  x.textAlign="left";x.textBaseline="top";x.fillText(cfg.unit,padL+2,padT+1);
+  x.textAlign="center";
+  for(const[t,lab,al]of[[tmin,"−60s","left"],[tmin+win/2,"−30s","center"],[tmax,"now","right"]]){
+    x.textAlign=al;x.fillStyle=ink3;x.fillText(lab,X(t),padT+ph+3);
+  }
+
+  const series=(f,color)=>{
+    if(pts.length<2)return;
+    const gr=x.createLinearGradient(0,padT,0,padT+ph);
+    gr.addColorStop(0,color+"59");gr.addColorStop(1,color+"03");
+    x.beginPath();pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
+    x.lineTo(X(pts[pts.length-1].t),padT+ph);x.lineTo(X(pts[0].t),padT+ph);x.closePath();
+    x.fillStyle=gr;x.fill();
+    x.save();x.beginPath();
+    pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
+    x.shadowColor=color;x.shadowBlur=9;x.strokeStyle=color;x.lineWidth=2;
+    x.lineJoin="round";x.lineCap="round";x.stroke();x.restore();
+  };
+  if(cfg.b)series(cfg.b,B);
+  series(cfg.a,A);
+
+  let cur=pts[pts.length-1];
+  if(hoverX!=null&&pts.length){
+    const hx=clamp(hoverX,padL,padL+pw);
+    let best=pts[0];for(const p of pts)if(Math.abs(X(p.t)-hx)<Math.abs(X(best.t)-hx))best=p;
+    cur=best;
+    x.strokeStyle="rgba(242,244,248,.4)";x.lineWidth=1;
+    x.beginPath();x.moveTo(X(cur.t),padT);x.lineTo(X(cur.t),padT+ph);x.stroke();
+    const dots=[[cfg.a,A]];if(cfg.b)dots.push([cfg.b,B]);
+    for(const[f,c]of dots){
+      x.save();x.shadowColor=c;x.shadowBlur=10;x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),3.5,0,7);
+      x.fillStyle=c;x.fill();x.strokeStyle=cssVar("--surface","#12141b");x.lineWidth=2;
+      x.stroke();x.restore();}
+  }
+  const el=$(cv.id+"-cur");
+  if(el)el.innerHTML=cur
+    ?`<span><i style="background:${A}"></i>${fmtV(cur[cfg.a]||0,cfg.unit)}</span>`+
+     (cfg.b?`<span><i style="background:${B}"></i>${fmtV(cur[cfg.b]||0,cfg.unit)}</span>`:"")
+    :"—";
+  return cur;
+}
+function drawAll(){
+  for(const nid of["node1","node2"])for(const c of CHARTS){
+    const cv=$(nid+"-"+c.key);
+    if(cv)drawChart(cv,sparks[nid]||[],c,hoverState[cv.id]);}
+}
+/* hover layer: crosshair on canvas + an HTML tooltip that names each series */
+document.addEventListener("mousemove",e=>{
+  const cv=e.target;
+  if(cv.tagName!=="CANVAS"||!cv.dataset.chart){hideTip();return;}
+  hoverState[cv.id]=e.offsetX;
+  const cfg=CHARTS.find(c=>c.key===cv.dataset.chart);
+  const cur=drawChart(cv,sparks[cv.dataset.node]||[],cfg,e.offsetX);
+  drawAll();
+  if(!cur){hideTip();return;}
+  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926");
+  const ago=Math.max(0,Math.round(((sparks[cv.dataset.node]||[]).slice(-1)[0]||{t:cur.t}).t-cur.t));
+  $("tip").innerHTML=`<div class="tt">${ago?`−${ago}s`:"now"}</div>`+
+    `<div class="tr"><i style="background:${A}"></i>${cfg.an} ${fmtV(cur[cfg.a]||0,cfg.unit)}</div>`+
+    (cfg.b?`<div class="tr"><i style="background:${B}"></i>${cfg.bn} ${fmtV(cur[cfg.b]||0,cfg.unit)}</div>`:"");
+  const t=$("tip");t.classList.add("on");
+  t.style.left=Math.min(e.clientX+14,innerWidth-t.offsetWidth-10)+"px";
+  t.style.top=Math.max(8,e.clientY-t.offsetHeight-12)+"px";
+},true);
+document.addEventListener("mouseout",e=>{
+  if(e.target.tagName==="CANVAS"&&e.target.dataset.chart){
+    delete hoverState[e.target.id];hideTip();drawAll();}});
+const hideTip=()=>$("tip").classList.remove("on");
+
+async function pollSparks(){
+  /* charts cost 16 kB a poll — only while their tab is actually on screen */
+  if(TAB!=="fleet"||document.hidden)return;
+  try{sparks=await(await fetch("/api/sparks",{cache:"no-store"})).json();drawAll();}catch(e){}
+}
+setInterval(pollSparks,2000);
+
+/* Token usage card — cheap direct DB reads, polled on the 10 s heartbeat
+   along with refresh(). Compact number formatter (1.23M, 45.8k…). Graph is a
+   14-day in/out area chart; mean/median/mode come from per-session and
+   per-call distributions (mode is bucketed — raw token counts rarely tie). */
+function tokFmt(n){
+  if(n==null||isNaN(n))return "—";
+  if(Math.abs(n)>=1e9)return (n/1e9).toFixed(2)+"B";
+  if(Math.abs(n)>=1e6)return (n/1e6).toFixed(2)+"M";
+  if(Math.abs(n)>=1e3)return (n/1e3).toFixed(1)+"k";
+  return String(Math.round(n));
+}
+function setTok(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function tokModeLabel(st){
+  if(!st||st.mode==null)return "—";
+  const n=st.mode_count||0;
+  // e.g. "~50k (×95)" — mode is a bucket center, not an exact value
+  return `~${tokFmt(st.mode)}${n?` (×${n})`:""}`;
+}
+let _tokSeries=[];
+function drawTokChart(series){
+  const cv=document.getElementById("tok-chart");
+  if(!cv)return;
+  const dpr=window.devicePixelRatio||1;
+  const w=cv.clientWidth||280, h=cv.clientHeight||72;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){
+    cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  }
+  const x=cv.getContext("2d");
+  x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const mono=getComputedStyle(document.documentElement).getPropertyValue("--mono").trim()||"monospace";
+  const pts=Array.isArray(series)?series:[];
+  if(pts.length<2){
+    x.fillStyle="rgba(255,255,255,.28)";x.font="10px "+mono;
+    x.fillText("collecting daily totals…",8,h/2+3);
+    return;
+  }
+  const inn=pts.map(p=>+p.input_tokens||0);
+  const out=pts.map(p=>+p.output_tokens||0);
+  const totals=pts.map((_,i)=>inn[i]+out[i]);
+  const hi=Math.max(1,...totals);
+  const padL=2,padR=2,padT=4,padB=14;
+  const plotW=Math.max(1,w-padL-padR), plotH=Math.max(1,h-padT-padB);
+  const X=i=>padL+(i/(pts.length-1))*plotW;
+  const Y=v=>padT+plotH-((v/hi)*plotH);
+  const s1=(getComputedStyle(document.documentElement).getPropertyValue("--s1").trim())||"#3987e5";
+  const good=(getComputedStyle(document.documentElement).getPropertyValue("--good").trim())||"#0ca30c";
+
+  // stacked area: input (bottom) + output (top)
+  const fillArea=(ys,color,alpha)=>{
+    x.beginPath();
+    ys.forEach((v,i)=>{const xx=X(i),yy=Y(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy);});
+    x.lineTo(X(ys.length-1),Y(0));x.lineTo(X(0),Y(0));x.closePath();
+    x.fillStyle=color;x.globalAlpha=alpha;x.fill();x.globalAlpha=1;
+  };
+  // input alone, then total (input+output) so output shows as the band above
+  fillArea(inn,s1,.22);
+  fillArea(totals,good,.18);
+  // outline totals
+  x.beginPath();
+  totals.forEach((v,i)=>{const xx=X(i),yy=Y(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy);});
+  x.strokeStyle=s1;x.lineWidth=1.5;x.stroke();
+  // day ticks: first / mid / last
+  x.fillStyle="rgba(255,255,255,.35)";x.font="9px "+mono;
+  const labels=[0, Math.floor((pts.length-1)/2), pts.length-1];
+  labels.forEach(i=>{
+    const d=String(pts[i].day||"").slice(5); // MM-DD
+    const tw=x.measureText(d).width;
+    let xx=X(i)-tw/2;xx=Math.max(0,Math.min(w-tw,xx));
+    x.fillText(d,xx,h-3);
+  });
+}
+function renderTokStats(block, prefix){
+  if(!block){
+    setTok(prefix+"-mean","—");setTok(prefix+"-median","—");
+    setTok(prefix+"-mode","—");setTok(prefix+"-p90","—");
+    return;
+  }
+  setTok(prefix+"-mean",tokFmt(block.mean));
+  setTok(prefix+"-median",tokFmt(block.median));
+  setTok(prefix+"-mode",tokModeLabel(block));
+  setTok(prefix+"-p90",`${tokFmt(block.p90)} / ${tokFmt(block.n)}`);
+}
+function renderTokenUsage(tu){
+  if(!tu)return;
+  const c=tu.counts||{},u=tu.last_24h||{},prof=(tu.profiles||[]).length;
+  const series=tu.series_14d||[];
+  _tokSeries=series;
+  const st=tu.stats||{};
+  setTok("tok-24h",`${tokFmt(u.input_tokens)} / ${tokFmt(u.output_tokens)}`);
+  setTok("tok-in",tokFmt(c.input_tokens));
+  setTok("tok-out",tokFmt(c.output_tokens));
+  setTok("tok-cache",tokFmt(c.cache_read_tokens));
+  setTok("tok-calls",`${tokFmt(c.api_calls)} / ${tokFmt(c.sessions)}`);
+  setTok("tok-cnt",`${prof} profiles · ${ageLabel(tu.updated_unix)||"live"}`);
+  const sumIn=series.reduce((a,p)=>a+(+p.input_tokens||0),0);
+  const sumOut=series.reduce((a,p)=>a+(+p.output_tokens||0),0);
+  setTok("tok-chart-sum",series.length?`${tokFmt(sumIn)} / ${tokFmt(sumOut)}`:"—");
+  renderTokStats(st.per_session,"tok-s");
+  renderTokStats(st.per_call,"tok-c");
+  // Defer draw until layout has a width (Jobs tab may be hidden on first poll).
+  requestAnimationFrame(()=>drawTokChart(series));
+}
+async function pollTokenUsage(){
+  if(document.hidden)return;
+  try{renderTokenUsage(await(await fetch("/api/token-usage",{cache:"no-store"})).json());}catch(e){}
+}
+
+/* ComfyUI jobs card — sparkDash 1.6-shaped: running/pending job blocks with
+   footprint (res · steps · sampler · nodes), model/LoRA list, elapsed clock
+   (no invented %), cancel/remove, queue ETA only from finished-job averages,
+   last finished, installed inventory. ComfyUI is on-demand, so
+   "offline / on-demand" must stay calm when it is down. */
+function setCfy(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function cfyShortId(id){
+  id=String(id||"");
+  return id.length<=12?id:(id.slice(0,8)+"…");
+}
+function cfyFmtDurMs(ms){
+  if(ms==null||!isFinite(ms)||ms<0)return null;
+  const sec=Math.round(ms/1000);
+  if(sec<60)return sec+"s";
+  const m=Math.floor(sec/60),s=sec%60;
+  if(m<60)return s?`${m}m ${s}s`:`${m}m`;
+  return `${Math.floor(m/60)}h ${m%60}m`;
+}
+function cfyFmtElapsed(createTime){
+  if(createTime==null||!isFinite(createTime))return null;
+  const ms=createTime<1e12?createTime*1000:createTime;
+  return cfyFmtDurMs(Math.max(0,Date.now()-ms));
+}
+function cfyFootprint(job){
+  if(!job)return "";
+  if(job.footprint)return job.footprint;
+  const parts=[];
+  if(job.width!=null&&job.height!=null)parts.push(`${job.width}×${job.height}`);
+  if(job.steps!=null)parts.push(`${job.steps} steps`);
+  if(job.batch_size!=null&&job.batch_size!==1)parts.push(`batch ${job.batch_size}`);
+  if(job.sampler)parts.push(job.sampler);
+  const nc=job.node_count||job.nodes||0;
+  if(nc>0)parts.push(`${nc} nodes`);
+  return parts.join(" · ");
+}
+function cfyJobTitle(job){
+  if(!job)return "job";
+  const t=(job.title||job.label||"").trim();
+  return t||cfyShortId(job.prompt_id||job.id);
+}
+function cfyProgressHtml(progress){
+  if(!progress)return "";
+  // Never show invented completion % — REST has no step meter.
+  const label="Running";
+  const el=progress.elapsed_ms!=null?cfyFmtDurMs(progress.elapsed_ms):"";
+  return `<div class="cfy-prog"><div class="cfy-prog-h"><span>${esc(label)}</span><span>${esc(el)}</span></div>
+    <span class="bar"><i class="cfy-indet"></i></span></div>`;
+}
+function cfyModelsHtml(models){
+  const list=(models||[]).slice(0,6);
+  if(!list.length)return "";
+  const more=(models.length>6)?`<li class="cfy-meta">+${models.length-6} more</li>`:"";
+  return `<ul class="cfy-models">${list.map(m=>`<li title="${esc(m)}">${esc(m)}</li>`).join("")}${more}</ul>`;
+}
+function cfyJobHtml(job,variant,progress,etaLabel){
+  const title=cfyJobTitle(job);
+  const foot=cfyFootprint(job);
+  const elapsed=variant==="running"?cfyFmtElapsed(job.create_time):null;
+  const badge=variant==="running"?"run":"";
+  const badgeTxt=variant==="running"?"Running":"Queued";
+  const btnTxt=variant==="running"?"Cancel":"Remove";
+  const pid=esc(job.prompt_id||job.id||"");
+  const meta=[elapsed,etaLabel?`${etaLabel} left`:null].filter(Boolean).join(" · ");
+  return `<div class="cfy-job" data-pid="${pid}">
+    <div class="cfy-top">
+      <div style="min-width:0;flex:1">
+        <span class="cfy-badge ${badge}"><i></i>${badgeTxt}</span>
+        ${meta?`<span class="cfy-meta" style="margin-left:6px">${esc(meta)}</span>`:""}
+        <div class="cfy-title" title="${esc(title)}">${esc(title)}</div>
+      </div>
+      <button type="button" class="cfy-btn" data-cfy-cancel="${pid}">${btnTxt}</button>
+    </div>
+    ${variant==="running"?cfyProgressHtml(progress):""}
+    ${foot?`<div class="cfy-foot" title="Workflow compute footprint">${esc(foot)}</div>`:""}
+    ${cfyModelsHtml(job.models)}
+  </div>`;
+}
+let _cfyCancelling=null;
+async function cfyCancel(promptId){
+  if(!promptId||_cfyCancelling)return;
+  if(!confirm("Cancel this ComfyUI job?"))return;
+  _cfyCancelling=promptId;
+  try{
+    const r=await fetch("/api/comfy/cancel",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt_id:promptId}),
+    });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||j.ok===false)alert(j.message||j.error||"Cancel failed");
+  }catch(e){alert(String(e));}
+  finally{_cfyCancelling=null;pollComfy();}
+}
+function renderComfy(c){
+  if(!c)return;
+  const off=!!c.offline;
+  const state=c.state||"offline";
+  const chip=c.chip||"offline";
+  setCfy("comfy-chip", off?"offline":chip);
+
+  const open=document.getElementById("comfy-open");
+  if(open&&c.open_url){open.href=c.open_url;}
+
+  const body=document.getElementById("comfy-body");
+  const invWrap=document.getElementById("comfy-inv-wrap");
+  const vramRow=document.getElementById("comfy-vram-row");
+
+  if(off){
+    setCfy("comfy-state","offline / on-demand · start on demand");
+    setCfy("comfy-vram","—");
+    if(vramRow)vramRow.style.display="none";
+    if(body)body.innerHTML=`<div class="cfy-idle" id="comfy-empty">Not reachable — ComfyUI is on-demand (default :8188).</div>`;
+    if(invWrap)invWrap.innerHTML="";
+    return;
+  }
+
+  if(vramRow)vramRow.style.display="";
+  const verBits=[c.version?`v${c.version}`:"",c.device_type||"",c.pytorch_version?`torch ${c.pytorch_version}`:""].filter(Boolean).join(" · ");
+  setCfy("comfy-state",
+    (state==="running"?"running":state==="queued"?"queued":"idle · ready")
+    +(verBits?` · ${verBits}`:""));
+  setCfy("comfy-vram",`${c.vram_used_pct!=null?c.vram_used_pct+"% used":"—"} · ${c.vram_free||"?"} free`);
+
+  const run=c.active_job||c.running||null;
+  const pending=(c.pending_jobs||c.pending||[]).slice(0,2);
+  const pendN=c.pending_count||pending.length||0;
+  const progress=c.progress||null;
+  const etaLabel=c.queue_eta_source==="finished_avg"?cfyFmtDurMs(c.queue_eta_ms):null;
+  const etaShort=etaLabel?`~${etaLabel} avg`:null;
+  const last=c.last_job||(c.last_finished||[])[0]||null;
+
+  let html="";
+  if(run){
+    html+=cfyJobHtml(run,"running",progress,etaShort);
+  } else {
+    html+=`<div class="cfy-idle">Idle — no running job</div>`;
+  }
+
+  if(pendN>0){
+    html+=`<div class="cfy-sub"><span>Queue</span><b>${pendN} pending${etaShort?` · ${etaShort}`:""}</b></div>`;
+    pending.forEach(j=>{html+=cfyJobHtml(j,"pending",null,null);});
+    if(pendN>pending.length)html+=`<div class="cfy-meta" style="margin-top:4px">+${pendN-pending.length} more waiting</div>`;
+  }
+
+  if(last){
+    const ld=last.duration_ms!=null?cfyFmtDurMs(last.duration_ms)
+            :(last.duration_s!=null?`${last.duration_s}s`:null);
+    html+=`<div class="cfy-meta" style="margin-top:8px">Last: ${esc(cfyJobTitle(last))}${ld?` · ${ld}`:""} · ${esc(last.status||"done")}</div>`;
+  }
+
+  if(body){
+    body.innerHTML=html;
+    body.querySelectorAll("[data-cfy-cancel]").forEach(btn=>{
+      btn.addEventListener("click",()=>cfyCancel(btn.getAttribute("data-cfy-cancel")));
+      if(_cfyCancelling&&btn.getAttribute("data-cfy-cancel")===_cfyCancelling){
+        btn.disabled=true;btn.textContent="…";
+      }
+    });
+  }
+
+  const inv=c.models_installed;
+  if(invWrap){
+    if(inv&&((inv.checkpoints||[]).length||(inv.loras||[]).length)){
+      const ck=(inv.checkpoints||[]).slice(0,12);
+      const lo=(inv.loras||[]).slice(0,12);
+      invWrap.innerHTML=`<details class="cfy-inv">
+        <summary>Installed: ${ck.length} checkpoints · ${lo.length} loras</summary>
+        <ul>${ck.map(m=>`<li title="${esc(m)}">${esc(m)}</li>`).join("")}
+            ${lo.map(m=>`<li title="${esc(m)}">${esc(m)}</li>`).join("")}</ul>
+      </details>`;
+    } else {
+      invWrap.innerHTML="";
+    }
+  }
+}
+async function pollComfy(){
+  if(document.hidden)return;
+  try{renderComfy(await(await fetch("/api/comfy",{cache:"no-store"})).json());}catch(e){}
+}
+
+/* Seed the Pulse host trends from the 1 Hz ring buffer the collector already
+   keeps, so the cards show a real trace immediately instead of sitting on
+   "collecting trend…" for the first few refreshes. Pi/Start9 have no
+   timeseries source, so those genuinely start empty. */
+(async()=>{
+  try{
+    const s=await(await fetch("/api/sparks",{cache:"no-store"})).json();
+    for(const nid of["node1","node2"]){
+      const v=(s[nid]||[]).map(p=>p.gpu).filter(n=>typeof n==="number");
+      /* the ring is already 1 Hz — same cadence as our tick, so take it whole */
+      if(v.length>1)HIST[nid]=v.slice(-HIST_N);
+    }
+    if(DATA.node1)renderHosts(fleetHosts(DATA));
+  }catch(e){}
+})();
+
+/* ══════════════════════ electricity cost (historical) ══════════════════════
+   Integrates logged watts over time → kWh, then $ = kWh × editable $/kWh.
+   Default: measured sensors (GPU / PMIC / RAPL). Optional wall estimate for
+   Sparks. NOT a live projection of current draw. Gaps >2h are not invented. */
+const ELEC_KEY="spark-console-kwh-rate";
+const ELEC_IDLE_KEY="spark-console-idle-wall-w";
+const ELEC_MODE_KEY="spark-console-elec-mode";
+const ELEC_DEFAULT=0.145;
+const ELEC_IDLE_DEFAULT=50;
+let ENERGY=null;   // last /api/energy-cost payload
+const ELEC_NAMES={node1:"sparkmax-10ef",node2:"sparkymaxxx-12ef",
+  pi:"raspberrypi",start9:"cosmic-charcoal"};
+function elecSrcLabel(id, mode){
+  if(id==="pi")return "board PMIC";
+  if(id==="start9")return "RAPL pkg+DRAM";
+  return mode==="wall"?"wall est ← GPU":"GPU draw (measured)";
+}
+function getKwhRate(){
+  const raw=localStorage.getItem(ELEC_KEY);
+  const n=raw==null?ELEC_DEFAULT:parseFloat(raw);
+  return (Number.isFinite(n)&&n>=0)?n:ELEC_DEFAULT;
+}
+function setKwhRate(v){
+  const n=parseFloat(v);
+  if(!Number.isFinite(n)||n<0)return getKwhRate();
+  localStorage.setItem(ELEC_KEY,String(n));
+  return n;
+}
+function getIdleWallW(){
+  const raw=localStorage.getItem(ELEC_IDLE_KEY);
+  const n=raw==null?ELEC_IDLE_DEFAULT:parseFloat(raw);
+  return (Number.isFinite(n)&&n>=10)?n:ELEC_IDLE_DEFAULT;
+}
+function setIdleWallW(v){
+  const n=parseFloat(v);
+  if(!Number.isFinite(n)||n<10)return getIdleWallW();
+  localStorage.setItem(ELEC_IDLE_KEY,String(n));
+  return n;
+}
+function getElecMode(){
+  const m=localStorage.getItem(ELEC_MODE_KEY);
+  return m==="wall"?"wall":"sensor";
+}
+function setElecMode(v){
+  const m=v==="wall"?"wall":"sensor";
+  localStorage.setItem(ELEC_MODE_KEY,m);
+  return m;
+}
+function fmtUsd(n){
+  if(n==null||!Number.isFinite(n))return "—";
+  if(Math.abs(n)<0.01)return "$"+n.toFixed(4);
+  if(Math.abs(n)<1)return "$"+n.toFixed(3);
+  return "$"+n.toFixed(2);
+}
+function fmtKwh(n){
+  if(n==null||!Number.isFinite(n))return "—";
+  if(n<0.01)return n.toFixed(4)+" kWh";
+  if(n<1)return n.toFixed(3)+" kWh";
+  return n.toFixed(2)+" kWh";
+}
+function ageLabel(unix){
+  if(!unix)return "";
+  const s=Math.max(0,Math.round(Date.now()/1000-unix));
+  if(s<5)return "just now";
+  if(s<60)return s+"s ago";
+  return Math.round(s/60)+"m ago";
+}
+function nodeHistCost(id){
+  // Prefer trailing 24h $ for per-node suffixes on power rows / Pulse feet.
+  const n=((ENERGY||{}).window_24h||{}).nodes||{};
+  const row=n[id];
+  if(!row||row.kwh==null)return null;
+  return {kwh:row.kwh, usd:row.kwh*getKwhRate(), hours:row.hours_covered,
+    complete:!!row.complete};
+}
+function costSuffix(nodeId){
+  const c=nodeHistCost(nodeId);
+  if(!c)return "";
+  const tag=c.complete?"":"~";
+  return ` · ${tag}${fmtUsd(c.usd)}/24h`;
+}
+function elecCellHtml(title, src, kwh24, kwh30, hrs24, hrs30, complete24, complete30, cls){
+  if(kwh24==null&&kwh30==null){
+    return `<div class="elec-cell ${cls||""}"><div class="n">${esc(title)}</div>
+      <div class="src">${esc(src||"")}</div><div class="w">—</div>
+      <div class="c">no history yet</div></div>`;
+  }
+  const rate=getKwhRate();
+  const u24=kwh24!=null?kwh24*rate:null;
+  const u30=kwh30!=null?kwh30*rate:null;
+  const cov24=hrs24!=null?`${Math.round(hrs24*10)/10}h`:"—";
+  const cov30=hrs30!=null?`${Math.round(hrs30*10)/10}h`:"—";
+  const mark24=complete24?"":" partial";
+  const mark30=complete30?"":(hrs30>=24?" building":" partial");
+  return `<div class="elec-cell ${cls||""}"><div class="n">${esc(title)}</div>
+    <div class="src">${esc(src)}</div>
+    <div class="w"><b>${fmtUsd(u24)}</b> /24h <span style="color:var(--ink-3)">· ${fmtKwh(kwh24)} · ${cov24}${mark24}</span></div>
+    <div class="c"><b>${fmtUsd(u30)}</b> /30d <span>· ${fmtKwh(kwh30)} · ${cov30}${mark30}</span></div></div>`;
+}
+function paintElecPanel(){
+  const rate=getKwhRate();
+  const idle=getIdleWallW();
+  const mode=getElecMode();
+  const inp=$("elec-rate"), idleInp=$("elec-idle"), modeSel=$("elec-mode");
+  const idleWrap=$("elec-idle-wrap");
+  if(inp&&document.activeElement!==inp)inp.value=String(rate);
+  if(idleInp&&document.activeElement!==idleInp)idleInp.value=String(idle);
+  if(modeSel&&document.activeElement!==modeSel)modeSel.value=mode;
+  if(idleWrap)idleWrap.hidden=mode!=="wall";
+  const grid=$("elec-grid");
+  const note=$("elec-note");
+  if(!grid)return;
+  const e=ENERGY;
+  if(!e||!e.ok){
+    grid.innerHTML=`<div class="elec-cell"><div class="n">Energy log</div>
+      <div class="src">loading…</div><div class="w">—</div>
+      <div class="c">${esc((e&&e.error)||"fetching /api/energy-cost")}</div></div>`;
+    if(note)note.textContent="Loading historical energy…";
+    return;
+  }
+  const w24=e.window_24h||{}, w30=e.window_30d||{};
+  const n24=w24.nodes||{}, n30=w30.nodes||{};
+  const names={...ELEC_NAMES};
+  try{
+    if(DATA.node1&&DATA.node1.hostname)names.node1=DATA.node1.hostname;
+    if(DATA.node2&&DATA.node2.hostname)names.node2=DATA.node2.hostname;
+    if(DATA.pi&&DATA.pi.hostname)names.pi=DATA.pi.hostname;
+    if(DATA.start9&&DATA.start9.hostname)names.start9=DATA.start9.hostname;
+  }catch(err){}
+  let html="";
+  for(const id of["node1","node2","pi","start9"]){
+    const a=n24[id]||{}, b=n30[id]||{};
+    html+=elecCellHtml(names[id], elecSrcLabel(id, mode),
+      a.kwh, b.kwh, a.hours_covered, b.hours_covered,
+      a.complete, b.complete);
+  }
+  const sparksSrc=mode==="wall"?"node1 + node2 · wall estimate":"node1 + node2 · measured GPU";
+  html+=elecCellHtml("Sparks total",sparksSrc,
+    w24.sparks_kwh, w30.sparks_kwh, w24.sparks_hours, w30.sparks_hours,
+    w24.sparks_complete, w30.sparks_complete, "tot");
+  html+=elecCellHtml("Fleet total","all logged nodes",
+    w24.fleet_kwh, w30.fleet_kwh, w24.fleet_hours, w30.fleet_hours,
+    w24.fleet_complete, w30.fleet_complete, "tot");
+  grid.innerHTML=html;
+  if(note){
+    const s24=w24.sparks_kwh!=null?w24.sparks_kwh*rate:null;
+    const s30=w30.sparks_kwh!=null?w30.sparks_kwh*rate:null;
+    const tag=w24.sparks_complete?"":"~";
+    const age=ageLabel(e.updated_unix);
+    const basis=mode==="wall"?`wall est · idle ${idle} W`:"measured GPU/PMIC/RAPL";
+    note.textContent=`Sparks ${basis}: ${tag}${fmtUsd(s24)} /24h · ${fmtUsd(s30)} /30d @ $${rate}/kWh · ${age}`;
+  }
+}
+async function pollEnergy(){
+  if(document.hidden)return;
+  try{
+    const mode=getElecMode();
+    const idle=getIdleWallW();
+    let url=`/api/energy-cost?mode=${encodeURIComponent(mode)}`;
+    if(mode==="wall")url+=`&idle_wall_w=${encodeURIComponent(idle)}`;
+    ENERGY=await(await fetch(url,{cache:"no-store"})).json();
+    paintElecPanel();
+    if(DATA&&Object.keys(DATA).length)renderHosts(fleetHosts(DATA));
+  }catch(e){
+    ENERGY={ok:false,error:String(e)};
+    paintElecPanel();
+  }
+}
+function bindElecRate(){
+  const inp=$("elec-rate"), idleInp=$("elec-idle"), modeSel=$("elec-mode");
+  if(inp&&!inp.dataset.bound){
+    inp.dataset.bound="1";
+    inp.value=String(getKwhRate());
+    inp.addEventListener("input",()=>{setKwhRate(inp.value);paintElecPanel();});
+    inp.addEventListener("change",()=>{
+      setKwhRate(inp.value);paintElecPanel();
+      if(DATA&&Object.keys(DATA).length){renderHosts(fleetHosts(DATA));renderFleet(DATA);}
+    });
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();}});
+  }
+  if(modeSel&&!modeSel.dataset.bound){
+    modeSel.dataset.bound="1";
+    modeSel.value=getElecMode();
+    modeSel.addEventListener("change",()=>{setElecMode(modeSel.value);pollEnergy();});
+  }
+  if(idleInp&&!idleInp.dataset.bound){
+    idleInp.dataset.bound="1";
+    idleInp.value=String(getIdleWallW());
+    // Idle wall changes the server-side integration — refetch, don't just reprice.
+    const applyIdle=()=>{setIdleWallW(idleInp.value);pollEnergy();};
+    idleInp.addEventListener("change",applyIdle);
+    idleInp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();idleInp.blur();applyIdle();}});
+  }
+}
+
+/* ══════════════════════ FLEET tab ══════════════════════ */
+const mrow=(l,p,v)=>`<div class="mrow"><label>${l}</label>
+  <div class="bar"><i class="${barCls(p)}" style="width:${clamp(p||0,0,100)}%"></i></div>
+  <span class="v">${v}</span></div>`;
+function tempRow(c,kind,extra){
+  const b=tempBand(c,kind),ceil={pi:85,pkg:100,gpu:90}[kind]||90;
+  const p=c!=null?clamp((+c)/ceil*100,0,100):0;
+  return `<div class="mrow"><label>temp</label>
+    <div class="bar"><i style="width:${p}%;background:var(--${
+      b==="cool"?"cool":b==="ok"?"good":b==="warm"?"warn":"crit"})"></i></div>
+    <span class="v">${tempSpan(c,kind)}${extra?" · "+extra:""}</span></div>`;
+}
+const offlineNode=(name,role,h)=>`<div class="card node"><h2>${esc(name)}
+  <span class="role">${esc(role)}</span></h2>
+  <div class="offline ${booting(h)?"stale":""}">${booting(h)
+    ?"connecting…":esc(name)+" unreachable — "+esc((h&&h.error)||"no data")}</div></div>`;
+
+function sampleAgeLabel(unix){
+  if(unix==null||!Number.isFinite(+unix))return "";
+  const age=Math.max(0,Math.round(Date.now()/1000-+unix));
+  if(age<=2)return "now";
+  if(age<60)return age+"s ago";
+  return Math.round(age/60)+"m ago";
+}
+
+function node1Html(n){
+  const s=n.system||{},g=(n.gpus||[])[0]||{};
+  const mods=(n.endpoints||[]).map(e=>({label:e.id,sub:`${e.engine} :${e.port}`,
+    val:"serving",state:norm(e.status)}));
+  (n.ollama||[]).forEach(m=>mods.push({label:m.name,sub:"ollama :11434",val:m.size||"",
+    state:m.stuck?"bad":"ok"}));
+  (n.processes||[]).filter(p=>p.mem_mb>4000&&!/llama-server/.test(p.name))
+    .forEach(p=>mods.push({label:p.name.split("/").pop(),sub:"proc",
+      val:(p.mem_mb/1024).toFixed(1)+" G",state:"ok"}));
+  const age=sampleAgeLabel(n.metrics_as_of)||(n.iso_ts?new Date(n.iso_ts).toLocaleTimeString():"");
+  return `<div class="card node" id="fn-node1"><h2>${esc(n.hostname||"sparkmax-10ef")}
+    <span class="role">node1 · primary</span>
+    <span class="up" data-live-up>${esc(age)}</span></h2>
+    ${mrow("gpu",g.util_gpu||0,`${g.util_gpu??"?"}%`)}
+    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw${costSuffix("node1")}`)}
+    ${mrow("cpu",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${s.load_1??"?"}/${s.load_5??"?"}/${s.load_15??"?"}`)}
+    ${mrow("mem",s.mem_pct||0,`${s.mem_used_gb??"?"} / ${s.mem_total_gb??"?"} G`)}
+    ${mrow("swap",pctOf(s.swap_used_gb,s.swap_total_gb),`${s.swap_used_gb??"?"} / ${s.swap_total_gb??"?"} G`)}
+    ${mrow("disk",s.disk_used_pct||0,`${s.disk_used_pct??"?"}% · ${s.disk_free_tb??"?"} TB free`)}
+    ${tempRow(g.temp_c,"gpu","GPU")}
+    ${chartsBlock("node1")}
+    <div class="subhead">Models · inference<span class="cnt">${mods.length}</span></div>
+    ${modTable(mods)}</div>`;
+}
+function node2Html(n){
+  if(!n||!n.reachable)return offlineNode("sparkymaxxx-12ef","node2 · deep lane",n);
+  const g=(n.gpus||[])[0]||{};
+  const mods=(n.models||[]).map(m=>({label:m.id,sub:`${m.engine} :${m.port}`,val:"serving",state:"ok"}));
+  (n.top_procs||[]).filter(p=>p.mem_gb>=1).forEach(p=>
+    mods.push({label:p.name,sub:"proc",val:p.mem_gb+" G",state:"ok"}));
+  const age=sampleAgeLabel(n.metrics_as_of)||("up "+(n.uptime||"?"));
+  return `<div class="card node" id="fn-node2"><h2>${esc(n.hostname)}
+    <span class="role">node2 · deep lane</span><span class="up" data-live-up>${esc(age)}</span></h2>
+    ${mrow("gpu",g.util_gpu||0,`${g.util_gpu??"?"}%`)}
+    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw${costSuffix("node2")}`)}
+    ${mrow("cpu",n.cpu_pct||0,`load ${esc(n.load)}`)}
+    ${mrow("mem",(n.mem||{}).pct||0,`${(n.mem||{}).used_gb} / ${(n.mem||{}).total_gb} G`)}
+    ${mrow("swap",n.swap?pctOf(n.swap.used_gb,n.swap.total_gb):0,
+      `${(n.swap||{}).used_gb??"?"} / ${(n.swap||{}).total_gb??"?"} G`)}
+    ${mrow("disk",(n.disk||{}).pct||0,`${(n.disk||{}).pct??"?"}% · ${(n.disk||{}).free_tb??"?"} TB free`)}
+    ${tempRow(g.temp_c,"gpu","GPU")}
+    ${chartsBlock("node2")}
+    <div class="subhead">Models · inference<span class="cnt">${mods.length}</span></div>
+    ${modTable(mods)}</div>`;
+}
+const modTable=mods=>`<table class="mtab">${mods.length?mods.map(m=>
+  `<tr><td title="${esc(m.label)}"><b>${esc(m.label)}</b></td>
+   <td class="faint">${esc(m.sub)}</td>
+   <td class="num">${esc(m.val)}</td>
+   <td>${st(m.state)}${m.state==="bad"?"stuck":"ok"}</td></tr>`).join("")
+  :`<tr><td class="faint">nothing serving</td></tr>`}</table>`;
+
+function piHtml(p){
+  if(!p||!p.reachable)return offlineNode("raspberrypi","Pi 5 · mirror",p);
+  const m=p.mem||{},d=p.disk||{},mi=p.mirror||{},wd=p.watchdog||{},hr=p.headroom||{};
+  const scale=p.power_scale_w||15;
+  return `<div class="card node" id="fn-pi"><h2>${esc(p.hostname)}
+    <span class="role">Pi 5 · mirror + watchdog</span><span class="up">up ${esc(p.uptime)}</span></h2>
+    ${mrow("cpu",p.cpu_pct||0,`${p.cpu_pct??"?"}% · ${esc(p.load)}`)}
+    ${p.power_w!=null?mrow("power",clamp(p.power_w/scale*100,0,100),
+      `${p.power_w} W · ${esc(p.power_label||"board")} (PMIC)${costSuffix("pi")}`):""}
+    ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
+    ${mrow("disk",d.pct||0,`${d.used_gb??"?"}/${d.total_gb??"?"} G · ${d.free_gb??"?"} G free`)}
+    ${tempRow(p.temp_c,"pi",`throttle ${esc(p.throttled||"?")}`)}
+    <div class="subhead">Role<span class="cnt">${esc(p.tailscale_ip||"")}</span></div>
+    <div class="kv"><span class="k">Stack watchdog (*/10m)</span>
+      <span class="v ${wd.age_m>25?"warn":"good"}">${esc(wd.last_ago||"unknown")}</span></div>
+    <div class="kv"><span class="k">Last watchdog line</span>
+      <span class="v faint" title="${esc(wd.tail||"")}">${esc((wd.tail||"—").slice(-44))}</span></div>
+    <div class="kv"><span class="k">Spark mirror</span>
+      <span class="v">${esc(mi.size_gb??"?")} GB · ${esc(mi.files??"?")} files · ${esc(mi.newest_ago||"?")}</span></div>
+    ${mi.span_days!=null?`<div class="kv"><span class="k">Mirror retention</span>
+      <span class="v ${mi.span_days>21?"warn":"good"}">${esc(mi.span_days)}d kept
+      <span class="faint">· policy 14d</span></span></div>`:""}
+    <div class="kv"><span class="k">Headroom</span>
+      <span class="v">${esc(hr.cpu_idle_pct??"?")}% cpu · ${esc(hr.mem_free_gb??"?")} G ram
+        · ${esc(hr.disk_free_gb??"?")} G disk</span></div>
+    <div class="subhead">Services<span class="cnt">${(p.services||[]).length}</span></div>
+    <div class="ctrs">${(p.services||[]).map(s=>
+      `<div class="ctr ${s.state==="active"?"":"down"}">${st(s.state==="active"?"ok":"stale")}
+        <span>${esc(s.name)}</span></div>`).join("")||'<div class="empty">none</div>'}</div></div>`;
+}
+function start9Html(s){
+  if(!s||!s.reachable)return offlineNode("cosmic-charcoal","Start9",s);
+  const m=s.mem||{},dd=s.disk_data||{},dr=s.disk_root||{},c=s.containers||{},bk=s.backup||{};
+  const scale=s.power_scale_w||65;
+  const pd=s.power_pkg_w!=null
+    ?`pkg ${s.power_pkg_w}W${s.power_dram_w!=null?` + dram ${s.power_dram_w}W`:""}`
+    :(s.power_label||"RAPL");
+  const svcs=s.lxc_services||s.podman_services||[];
+  return `<div class="card node" id="fn-start9"><h2>${esc(s.hostname)}
+    <span class="role">Start9 · StartOS 0.4</span><span class="up">up ${esc(s.uptime)}</span></h2>
+    ${mrow("cpu",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${esc(s.load)}`)}
+    ${s.power_w!=null?mrow("power",clamp(s.power_w/scale*100,0,100),`${s.power_w} W · ${esc(pd)}${costSuffix("start9")}`):""}
+    ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
+    ${mrow("swap",(s.swap||{}).pct||0,`${(s.swap||{}).used_gb??"?"} / ${(s.swap||{}).total_gb??"?"} G`)}
+    ${mrow("data",dd.pct||0,`${Math.round(dd.used_gb||0)} G · ${dd.free_tb??"?"} TB free`)}
+    ${mrow("root",dr.pct||0,`${dr.used_gb??"?"}/${dr.total_gb??"?"} G overlay`)}
+    ${tempRow(s.temp_c,"pkg",esc(s.temp_source||"CPU package"))}
+    <div class="kv"><span class="k">startd</span>
+      <span class="v ${s.startd==="active"?"good":"crit"}">${esc(s.startd)}
+      ${s.os_git?`<span class="faint">${esc(s.os_git)}</span>`:""}</span></div>
+    <div class="kv"><span class="k">Tier-3 backup marker</span>
+      <span class="v">${esc(bk.ago||"unknown")}</span></div>
+    <div class="subhead">LXC packages<span class="cnt">${c.running??"?"} / ${c.total??"?"} up
+      · ${esc(c.runtime||"lxc")}</span></div>
+    <div class="ctrs">${svcs.map(x=>
+      `<div class="ctr ${x.up?"":"down"}" title="${esc(x.name)} — ${esc(x.status)}">
+        ${st(x.up?"ok":"bad")}<span>${esc(x.name)}</span></div>`).join("")
+      ||'<div class="empty">none</div>'}</div></div>`;
+}
+function renderFleet(d){
+  paintElecPanel();
+  // Keep #elec-panel (rate editor) — only rebuild the four node cards.
+  const root=$("v-fleet");
+  if(!root)return;
+  [...root.children].forEach(c=>{if(c.id!=="elec-panel")c.remove();});
+  root.insertAdjacentHTML("beforeend",
+    node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9));
+  if(TAB==="fleet")drawAll();     /* innerHTML wipes the canvases — redraw now */
+}
+
+/* ══════════════════════ CONTROL tab ══════════════════════ */
+let SVC_GROUP="all";
+function svcGroup(el){
+  document.querySelectorAll("#v-control .pill").forEach(p=>p.classList.toggle("on",p===el));
+  SVC_GROUP=el.dataset.g;renderControl();
+}
+function renderControl(){
+  const b=DATA.services||{},list=b.services||[],op=b.active_operation;
+  const q=($("svc-q").value||"").toLowerCase();
+  const waste=(b.waste_ids||[]).length,up=list.filter(s=>s.active).length;
+  setBadge("control",waste,true);
+  $("svc-op").textContent=op&&op.status==="running"?`⏳ ${op.type} ${op.key}: ${op.message||"running…"}`
+    :op&&op.status==="failed"?`✕ ${op.type} ${op.key} failed`
+    :waste?`${waste} running with no recent use`:`${up}/${list.length} up`;
+  const busy=!!(op&&op.status==="running");
+
+  /* one URL registry for both: links are built FROM the service catalog */
+  const linkFor={};
+  ((DATA.links||{}).groups||[]).filter(g=>g.kind==="local")
+    .forEach(g=>(g.links||[]).forEach(l=>{linkFor[l.id]=l;}));
+
+  const shown=list.filter(s=>(SVC_GROUP==="all"||s.group===SVC_GROUP)
+    &&(!q||(s.label+" "+s.detail+" "+s.id).toLowerCase().includes(q)));
+  $("svc-cnt").textContent=`${shown.length} shown · ${up}/${list.length} up`;
+  $("services").innerHTML=shown.map(s=>{
+    const state=s.active?"ok":(s.state==="failed"||s.unit_missing?"bad":"stale");
+    const canStop=!s.no_stop&&s.active&&!s.unit_missing,canStart=!s.active&&!s.unit_missing;
+    let sel="";
+    if(s.id==="node2-deep"&&s.models&&s.models.length){
+      const cur=s.model_key||s.default_model||s.models[0];
+      sel=`<select id="svc-model-${esc(s.id)}" ${busy?"disabled":""}>${s.models.map(m=>
+        `<option value="${esc(m)}" ${m===cur?"selected":""}>${esc(m)}</option>`).join("")}</select>`;
+    }
+    const idle=s.idle||"unknown";
+    const used=s.active
+      ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
+      :(s.unit_missing?"no unit":"stopped");
+    const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
+    const L=linkFor[s.id];
+    const url=L?(L.url||`http://${location.hostname}:${L.port}${L.path||"/"}`):null;
+    return `<div class="svc ${idle==="waste"?"waste":""}" title="${esc(s.hint||s.detail||"")}">
+      <div class="name">${st(state)}<span>${esc(s.label)}</span>
+        ${url&&s.active?`<a class="open" href="${esc(url)}" target="_blank" rel="noopener"
+          onclick="event.stopPropagation()">open ↗</a>`:""}</div>
+      <div class="meta">${esc(s.detail)}${extra?" · "+extra:""}</div>
+      <div class="used ${idle==="waste"?"waste":""}">${used}</div>
+      <div class="acts">${sel}
+        <button class="btn go" ${canStart&&!busy?"":"disabled"}
+          onclick="svcAction('${esc(s.id)}','start')">Start</button>
+        <button class="btn stop" ${canStop&&!busy?"":"disabled"}
+          onclick="svcAction('${esc(s.id)}','stop')">Stop</button></div></div>`;
+  }).join("")||`<div class="empty" style="padding-left:14px">no services match</div>`;
+
+  /* remote hosts are report-only (read-only by design) — links, no controls */
+  $("remote-links").innerHTML=((DATA.links||{}).groups||[])
+    .filter(g=>g.kind!=="local").map(g=>{
+      const ls=(g.links||[]).filter(l=>!q||(l.label+" "+(l.detail||"")).toLowerCase().includes(q));
+      if(!ls.length)return "";
+      return `<div class="lgroup"><h4>${esc(g.label)}
+        <span class="cnt">${ls.length}${g.note?" · "+esc(g.note):""}</span></h4>
+        <div class="ltiles">${ls.map(l=>{
+          const u=l.url||`http://${location.hostname}:${l.port}${l.path||"/"}`;
+          return `<a class="ltile ${l.status==="up"?"":"down"}" href="${esc(u)}"
+            target="_blank" rel="noopener" title="${esc(u)}">
+            <b>${st(norm(l.status))}<span>${esc(l.label)}</span></b>
+            <span>${esc(l.detail||u.replace(/^https?:\/\//,""))}</span></a>`;}).join("")}</div></div>`;
+    }).join("");
+}
+function renderLaunch(apps){
+  $("launch-apps").innerHTML=(apps||[]).map(a=>{
+    const r=!!a.running;
+    const sub=r?`running · pid ${a.pid}`:(a.last?`last: ${esc(a.last.at||"")}`:esc(a.detail));
+    return `<div class="lt ${r?"up":""}" title="${esc(a.note||a.detail||"")}">
+      <span class="ico">${esc(a.icon||"▶")}</span>
+      <div class="txt"><b>${st(r?"ok":"stale")}${esc(a.label)}</b><span>${sub}</span></div>
+      <button class="btn" id="lnc-${esc(a.id)}" ${r?"disabled":""}
+        onclick="launchApp('${esc(a.id)}')">${r?"Open":"Launch"}</button></div>`;
+  }).join("")||`<div class="empty">no desktop apps</div>`;
+}
+
+/* ══════════════════════ JOBS tab ══════════════════════ */
+let AUTO_LAYER="all";
+function autoLayer(el){
+  document.querySelectorAll("#v-jobs .pill").forEach(p=>p.classList.toggle("on",p===el));
+  AUTO_LAYER=el.dataset.l;renderJobs();
+}
+function renderJobs(){
+  const bk=DATA.backups||{},bc=bk.counts||{};
+  $("bk-cnt").textContent=`${bc.ok??0} ok · ${bc.warn??0} warn · ${bc.fail??0} fail`;
+  $("backups").innerHTML=(bk.entries||[]).map(e=>{
+    const s=norm(e.state);
+    return `<div class="bk ${e.state==="ok"?"":e.state}">
+      <div class="h">${st(s)}<b>${esc(e.label)}</b><span class="tier">T${esc(e.tier)}</span>
+        <span class="age ${s==="ok"?"good":s==="bad"?"crit":"warn"}">${esc(e.ago)}</span></div>
+      <div class="d" title="${esc(e.detail)}">${esc(e.detail)}</div>
+      ${e.extra?`<div class="d">${esc(e.extra)}</div>`:""}
+      ${e.note?`<div class="n">▲ ${esc(e.note)}</div>`:""}
+      <div class="d">every ${esc(e.cadence_h)}h${e.target?" · "+esc(e.target):""}</div></div>`;
+  }).join("")||`<div class="empty">no backup data yet</div>`;
+
+  const auto=DATA.automation||{},jobs=auto.jobs||[],c=auto.counts||{};
+  const q=($("auto-q").value||"").toLowerCase();
+  $("auto-summary").textContent=
+    `${c.hermes??0} hermes · ${c.crontab??0} crontab · ${c.timer??0} timers · ${c.paused??0} paused`;
+  const probs=(c.failing||0)+(bc.fail||0)+(bc.warn||0);
+  setBadge("jobs",probs,!(c.failing||bc.fail));
+  const order={fail:0,warn:1,unknown:2,running:2,ok:3,paused:9};
+  const shown=[...jobs]
+    .sort((a,b)=>(order[a.state]??5)-(order[b.state]??5)||(a.next_ts||9e12)-(b.next_ts||9e12))
+    .filter(j=>{
+      if(AUTO_LAYER==="problem"&&j.state!=="fail"&&j.state!=="paused")return false;
+      if(AUTO_LAYER!=="all"&&AUTO_LAYER!=="problem"&&j.layer!==AUTO_LAYER)return false;
+      return !q||(j.name+" "+j.detail+" "+j.schedule+" "+j.where).toLowerCase().includes(q);
+    });
+  $("jobs").innerHTML=`<table class="jtab"><thead><tr><th></th><th>Job</th>
+    <th>Layer</th><th>Schedule</th><th>Next</th><th>Last</th></tr></thead><tbody>
+    ${shown.map(j=>`<tr>
+      <td>${st(j.state==="paused"?"stale":norm(j.state))}</td>
+      <td><div class="jname" title="${esc(j.name)}">${esc(j.name)}</div>
+        <div class="jdetail" title="${esc(j.detail)}">${esc(j.where)} · ${esc(j.detail)}${
+          j.error?` · <span class="crit">${esc(j.error)}</span>`:""}</div></td>
+      <td><span class="lay ${esc(j.layer)}">${esc(j.layer)}</span></td>
+      <td class="num faint" style="white-space:nowrap">${esc(j.schedule)}</td>
+      <td class="num" style="white-space:nowrap">${esc(j.next_in)}</td>
+      <td class="num faint" style="white-space:nowrap">${esc(j.last_ago)}</td></tr>`).join("")
+    ||`<tr><td colspan="6" class="empty">no jobs match</td></tr>`}</tbody></table>`;
+}
+
+/* ══════════════════════ mutations ══════════════════════ */
+async function svcAction(id,action){
+  if(action==="stop"){
+    const critical=["llama-miaai35","hermes-orchestrator"];
+    if(critical.includes(id)&&!confirm(`Stop ${id}? Hermes / agents may fail until it is back.`))return;
+  }
+  let model=null;
+  if(id==="node2-deep"&&action==="start"){const s=$("svc-model-node2-deep");model=s?s.value:null;}
+  try{
+    $("err").textContent=`${action} ${id}…`;
+    const r=await fetch("/api/services/"+encodeURIComponent(id),{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({action,model})});
+    const d=await r.json();
+    if(!d.ok){$("err").textContent=d.error||"action failed";return;}
+    $("err").textContent=d.operation?`queued: ${d.operation.message}`:(d.message||"ok");
+    for(let i=0;i<6;i++){
+      await new Promise(res=>setTimeout(res,i===0?800:2000));
+      DATA.services=await(await fetch("/api/services",{cache:"no-store"})).json();
+      renderControl();
+    }
+    await refresh();
+  }catch(e){$("err").textContent="service action failed: "+e.message;}
+}
+async function launchApp(id){
+  const b=$("lnc-"+id);if(b){b.disabled=true;b.textContent="…";}
+  try{
+    const j=await(await fetch("/api/launch/"+encodeURIComponent(id),{method:"POST"})).json();
+    if(!j.ok)alert(j.error||"launch failed");else if(b)b.textContent="Open";
+  }catch(e){alert("launch failed: "+e);}
+  finally{setTimeout(refresh,1500);}
+}
+async function runAction(id){
+  const btn=$("act-"+id);if(btn){btn.disabled=true;btn.textContent="…";}
+  try{
+    const d=await(await fetch("/api/actions/"+encodeURIComponent(id),{method:"POST"})).json();
+    if(!d.ok){$("err").textContent=d.error||"action failed";return;}
+    for(let i=0;i<40;i++){
+      await new Promise(res=>setTimeout(res,i<3?600:1500));
+      const rr=await fetch("/api/actions/runs/"+d.run.id,{cache:"no-store"});
+      if(!rr.ok)break;
+      const run=(await rr.json()).run,out=$("out-"+id);
+      if(out)out.textContent=`${run.status}${run.took_s?" · "+run.took_s+"s":""}\n${run.output||""}`.slice(0,2000);
+      if(run.status!=="running"){
+        DATA.actions=(await(await fetch("/api/actions")).json()).actions;
+        renderActions(DATA.actions);
+        const o2=$("out-"+id);
+        if(o2)o2.textContent=`${run.status} · ${run.took_s}s\n${(run.output||"").slice(-1200)}`;
+        break;
+      }
+    }
+  }catch(e){$("err").textContent="action failed: "+e.message;}
+  finally{if($("act-"+id)){$("act-"+id).disabled=false;$("act-"+id).textContent="Run";}}
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   TOUCH LAYER
+   Everything below exists because a finger is not a mouse: there is no hover
+   to read a chart with, no scrollbar to reach for, and the natural way to
+   change section is to throw the page sideways.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── chart scrubbing ──────────────────────────────────────────────────────
+   The crosshair follows the finger. touchmove is NON-passive on purpose: once
+   a scrub is horizontal we must preventDefault, or the section scrolls away
+   underneath the finger while you are trying to read a value. A vertical drag
+   that starts on a chart releases the scrub and scrolls normally. */
+let scrubCv=null,scrubX0=0,scrubY0=0,scrubLocked=0;   /* 0 undecided 1 scrub 2 scroll */
+function scrubAt(cv,clientX,clientY){
+  const r=cv.getBoundingClientRect(),x=clientX-r.left;
+  hoverState[cv.id]=x;
+  const cfg=CHARTS.find(c=>c.key===cv.dataset.chart);
+  if(!cfg)return;
+  const cur=drawChart(cv,sparks[cv.dataset.node]||[],cfg,x);
+  if(!cur){hideTip();return;}
+  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926");
+  const ago=Math.max(0,Math.round(((sparks[cv.dataset.node]||[]).slice(-1)[0]||{t:cur.t}).t-cur.t));
+  const tip=$("tip");
+  tip.innerHTML=`<div class="tt">${ago?`−${ago}s`:"now"}</div>`+
+    `<div class="tr"><i style="background:${A}"></i>${cfg.an} ${fmtV(cur[cfg.a]||0,cfg.unit)}</div>`+
+    (cfg.b?`<div class="tr"><i style="background:${B}"></i>${cfg.bn} ${fmtV(cur[cfg.b]||0,cfg.unit)}</div>`:"");
+  tip.classList.add("on");
+  /* park it above the finger so the hand does not cover the answer */
+  tip.style.left=clamp(clientX-tip.offsetWidth/2,8,innerWidth-tip.offsetWidth-8)+"px";
+  tip.style.top=Math.max(8,clientY-tip.offsetHeight-26)+"px";
+}
+function endScrub(){
+  if(!scrubCv)return;
+  delete hoverState[scrubCv.id];
+  scrubCv=null;scrubLocked=0;hideTip();drawAll();
+}
+document.addEventListener("touchstart",e=>{
+  const cv=e.target;
+  if(cv.tagName!=="CANVAS"||!cv.dataset.chart||e.touches.length!==1)return;
+  scrubCv=cv;scrubLocked=0;
+  scrubX0=e.touches[0].clientX;scrubY0=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(!scrubCv||e.touches.length!==1)return;
+  const t=e.touches[0],dx=t.clientX-scrubX0,dy=t.clientY-scrubY0;
+  if(!scrubLocked&&Math.hypot(dx,dy)>8)scrubLocked=Math.abs(dx)>Math.abs(dy)?1:2;
+  if(scrubLocked===2){endScrub();return;}          /* vertical → hand it to the scroller */
+  if(e.cancelable)e.preventDefault();
+  scrubAt(scrubCv,t.clientX,t.clientY);
+},{passive:false});
+for(const ev of["touchend","touchcancel"])
+  document.addEventListener(ev,endScrub,{passive:true});
+
+/* ── swipe between sections ───────────────────────────────────────────────
+   Only fires for a horizontal-dominant flick that did NOT start inside
+   something that scrolls sideways itself (the filter-pill rows, a wide table,
+   a chart) or on a control — otherwise the gesture is ambiguous and the wrong
+   thing moves. */
+(function(){
+  let x0=0,y0=0,t0=0,live=false,decided=false;
+  const guards=/^(CANVAS|INPUT|SELECT|TEXTAREA|BUTTON|A)$/;
+  const blocked=el=>{
+    for(let n=el;n&&n!==document.body;n=n.parentElement){
+      if(guards.test(n.tagName))return true;
+      const ox=getComputedStyle(n).overflowX;
+      if(/auto|scroll/.test(ox)&&n.scrollWidth>n.clientWidth+4)return true;
+    }
+    return false;
+  };
+  addEventListener("touchstart",e=>{
+    live=false;
+    if(!phone()||e.touches.length!==1||blocked(e.target))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();
+    live=true;decided=false;
+  },{passive:true});
+  addEventListener("touchmove",e=>{
+    if(!live)return;
+    const t=e.touches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(!decided&&Math.hypot(dx,dy)>12){
+      decided=true;
+      if(Math.abs(dy)>=Math.abs(dx))live=false;      /* vertical → a scroll, not a swipe */
+    }
+  },{passive:true});
+  addEventListener("touchend",e=>{
+    if(!live)return;live=false;
+    const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+    if(Date.now()-t0>800||Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.6)return;
+    const next=TABS.indexOf(TAB)+(dx<0?1:-1);
+    if(next<0||next>=TABS.length)return;
+    switchTab(TABS[next],dx<0?1:-1);
+  },{passive:true});
+})();
+
+/* ── pull to refresh ──────────────────────────────────────────────────────
+   Armed only at the very top of the active section, so it can never steal a
+   normal scroll. Refreshing means BOTH calls: structure and values. */
+(function(){
+  const THRESH=64;
+  let y0=0,live=false,pulling=false,dist=0,from=null;
+  const chip=()=>$("ptr"),label=()=>$("ptr-txt");
+  const view=()=>$("v-"+TAB);
+  /* "at top" means the section AND every nested scroller under the finger —
+     otherwise pulling a half-scrolled alert list would arm the refresh */
+  const atTop=()=>{
+    const v=view();
+    if(!v||v.scrollTop>0)return false;
+    for(let n=from;n&&n!==document.body;n=n.parentElement)
+      if(n.scrollTop>0&&n.scrollHeight>n.clientHeight+2)return false;
+    return true;
+  };
+  const reset=()=>{chip().className="";pulling=false;dist=0;};
+  addEventListener("touchstart",e=>{
+    from=e.target;
+    live=phone()&&e.touches.length===1&&atTop();
+    if(live){y0=e.touches[0].clientY;pulling=false;dist=0;}
+  },{passive:true});
+  addEventListener("touchmove",e=>{
+    if(!live)return;
+    dist=e.touches[0].clientY-y0;
+    if(dist<=6||!atTop()){if(pulling)reset();if(!atTop())live=false;return;}
+    pulling=true;
+    chip().className="armed";
+    label().textContent=dist>=THRESH?"release to refresh":"pull to refresh";
+  },{passive:true});
+  addEventListener("touchend",async()=>{
+    if(!live){reset();return;}
+    live=false;
+    if(!pulling||dist<THRESH){reset();return;}
+    chip().className="spin";label().textContent="refreshing…";
+    await refresh();await tickLoop();
+    label().textContent="updated";
+    setTimeout(reset,700);
+  },{passive:true});
+})();
+
+/* ══════════════════════ main loop ══════════════════════
+   Cadences (split so side panels don't stampede with overview):
+
+     /api/tick      ~400 B, <5 ms — VALUES from 1 Hz hist. → 1 s
+     /api/overview  structure + hist-overlaid gauges.     → 10 s (20 s phone)
+     /api/comfy     → 10 s (server backs off while offline)
+     /api/token-usage / /api/energy-cost → 30 s (server 20 s cache)
+
+   Both tick and overview stop while the tab is hidden. */
+let HOSTS=[];               /* last host models — patched in place by the tick */
+let LAST_TICK=0, tickBusy=false;
+
+async function refresh(){
+  try{
+    const d=await(await fetch("/api/overview",{cache:"no-store"})).json();
+    DATA=d;
+    const hosts=fleetHosts(d);
+    HOSTS=hosts;
+    const items=attentionItems(d,hosts);
+    renderHero(hosts,items,d);
+    renderHosts(hosts);
+    renderAttention(items);
+    renderProjects(d.projects||[]);
+    renderActions(d.actions||[]);
+    renderLaunch(d.launch||[]);
+    renderFleet(d);
+    renderControl();
+    renderJobs();
+    setBadge("fleet",hosts.filter(h=>h.state==="bad").length,false);
+    $("stamp").textContent="updated "+(sampleAgeLabel((d.node1||{}).metrics_as_of)
+      ||new Date().toLocaleTimeString());
+    $("err").textContent="";
+  }catch(e){$("err").textContent="refresh failed: "+e.message;}
+}
+
+/* Patch the live numbers onto the host models the last refresh built, then
+   repaint. Structure (which hosts, what state, alerts) is deliberately NOT
+   touched here — that stays the 10 s call's job. */
+function applyTick(t){
+  if(!HOSTS.length)return;
+  const num=(v,cur)=>typeof v==="number"?v:cur;
+  // Keep DATA in sync so Fleet/Jobs don't show overview-stale gauges.
+  patchDataFromTick(t);
+  HOSTS.forEach(h=>{
+    const s=t[h.id];
+    if(!s||h.offline||s.reachable===false)return;
+    h.dial=num(h.id==="node1"||h.id==="node2"?s.gpu:s.cpu,h.dial);
+    h.cpu=num(s.cpu,h.cpu);
+    h.mem=num(s.mem,h.mem);
+    if(h.memTotal&&typeof s.mem==="number")
+      h.memTxt=`${(s.mem/100*h.memTotal).toFixed(1)}/${h.memTotal}G`;
+    if(typeof s.temp==="number"&&s.temp>0)h.tempC=s.temp;
+    if(typeof s.pwr==="number"&&s.pwr>0)h.powerW=s.pwr;
+    const age=sampleAgeLabel(s.t);
+    if(age)h.up=age;
+  });
+  pushHist(HOSTS);
+  renderHosts(HOSTS);
+  patchFleetLive(t);
+}
+function patchDataFromTick(t){
+  if(!DATA||!t)return;
+  const n1=t.node1;
+  if(n1&&DATA.node1){
+    DATA.node1.metrics_as_of=n1.t;
+    const g=(DATA.node1.gpus||(DATA.node1.gpus=[{}]))[0];
+    if(typeof n1.gpu==="number")g.util_gpu=n1.gpu;
+    if(typeof n1.pwr==="number"){g.power_w=n1.pwr;DATA.node1.total_power_watts=n1.pwr;}
+    if(typeof n1.temp==="number")g.temp_c=n1.temp;
+    const sys=DATA.node1.system||(DATA.node1.system={});
+    if(typeof n1.cpu==="number")sys.cpu_pct=n1.cpu;
+    if(typeof n1.mem==="number")sys.mem_pct=n1.mem;
+  }
+  const n2=t.node2;
+  if(n2&&DATA.node2&&n2.reachable!==false){
+    DATA.node2.metrics_as_of=n2.t;
+    const g=(DATA.node2.gpus||(DATA.node2.gpus=[{}]))[0];
+    if(typeof n2.gpu==="number")g.util_gpu=n2.gpu;
+    if(typeof n2.pwr==="number")g.power_w=n2.pwr;
+    if(typeof n2.temp==="number")g.temp_c=n2.temp;
+    if(typeof n2.cpu==="number")DATA.node2.cpu_pct=n2.cpu;
+    if(typeof n2.mem==="number"&&DATA.node2.mem)DATA.node2.mem.pct=n2.mem;
+  }
+  for(const id of["pi","start9"]){
+    const s=t[id];
+    if(!s||!DATA[id]||s.reachable===false)continue;
+    if(typeof s.cpu==="number")DATA[id].cpu_pct=s.cpu;
+    if(typeof s.mem==="number"&&DATA[id].mem)DATA[id].mem.pct=s.mem;
+    if(typeof s.pwr==="number")DATA[id].power_w=s.pwr;
+    if(typeof s.temp==="number")DATA[id].temp_c=s.temp;
+  }
+}
+/* In-place Fleet gauge updates — avoid full HTML rebuild every second (wipes charts). */
+function patchFleetLive(t){
+  if(TAB!=="fleet"||!t)return;
+  const setRow=(card,label,pct,txt)=>{
+    if(!card)return;
+    for(const row of card.querySelectorAll(".mrow")){
+      const lab=row.querySelector("label");
+      if(!lab||lab.textContent!==label)continue;
+      const bar=row.querySelector(".bar i");
+      const v=row.querySelector(".v");
+      if(bar&&typeof pct==="number"){
+        bar.style.width=clamp(pct,0,100)+"%";
+        bar.className=barCls(pct);
+      }
+      if(v&&txt!=null)v.textContent=txt;
+      break;
+    }
+  };
+  const n1=t.node1, c1=$("fn-node1");
+  if(n1&&c1){
+    if(typeof n1.gpu==="number")setRow(c1,"gpu",n1.gpu,`${Math.round(n1.gpu)}%`);
+    if(typeof n1.pwr==="number"){
+      const c=nodeHistCost("node1");
+      const extra=c?` · ${c.complete?"":"~"}${fmtUsd(c.usd)}/24h`:"";
+      setRow(c1,"power",clamp(n1.pwr,0,100),`${n1.pwr} W · GPU draw${extra}`);
+    }
+    if(typeof n1.cpu==="number")setRow(c1,"cpu",n1.cpu,`${Math.round(n1.cpu)}%`);
+    if(typeof n1.mem==="number")setRow(c1,"mem",n1.mem,`${Math.round(n1.mem)}%`);
+    if(typeof n1.temp==="number"){
+      for(const row of c1.querySelectorAll(".mrow")){
+        if((row.querySelector("label")||{}).textContent!=="temp")continue;
+        const v=row.querySelector(".v");
+        if(v)v.innerHTML=`${tempSpan(n1.temp,"gpu")} · GPU`;
+        break;
+      }
+    }
+    const up=c1.querySelector("[data-live-up]");
+    if(up)up.textContent=sampleAgeLabel(n1.t)||up.textContent;
+  }
+  const n2=t.node2, c2=$("fn-node2");
+  if(n2&&c2&&n2.reachable!==false){
+    if(typeof n2.gpu==="number")setRow(c2,"gpu",n2.gpu,`${Math.round(n2.gpu)}%`);
+    if(typeof n2.pwr==="number"){
+      const c=nodeHistCost("node2");
+      const extra=c?` · ${c.complete?"":"~"}${fmtUsd(c.usd)}/24h`:"";
+      setRow(c2,"power",clamp(n2.pwr,0,100),`${n2.pwr} W · GPU draw${extra}`);
+    }
+    if(typeof n2.cpu==="number")setRow(c2,"cpu",n2.cpu,`${Math.round(n2.cpu)}%`);
+    if(typeof n2.mem==="number")setRow(c2,"mem",n2.mem,`${Math.round(n2.mem)}%`);
+    const up=c2.querySelector("[data-live-up]");
+    if(up)up.textContent=sampleAgeLabel(n2.t)||up.textContent;
+  }
+  for(const id of["pi","start9"]){
+    const s=t[id], card=$(`fn-${id}`);
+    if(!s||!card||s.reachable===false)continue;
+    if(typeof s.cpu==="number")setRow(card,"cpu",s.cpu,`${Math.round(s.cpu)}%`);
+    if(typeof s.mem==="number")setRow(card,"mem",s.mem,`${Math.round(s.mem)}%`);
+    if(typeof s.pwr==="number"){
+      const c=nodeHistCost(id);
+      const extra=c?` · ${c.complete?"":"~"}${fmtUsd(c.usd)}/24h`:"";
+      const kind=id==="pi"?"board (PMIC)":"RAPL";
+      setRow(card,"power",clamp(s.pwr/(id==="pi"?15:65)*100,0,100),`${s.pwr} W · ${kind}${extra}`);
+    }
+  }
+}
+async function tickLoop(){
+  if(document.hidden||tickBusy)return;
+  tickBusy=true;
+  try{
+    const t=await(await fetch("/api/tick",{cache:"no-store"})).json();
+    applyTick(t);
+    LAST_TICK=Date.now();
+  }catch(e){/* the liveness pill below is the visible consequence */}
+  finally{tickBusy=false;paintLive();}
+}
+/* Says out loud whether the animating numbers are still arriving. A dashboard
+   that silently freezes on last-known-good is worse than one that admits it. */
+function paintLive(){
+  const el=$("live"),txt=$("live-txt");
+  if(!el)return;
+  if(!LAST_TICK){el.className="live stale";txt.textContent="…";return;}
+  const age=(Date.now()-LAST_TICK)/1000;
+  if(age<4){el.className="live";txt.textContent="live";}
+  else if(age<45){el.className="live stale";txt.textContent=Math.round(age)+"s ago";}
+  else{el.className="live dead";txt.textContent="no data";}
+}
+
+const clockTick=()=>$("clock").textContent=new Date().toLocaleTimeString();
+clockTick();setInterval(clockTick,1000);
+setInterval(paintLive,1000);
+switchTab(TAB);
+bindElecRate();
+refresh();tickLoop();pollTokenUsage();pollComfy();pollEnergy();
+
+/* Cadences split so structural overview isn't piled with every side panel:
+     overview  10s (20s phone) — structure
+     tick      1s              — live gauges (already paid hist)
+     comfy     10s             — Pulse card; server backs off when offline
+     tokens    30s             — Jobs stats (20s server cache)
+     energy    30s             — Fleet $ (20s server cache)
+     sparks    2s on Fleet     — chart hist */
+setInterval(()=>{if(!document.hidden)refresh();},phone()?20000:10000);
+setInterval(tickLoop,1000);
+setInterval(()=>{if(!document.hidden)pollComfy();},10000);
+setInterval(()=>{if(!document.hidden)pollTokenUsage();},30000);
+setInterval(()=>{if(!document.hidden)pollEnergy();},30000);
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)return;
+  paintLive();refresh();tickLoop();pollTokenUsage();pollComfy();pollEnergy();
+  if(TAB==="fleet")pollSparks();
+});
+
+window.addEventListener("resize",()=>{
+  if(TAB==="fleet")drawAll();
+  if(TAB==="jobs")drawTokChart(_tokSeries);
+  document.querySelectorAll(".spark").forEach(cv=>{
+    const id=(cv.closest(".host")||{}).id;
+    if(id)drawSpark(cv,HIST[id.slice(3)]||[],"var(--s1)");});
+});
+</script>
+</body>
+</html>

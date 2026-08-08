@@ -1,0 +1,395 @@
+#!/usr/bin/env python3
+"""
+Case/fan cooling A/B helper.
+
+Marks before/after windows against the 5-minute performance_timeseries.csv and
+compares GPU temps with util buckets so load differences don't fake a win.
+
+Usage:
+  python3 cooling_experiment.py mark-before [--note "..."] [--nodes node1,node2]
+  python3 cooling_experiment.py mark-after  [--note "..."]
+  python3 cooling_experiment.py status
+  python3 cooling_experiment.py compare [--min-hours-after 4]
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+import statistics
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+PROJECT_DIR = Path(__file__).resolve().parent
+CSV_FILE = PROJECT_DIR / "data/performance_timeseries.csv"
+EXPERIMENT_FILE = PROJECT_DIR / "data/cooling-experiment.json"
+REPORT_DIR = PROJECT_DIR / "data/cooling-reports"
+
+# Util buckets keep before/after comparable under different inference load.
+UTIL_BUCKETS = (
+    ("idle", 0.0, 10.0),
+    ("mid", 10.0, 70.0),
+    ("high", 70.0, 100.1),
+)
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).isoformat()
+
+
+def _parse_iso(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _number(value: str | None) -> float | None:
+    try:
+        return float(value) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _percentile(values: list[float], percentile: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    index = (len(ordered) - 1) * percentile
+    low = math.floor(index)
+    high = math.ceil(index)
+    if low == high:
+        return round(ordered[low], 2)
+    weight = index - low
+    return round(ordered[low] * (1 - weight) + ordered[high] * weight, 2)
+
+
+def _stats(values: list[float]) -> dict:
+    if not values:
+        return {"n": 0, "min": None, "p50": None, "mean": None, "p95": None, "max": None}
+    return {
+        "n": len(values),
+        "min": round(min(values), 2),
+        "p50": _percentile(values, 0.50),
+        "mean": round(statistics.mean(values), 2),
+        "p95": _percentile(values, 0.95),
+        "max": round(max(values), 2),
+    }
+
+
+def _load_experiment() -> dict:
+    if EXPERIMENT_FILE.exists():
+        return json.loads(EXPERIMENT_FILE.read_text())
+    return {}
+
+
+def _save_experiment(payload: dict) -> None:
+    EXPERIMENT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    EXPERIMENT_FILE.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def mark_before(note: str, nodes: list[str]) -> dict:
+    """Open the pre-case window at now; keeps collecting until mark-after."""
+    payload = {
+        "name": "case-fan-cooling",
+        "nodes": nodes,
+        "created_at": _iso(_now()),
+        "before_start": _iso(_now()),
+        "before_end": None,
+        "after_start": None,
+        "after_end": None,
+        "notes": {"before": note},
+        "collector": {
+            "csv": str(CSV_FILE),
+            "interval_hint_s": 300,
+            "node1_temp_col": "gpu_temp_c",
+            "node2_temp_col": "node2_gpu_temp_c",
+        },
+    }
+    _save_experiment(payload)
+    return payload
+
+
+def mark_after(note: str) -> dict:
+    """Close before window and open after window when case/fan is live."""
+    payload = _load_experiment()
+    if not payload.get("before_start"):
+        raise SystemExit("No before window — run mark-before first.")
+    now = _iso(_now())
+    payload["before_end"] = now
+    payload["after_start"] = now
+    payload.setdefault("notes", {})["after"] = note
+    _save_experiment(payload)
+    return payload
+
+
+def _load_rows(start: datetime, end: datetime | None = None) -> list[dict]:
+    end = end or _now()
+    rows: list[dict] = []
+    with CSV_FILE.open(newline="") as source:
+        for row in csv.DictReader(source):
+            ts = _parse_iso(row.get("iso_ts"))
+            if ts is None or ts < start or ts > end:
+                continue
+            rows.append(row)
+    return rows
+
+
+def _bucket_name(util: float | None) -> str | None:
+    if util is None:
+        return None
+    for name, lo, hi in UTIL_BUCKETS:
+        if lo <= util < hi:
+            return name
+    return None
+
+
+def _node_series(rows: list[dict], node: str) -> dict[str, list[float]]:
+    """Temps + util for one node, plus per-bucket temp lists."""
+    if node == "node1":
+        temp_key, util_key, power_key = "gpu_temp_c", "gpu_util", "gpu_power_w"
+    else:
+        temp_key, util_key, power_key = "node2_gpu_temp_c", "node2_gpu_util", "node2_gpu_power_w"
+
+    temps: list[float] = []
+    utils: list[float] = []
+    powers: list[float] = []
+    buckets: dict[str, list[float]] = {name: [] for name, _, _ in UTIL_BUCKETS}
+
+    for row in rows:
+        temp = _number(row.get(temp_key))
+        util = _number(row.get(util_key))
+        power = _number(row.get(power_key))
+        if temp is None:
+            continue
+        temps.append(temp)
+        if util is not None:
+            utils.append(util)
+            bucket = _bucket_name(util)
+            if bucket:
+                buckets[bucket].append(temp)
+        if power is not None:
+            powers.append(power)
+
+    return {
+        "temp": temps,
+        "util": utils,
+        "power": powers,
+        "buckets": buckets,
+    }
+
+
+def _delta(before: dict, after: dict) -> dict:
+    out = {}
+    for key in ("min", "p50", "mean", "p95", "max"):
+        b, a = before.get(key), after.get(key)
+        out[key] = round(a - b, 2) if b is not None and a is not None else None
+    return out
+
+
+def compare(min_hours_after: float = 0.0) -> dict:
+    """Diff after vs before; negative temp delta means cooler (good)."""
+    payload = _load_experiment()
+    if not payload.get("before_start"):
+        raise SystemExit("No experiment — run mark-before first.")
+    before_start = _parse_iso(payload["before_start"])
+    before_end = _parse_iso(payload.get("before_end")) or _now()
+    after_start = _parse_iso(payload.get("after_start"))
+    if after_start is None:
+        raise SystemExit(
+            "After window not marked yet. When the case/fan is on, run:\n"
+            "  python3 cooling_experiment.py mark-after"
+        )
+
+    after_end = _parse_iso(payload.get("after_end")) or _now()
+    after_hours = (after_end - after_start).total_seconds() / 3600.0
+    if after_hours < min_hours_after:
+        raise SystemExit(
+            f"After window only {after_hours:.2f}h; need >= {min_hours_after}h "
+            f"(pass --min-hours-after 0 to override)."
+        )
+
+    before_rows = _load_rows(before_start, before_end)
+    after_rows = _load_rows(after_start, after_end)
+    nodes = payload.get("nodes") or ["node1", "node2"]
+
+    report = {
+        "experiment": payload.get("name"),
+        "generated_at": _iso(_now()),
+        "windows": {
+            "before": {
+                "start": payload["before_start"],
+                "end": payload.get("before_end") or _iso(before_end),
+                "samples": len(before_rows),
+                "hours": round((before_end - before_start).total_seconds() / 3600.0, 2),
+            },
+            "after": {
+                "start": payload["after_start"],
+                "end": payload.get("after_end") or _iso(after_end),
+                "samples": len(after_rows),
+                "hours": round(after_hours, 2),
+            },
+        },
+        "nodes": {},
+        "reading_guide": (
+            "delta = after − before (°C). Negative = cooler. "
+            "Prefer util-bucket deltas over overall mean when loads differ."
+        ),
+    }
+
+    for node in nodes:
+        b = _node_series(before_rows, node)
+        a = _node_series(after_rows, node)
+        b_temp = _stats(b["temp"])
+        a_temp = _stats(a["temp"])
+        node_report = {
+            "before": {
+                "temp": b_temp,
+                "util": _stats(b["util"]),
+                "power_w": _stats(b["power"]),
+            },
+            "after": {
+                "temp": a_temp,
+                "util": _stats(a["util"]),
+                "power_w": _stats(a["power"]),
+            },
+            "temp_delta_c": _delta(b_temp, a_temp),
+            "by_util_bucket": {},
+        }
+        for name, _, _ in UTIL_BUCKETS:
+            bb = _stats(b["buckets"][name])
+            aa = _stats(a["buckets"][name])
+            node_report["by_util_bucket"][name] = {
+                "before": bb,
+                "after": aa,
+                "temp_delta_c": _delta(bb, aa),
+            }
+        report["nodes"][node] = node_report
+
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = _now().strftime("%Y%m%dT%H%M%SZ")
+    out_path = REPORT_DIR / f"cooling-compare-{stamp}.json"
+    out_path.write_text(json.dumps(report, indent=2) + "\n")
+    report["report_path"] = str(out_path)
+    return report
+
+
+def _print_compare(report: dict) -> None:
+    w = report["windows"]
+    print(
+        f"Cooling compare  before {w['before']['hours']}h/{w['before']['samples']} samples  "
+        f"after {w['after']['hours']}h/{w['after']['samples']} samples"
+    )
+    print(report["reading_guide"])
+    for node, body in report["nodes"].items():
+        d = body["temp_delta_c"]
+        print(
+            f"\n{node}: mean {body['before']['temp']['mean']}→{body['after']['temp']['mean']} "
+            f"(Δ {d['mean']})  p95 {body['before']['temp']['p95']}→{body['after']['temp']['p95']} "
+            f"(Δ {d['p95']})  max {body['before']['temp']['max']}→{body['after']['temp']['max']} "
+            f"(Δ {d['max']})"
+        )
+        print(
+            f"  load check util mean "
+            f"{body['before']['util']['mean']}→{body['after']['util']['mean']}  "
+            f"power mean {body['before']['power_w']['mean']}→{body['after']['power_w']['mean']}"
+        )
+        for bucket, stats in body["by_util_bucket"].items():
+            bd = stats["temp_delta_c"]
+            if stats["before"]["n"] == 0 and stats["after"]["n"] == 0:
+                continue
+            print(
+                f"  {bucket:4s}: n {stats['before']['n']}→{stats['after']['n']}  "
+                f"mean Δ {bd['mean']}  p95 Δ {bd['p95']}  max Δ {bd['max']}"
+            )
+    print(f"\nReport: {report['report_path']}")
+
+
+def status() -> None:
+    payload = _load_experiment()
+    if not payload:
+        print("No cooling experiment marked yet.")
+        return
+    print(json.dumps(payload, indent=2))
+    before_start = _parse_iso(payload.get("before_start"))
+    before_end = _parse_iso(payload.get("before_end")) or _now()
+    if before_start:
+        hours = (before_end - before_start).total_seconds() / 3600.0
+        rows = _load_rows(before_start, before_end)
+        n2_temps = sum(1 for r in rows if _number(r.get("node2_gpu_temp_c")) is not None)
+        print(
+            f"\nbefore window so far: {hours:.2f}h, {len(rows)} samples, "
+            f"{n2_temps} with node2_gpu_temp_c"
+        )
+    if payload.get("after_start"):
+        after_start = _parse_iso(payload["after_start"])
+        after_end = _parse_iso(payload.get("after_end")) or _now()
+        assert after_start is not None
+        hours = (after_end - after_start).total_seconds() / 3600.0
+        rows = _load_rows(after_start, after_end)
+        print(f"after window so far: {hours:.2f}h, {len(rows)} samples")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_before = sub.add_parser("mark-before", help="Start pre-case baseline now")
+    p_before.add_argument("--note", default="pre case+fan")
+    p_before.add_argument(
+        "--nodes",
+        default="node1,node2",
+        help="Comma list: node1,node2 (default both)",
+    )
+
+    p_after = sub.add_parser("mark-after", help="Case/fan is on — start after window")
+    p_after.add_argument("--note", default="case+fan installed")
+
+    sub.add_parser("status", help="Show experiment marker + sample counts")
+
+    p_cmp = sub.add_parser("compare", help="Print before vs after temp deltas")
+    p_cmp.add_argument(
+        "--min-hours-after",
+        type=float,
+        default=4.0,
+        help="Refuse compare until after window has this many hours (default 4)",
+    )
+
+    args = parser.parse_args()
+
+    if args.cmd == "mark-before":
+        nodes = [n.strip() for n in args.nodes.split(",") if n.strip()]
+        payload = mark_before(args.note, nodes)
+        print("BEFORE marked at", payload["before_start"])
+        print("When case+fan is on (~7h): python3 cooling_experiment.py mark-after")
+        print("Marker:", EXPERIMENT_FILE)
+        return 0
+
+    if args.cmd == "mark-after":
+        payload = mark_after(args.note)
+        print("AFTER marked at", payload["after_start"])
+        print("Let it soak (ideally ≥4h), then: python3 cooling_experiment.py compare")
+        return 0
+
+    if args.cmd == "status":
+        status()
+        return 0
+
+    if args.cmd == "compare":
+        report = compare(min_hours_after=args.min_hours_after)
+        _print_compare(report)
+        return 0
+
+    raise SystemExit(f"unknown command: {args.cmd}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

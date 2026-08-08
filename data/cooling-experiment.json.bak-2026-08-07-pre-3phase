@@ -1,0 +1,22 @@
+{
+  "name": "case-fan-cooling",
+  "nodes": [
+    "node1",
+    "node2"
+  ],
+  "created_at": "2026-08-07T14:21:48.965634+00:00",
+  "before_start": "2026-08-07T14:21:48.965644+00:00",
+  "before_end": "2026-08-08T00:35:57.970028+00:00",
+  "after_start": "2026-08-08T00:35:57.970028+00:00",
+  "after_end": null,
+  "notes": {
+    "before": "pre case+fan; mark started ~7h before install",
+    "after": "case+fan installed; dual reboot 19:15 and 19:32 CDT; post-install mark"
+  },
+  "collector": {
+    "csv": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/performance_timeseries.csv",
+    "interval_hint_s": 300,
+    "node1_temp_col": "gpu_temp_c",
+    "node2_temp_col": "node2_gpu_temp_c"
+  }
+}

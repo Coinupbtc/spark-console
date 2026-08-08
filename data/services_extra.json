@@ -1,42 +1,7 @@
 {
   "version": 1,
-  "updated_at": "2026-07-30T14:32:15.093307+00:00",
+  "updated_at": "2026-08-08T06:07:00+00:00",
   "services": {
-    "crypto-machine-desk": {
-      "label": "Crypto Machine Desk",
-      "detail": "Paper trading dashboard \u2014 charts, strategies, buy/sell tape",
-      "group": "apps",
-      "kind": "systemd",
-      "critical": false,
-      "no_stop": false,
-      "hint": "",
-      "source": "extra",
-      "unit": "crypto-machine-dashboard.service",
-      "probe": [
-        "http://100.81.246.26:8787/",
-        2.0
-      ],
-      "port": 8787,
-      "show_projects_tile": true,
-      "registered_at": "2026-07-24T14:20:19.691899+00:00"
-    },
-    "ai-trend-monitor": {
-      "label": "AI Model Trend Monitor",
-      "detail": ":9000",
-      "group": "apps",
-      "kind": "probe-only",
-      "critical": false,
-      "no_stop": true,
-      "hint": "",
-      "source": "extra",
-      "probe": [
-        "http://127.0.0.1:9000/",
-        2.0
-      ],
-      "port": 9000,
-      "show_projects_tile": true,
-      "registered_at": "2026-07-25T01:46:59.587293+00:00"
-    },
     "blender-mcp": {
       "label": "Blender MCP bridge",
       "detail": "Headless Blender bridge for agents \u00b7 127.0.0.1:9876 (raw TCP)",
@@ -58,6 +23,7 @@
       "critical": false,
       "no_stop": false,
       "hint": "Phone PWA: https://sparkmax-10ef.tail6cfceb.ts.net (Tailscale only; app is loopback-only, serve terminates TLS)",
+      "open_url": "https://sparkmax-10ef.tail6cfceb.ts.net/",
       "source": "extra",
       "unit": "cardarb-mobile.service",
       "show_projects_tile": true,
@@ -81,58 +47,6 @@
       "show_projects_tile": true,
       "registered_at": "2026-07-26T15:48:41.665788+00:00"
     },
-    "hermes-db-watch": {
-      "label": "Hermes DB Corruption Watch",
-      "detail": "",
-      "group": "apps",
-      "kind": "systemd",
-      "critical": false,
-      "no_stop": false,
-      "hint": "",
-      "source": "extra",
-      "unit": "hermes-db-watch.timer.service",
-      "show_projects_tile": true,
-      "registered_at": "2026-07-26T16:11:06.597096+00:00"
-    },
-    "hermes-db-integrity": {
-      "label": "Hermes DB Integrity (nightly)",
-      "detail": "",
-      "group": "apps",
-      "kind": "systemd",
-      "critical": false,
-      "no_stop": false,
-      "hint": "",
-      "source": "extra",
-      "unit": "hermes-db-integrity.timer.service",
-      "show_projects_tile": true,
-      "registered_at": "2026-07-26T16:11:06.685634+00:00"
-    },
-    "restic-weekly-verify": {
-      "label": "Restic Deep Verify (weekly)",
-      "detail": "",
-      "group": "apps",
-      "kind": "systemd",
-      "critical": false,
-      "no_stop": false,
-      "hint": "",
-      "source": "extra",
-      "unit": "restic-weekly-verify.timer.service",
-      "show_projects_tile": true,
-      "registered_at": "2026-07-26T16:11:06.755626+00:00"
-    },
-    "backup-model-weights": {
-      "label": "Model Weight Mirror (weekly)",
-      "detail": "",
-      "group": "apps",
-      "kind": "systemd",
-      "critical": false,
-      "no_stop": false,
-      "hint": "",
-      "source": "extra",
-      "unit": "backup-model-weights.timer.service",
-      "show_projects_tile": true,
-      "registered_at": "2026-07-26T16:11:06.834657+00:00"
-    },
     "start9-hermes-proxy": {
       "label": "Start9 Hermes Proxy",
       "detail": "SearXNG/mempool proxy \u2192 Start9 LXC",
@@ -140,6 +54,7 @@
       "kind": "systemd",
       "critical": false,
       "no_stop": false,
+      "no_open": true,
       "hint": "StartOS 0.4; listens 127.0.0.1:18080",
       "source": "extra",
       "unit": "start9-hermes-proxy.service",
@@ -158,6 +73,7 @@
       "kind": "systemd",
       "critical": false,
       "no_stop": false,
+      "no_open": true,
       "hint": "oneshot RemainAfterExit; StartOS 0.4",
       "source": "extra",
       "unit": "gitea-tunnel.service",
@@ -176,6 +92,7 @@
       "kind": "systemd",
       "critical": false,
       "no_stop": false,
+      "no_open": true,
       "hint": "StartOS 0.4; vault sync path",
       "source": "extra",
       "unit": "start9-syncthing-tunnel.service",
@@ -187,70 +104,23 @@
       "show_projects_tile": true,
       "registered_at": "2026-07-26T18:38:39.273889+00:00"
     },
-    "engine-autoupdate": {
-      "label": "Engine Auto-Update (llama.cpp weekly)",
-      "detail": "Weekly upstream llama.cpp rebuild; APPLY=1 to A/B and apply",
+    "showrunner": {
+      "label": "Showrunner (H3 story boards)",
+      "detail": ":8095",
       "group": "apps",
       "kind": "systemd",
       "critical": false,
       "no_stop": false,
       "hint": "",
       "source": "extra",
-      "unit": "engine-autoupdate.service",
-      "show_projects_tile": true,
-      "registered_at": "2026-07-26T20:15:05.687375+00:00"
-    },
-    "portfolio-proto-8791": {
-      "label": "portfolio prototypes :8791",
-      "detail": ":8791",
-      "group": "apps",
-      "kind": "probe-only",
-      "critical": false,
-      "no_stop": true,
-      "hint": "",
-      "source": "extra",
+      "unit": "showrunner.service",
       "probe": [
-        "http://127.0.0.1:8791/",
+        "http://127.0.0.1:8095/",
         2.0
       ],
-      "port": 8791,
+      "port": 8095,
       "show_projects_tile": true,
-      "registered_at": "2026-07-27T00:22:26.041185+00:00"
-    },
-    "teachers-book": {
-      "label": "Teachers B00k",
-      "detail": "Local-first teacher gradebook (FastAPI+SQLite)",
-      "group": "apps",
-      "kind": "systemd",
-      "critical": false,
-      "no_stop": false,
-      "hint": "",
-      "source": "extra",
-      "unit": "teachers-book.service",
-      "probe": [
-        "http://127.0.0.1:8010/",
-        2.0
-      ],
-      "port": 8010,
-      "show_projects_tile": true,
-      "registered_at": "2026-07-29T13:14:04.471780+00:00"
-    },
-    "crypto-dashboard": {
-      "label": "Crypto Dashboard",
-      "detail": ":8890",
-      "group": "apps",
-      "kind": "probe-only",
-      "critical": false,
-      "no_stop": true,
-      "hint": "",
-      "source": "extra",
-      "probe": [
-        "http://127.0.0.1:8890/",
-        2.0
-      ],
-      "port": 8890,
-      "show_projects_tile": true,
-      "registered_at": "2026-07-30T14:32:15.092274+00:00"
+      "registered_at": "2026-08-08T04:10:16.138652+00:00"
     }
   }
 }

@@ -31,6 +31,7 @@ CLUSTER_CSV_HEADERS = [
     "node2_swap_pct",
     "node2_gpu_util",
     "node2_gpu_power_w",
+    "node2_gpu_temp_c",
     "node2_active_model",
     "node2_endpoint_8100_ok",
     "workloads_json",
@@ -182,6 +183,8 @@ def cluster_csv_values(cluster: dict) -> dict:
         "node2_swap_pct": node2.get("swap", {}).get("pct", ""),
         "node2_gpu_util": node2_gpu.get("util_gpu", ""),
         "node2_gpu_power_w": node2_gpu.get("power_w", ""),
+        # Persist node2 GPU temp so cooling A/B (case/fan) can use both nodes.
+        "node2_gpu_temp_c": node2_gpu.get("temp_c", ""),
         "node2_active_model": deep_model.get("id", ""),
         "node2_endpoint_8100_ok": node2_8100.get("status") == "ok",
         "workloads_json": json.dumps(workloads, separators=(",", ":")),

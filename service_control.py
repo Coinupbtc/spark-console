@@ -43,7 +43,7 @@ _REGISTER_ALLOWED = frozenset({
     "label", "detail", "group", "kind", "unit", "probe", "critical",
     "no_stop", "hint", "activity_files", "activity_dirs", "activity_journal",
     "models", "default_model", "ollama_status", "source", "registered_at",
-    "probe_url", "probe_timeout", "port", "show_projects_tile",
+    "probe_url", "probe_timeout", "port", "open_url", "no_open", "show_projects_tile",
 })
 _SAFE_GROUPS = frozenset({"inference", "hermes", "apps", "meta", "other"})
 _SAFE_KINDS = frozenset({"systemd", "node2-deep", "probe-only"})
@@ -144,70 +144,9 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "hint": "Heavy Kanban → node2 deep lane (trial key switchable).",
         "deep_lane_label": True,
     },
-    # ---- apps / websites ----
-    "stl-sandbox": {
-        "label": "STL Sandbox",
-        "detail": "3D print UI :8050",
-        "group": "apps",
-        "kind": "systemd",
-        "unit": "stl-sandbox.service",
-        "probe": ("http://127.0.0.1:8050/", 2),
-        "critical": False,
-        "hint": "Safe to stop when not designing.",
-        "activity_dirs": [
-            str(HOME / "Documents/sandbox-stl/stl-sandbox/output"),
-            str(HOME / "Documents/sandbox-stl/stl-sandbox/data"),
-        ],
-        "activity_journal": True,
-    },
-    "betintel-backend": {
-        "label": "BetIntel API",
-        "detail": "sports FastAPI :8000",
-        "group": "apps",
-        "kind": "systemd",
-        "unit": "betintel-backend.service",
-        "probe": ("http://127.0.0.1:8000/api/status", 2),
-        "critical": False,
-        "activity_journal": True,
-    },
-    "betintel-frontend": {
-        "label": "BetIntel UI",
-        "detail": "Vite :5173",
-        "group": "apps",
-        "kind": "systemd",
-        "unit": "betintel-frontend.service",
-        "probe": ("http://127.0.0.1:5173/", 2),
-        "critical": False,
-        "activity_journal": True,
-    },
-    "blockfield": {
-        "label": "Blockfield",
-        "detail": "Bitcoin viz :8080",
-        "group": "apps",
-        "kind": "systemd",
-        "unit": "bitcoin-blockfield.service",
-        "probe": ("http://127.0.0.1:8080/", 2),
-        "critical": False,
-        "hint": "Static http.server — stop if unused.",
-        "activity_journal": True,
-    },
-    "bakeoff-ui": {
-        "label": "Bakeoff UI",
-        "detail": "model bakeoff :8765",
-        "group": "apps",
-        "kind": "systemd",
-        "unit": "bakeoff-ui.service",
-        "probe": ("http://127.0.0.1:8765/", 2),
-        "critical": False,
-        "hint": "UI only; runs are CLI. Stop UI when done.",
-        "activity_files": [
-            str(HOME / ".local/state/hermes/bakeoff/progress.json"),
-            str(HOME / ".local/state/hermes/bakeoff/history.jsonl"),
-            str(HOME / ".local/state/hermes/bakeoff/latest.json"),
-        ],
-        "activity_dirs": [str(HOME / ".local/state/hermes/bakeoff/runs")],
-        "activity_journal": True,
-    },
+    # Side-project UIs (BetIntel, Bakeoff, Blockfield, STL Sandbox) live as
+    # systemd units still — re-register via register-console-service.sh when
+    # you want them on Control again. Kept off the board on purpose (2026-08-08).
     # ---- meta ----
     "dashboard": {
         "label": "Spark Console",
@@ -311,6 +250,14 @@ def _normalize_entry(sid: str, raw: dict, source: str) -> dict | None:
         entry["activity_journal"] = bool(raw["activity_journal"])
     if raw.get("show_projects_tile"):
         entry["show_projects_tile"] = True
+    # Tunnels/proxies often have a probe port but no useful site to open from Control
+    if raw.get("no_open"):
+        entry["no_open"] = True
+    # Public site URL when there is no local port (e.g. Tailscale serve HTTPS)
+    if raw.get("open_url"):
+        ou = str(raw["open_url"]).strip()
+        if ou.startswith("http://") or ou.startswith("https://"):
+            entry["open_url"] = ou[:400]
     if raw.get("registered_at"):
         entry["registered_at"] = str(raw["registered_at"])[:40]
     return entry
@@ -381,7 +328,10 @@ def _discover_unit_markers() -> dict[str, dict]:
         if "X-Spark-Console" not in text:
             continue
         marks = _parse_unit_spark_markers(text)
-        sid = marks.get("id") or path.stem
+        # Need a real marker payload — a commented-out mention must not re-add the tile
+        if not marks or not marks.get("id"):
+            continue
+        sid = marks["id"]
         if sid in BUILTIN_SERVICES:
             continue
         raw = {
@@ -801,6 +751,13 @@ def list_services() -> dict:
             "extra": "",
             "unit_missing": False,
         }
+        # So Control can swap Start → Open without waiting on the links catalog
+        if meta.get("open_url"):
+            row["open_url"] = meta["open_url"]
+        if meta.get("port"):
+            row["port"] = meta["port"]
+        if meta.get("no_open"):
+            row["no_open"] = True
         # Live deep-lane key for labels that follow the trial (not hard-coded MiMo/Laguna)
         if meta.get("deep_lane_label"):
             mk = n2().get("model_key") or _read_node2_active_key() or "?"

@@ -77,18 +77,24 @@ def query_links(services: dict | None = None, start9: dict | None = None,
                     port = int(str(probe[0]).split(":")[2].split("/")[0])
                 except (IndexError, ValueError):
                     port = None
-        if not port:
+        open_url = meta.get("open_url")
+        # Need a local port OR an explicit public URL (Tailscale serve, etc.)
+        if not port and not open_url:
             continue
         state = live.get(sid, {})
-        local.append({
+        tile = {
             "id": sid,
             "label": meta.get("label", sid),
             "detail": meta.get("detail", ""),
-            "port": int(port),
-            "path": "/",
             "status": "up" if state.get("active") else ("down" if state else "unknown"),
             "group": meta.get("group", "apps"),
-        })
+        }
+        if open_url:
+            tile["url"] = open_url
+        if port:
+            tile["port"] = int(port)
+            tile["path"] = "/"
+        local.append(tile)
     for extra in LOCAL_EXTRA:
         local.append({"id": f"extra-{extra['port']}", "label": extra["label"],
                       "detail": extra["detail"], "port": extra["port"],

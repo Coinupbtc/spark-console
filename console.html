@@ -8,7 +8,10 @@
      back with env(safe-area-inset-*). -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spark Console</title>
-<meta name="theme-color" content="#080a0e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#090b10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,66 +19,67 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090b10'/%3E%3Cpath d='M18 4L10 18h6l-2 10 10-16h-6l2-8z' fill='%233d9aef'/%3E%3C/svg%3E">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   Spark Console v2 — 4 tabs, one theme.
+   Spark Console — instrument-panel theme (desktop + iPhone PWA).
 
-   Palette is NOT eyeballed. Series + status hexes come from the dataviz
-   reference palette and were run through scripts/validate_palette.js against
-   this page's own surface (#12141b, dark):
-     series  #3987e5 / #d95926 / #199e70 → ALL CHECKS PASS
-     status  good #0ca30c ↔ crit #d03b3b → CVD ΔE 4.1 (deuteranopia) = FAIL
-   That last number is why every status indicator here carries a DISTINCT
-   GLYPH (● ▲ ✕ ○) and not just a colour. Never signal state with hue alone.
+   Direction: precision hardware console, not neon cyberpunk.
+   Series hexes kept for chart continuity (validated earlier). Status still
+   uses distinct glyphs (● ▲ ✕ ○) — never hue alone.
+   Type: Sora (UI) + IBM Plex Mono (numbers).
    ═══════════════════════════════════════════════════════════════════════════ */
 :root{
-  /* surfaces */
-  --bg:#080a0e; --surface:#12141b; --surface-2:#171b24; --raise:#1d222d;
-  --line:rgba(255,255,255,.085); --line-2:rgba(255,255,255,.14);
-  /* ink */
-  --ink:#f2f4f8; --ink-2:#a5adbb; --ink-3:#6c7484;
-  /* series (validated categorical slots 1-3) */
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
-  /* status (fixed, never themed) */
-  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --neutral:#898781;
-  --cool:#3987e5;
-  --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
-  --r:14px; --r-sm:9px;
-  --shadow:0 18px 40px -12px rgba(0,0,0,.7);
-  /* iOS safe areas — 0 everywhere else, so desktop is unaffected */
+  /* Midnight ice — soft, high-end dark UI (desktop + iPhone) */
+  --bg:#080a0e; --surface:#10141c; --surface-2:#151a24; --raise:#1c2230;
+  --line:rgba(230,236,248,.06); --line-2:rgba(230,236,248,.12);
+  --ink:#f3f5f9; --ink-2:#9aa4b8; --ink-3:#667085;
+  /* series — soft sky / warm coral / mint (charts + accents) */
+  --s1:#6eb6ff; --s2:#ff9b72; --s3:#5ed4a8;
+  /* status — readable but not neon-alarm */
+  --good:#4ade9a; --warn:#f5c15a; --crit:#ff7a8a; --neutral:#7d8494;
+  --cool:#6eb6ff;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:16px; --r-sm:10px;
+  --shadow:0 18px 50px -22px rgba(0,0,0,.75);
   --sat:env(safe-area-inset-top,0px);   --sab:env(safe-area-inset-bottom,0px);
   --sal:env(safe-area-inset-left,0px);  --sar:env(safe-area-inset-right,0px);
-  --tabbar:0px;                          /* bottom bar height; set on mobile */
+  --tabbar:0px;
+  --ease:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-/* iOS Safari inflates text on rotation without this, which reflows the whole
-   layout when the phone turns */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%}
 body{
   background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);
-  display:grid;grid-template-rows:58px minmax(0,1fr);gap:14px;padding:14px;
-  height:100vh;max-width:100vw;overflow:hidden;position:relative;isolation:isolate;
-  -webkit-tap-highlight-color:transparent;
+  display:grid;grid-template-rows:56px minmax(0,1fr);gap:14px;
+  padding:14px 16px 16px;height:100vh;max-width:100vw;overflow:hidden;
+  position:relative;isolation:isolate;-webkit-tap-highlight-color:transparent;
+  letter-spacing:-.01em;
 }
-/* 100dvh tracks the *visible* viewport, so an iOS Safari tab does not hide the
-   bottom of the page behind the URL bar. Kept after the 100vh line as a
-   progressive upgrade. */
 @supports (height:100dvh){body{height:100dvh}}
-/* ── aurora: 3 blurred blobs on the compositor. transform-only, no repaint ── */
+/* Atmosphere: soft instrument glow + faint grid (not purple haze) */
 body::before{
-  content:"";position:fixed;inset:-30%;z-index:0;pointer-events:none;
+  content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;
   background:
-    radial-gradient(38% 42% at 18% 22%,rgba(57,135,229,.20),transparent 70%),
-    radial-gradient(34% 38% at 82% 12%,rgba(217,89,38,.13),transparent 70%),
-    radial-gradient(40% 44% at 62% 88%,rgba(25,158,112,.11),transparent 70%);
-  filter:blur(38px);animation:drift 38s ease-in-out infinite alternate;
+    radial-gradient(44% 38% at 10% 6%,rgba(110,182,255,.14),transparent 64%),
+    radial-gradient(34% 30% at 90% 12%,rgba(255,155,114,.08),transparent 66%),
+    radial-gradient(48% 42% at 72% 100%,rgba(94,212,168,.07),transparent 70%),
+    linear-gradient(180deg,rgba(255,255,255,.018),transparent 30%);
+  filter:blur(32px);animation:drift 52s var(--ease) infinite alternate;
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 30%,#000 20%,transparent 75%);
 }
 @keyframes drift{
   from{transform:translate3d(0,0,0) scale(1)}
-  to{transform:translate3d(2.5%,-2%,0) scale(1.08)}
+  to{transform:translate3d(1.8%,-1.4%,0) scale(1.05)}
 }
 body>*{position:relative;z-index:1}
 @media (prefers-reduced-motion:reduce){
@@ -94,58 +98,74 @@ body>*{position:relative;z-index:1}
 .st{display:inline-flex;align-items:center;justify-content:center;flex:none;
   width:14px;height:14px;font-size:10px;line-height:1;font-style:normal;
   margin-right:7px;vertical-align:-1px}
-.st.ok{color:var(--good);text-shadow:0 0 9px rgba(12,163,12,.85)}
-.st.warn{color:var(--warn);text-shadow:0 0 9px rgba(250,178,25,.7)}
-.st.bad{color:var(--crit);text-shadow:0 0 10px rgba(208,59,59,.9)}
+.st.ok{color:var(--good)}
+.st.warn{color:var(--warn)}
+.st.bad{color:var(--crit)}
 .st.stale{color:var(--neutral)}
 .st.bad{animation:pulse 2.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
 
-.card{background:linear-gradient(160deg,var(--surface-2),var(--surface));
-  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+.card{
+  background:linear-gradient(165deg,rgba(255,255,255,.03),transparent 42%),var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);
   display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
-.card::after{content:"";position:absolute;inset:0 0 auto;height:1px;pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)}
-.card>h3{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink-3);padding:13px 16px 9px;display:flex;align-items:center;
+.card>h3{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);padding:14px 16px 10px;display:flex;align-items:center;
   justify-content:space-between;gap:10px;flex:none}
-.card>h3 .cnt{font:400 11px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.card>h3 .cnt{font:500 11px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink-3)}
 .scroll{overflow:auto;flex:1;min-height:0;padding:0 16px 14px}
-.scroll::-webkit-scrollbar,.view::-webkit-scrollbar{width:7px;height:7px}
+.scroll::-webkit-scrollbar,.view::-webkit-scrollbar{width:6px;height:6px}
 .scroll::-webkit-scrollbar-thumb,.view::-webkit-scrollbar-thumb{
   background:var(--line-2);border-radius:99px}
-.empty{color:var(--ink-3);font-size:12.5px;padding:14px 2px;font-style:italic}
+.empty{color:var(--ink-3);font-size:12.5px;padding:14px 2px}
 
-.btn{font:600 11.5px var(--sans);color:var(--ink-2);background:var(--raise);
-  border:1px solid var(--line-2);border-radius:7px;padding:5px 11px;cursor:pointer;
-  transition:.15s;white-space:nowrap}
-.btn:hover:not(:disabled){color:var(--ink);border-color:var(--s1);
-  box-shadow:0 0 0 3px rgba(57,135,229,.14)}
+.btn{font:600 12px var(--sans);color:var(--ink-2);background:var(--raise);
+  border:1px solid var(--line-2);border-radius:8px;padding:6px 12px;cursor:pointer;
+  transition:border-color .15s,color .15s,box-shadow .15s,transform .12s;white-space:nowrap}
+.btn:hover:not(:disabled){color:var(--ink);border-color:rgba(110,182,255,.5);
+  box-shadow:0 0 0 3px rgba(110,182,255,.12)}
 .btn:disabled{opacity:.32;cursor:not-allowed}
-.btn.go:hover:not(:disabled){border-color:var(--good);box-shadow:0 0 0 3px rgba(12,163,12,.16)}
-.btn.stop:hover:not(:disabled){border-color:var(--crit);box-shadow:0 0 0 3px rgba(208,59,59,.16)}
-input[type=text],select{font:13px var(--sans);color:var(--ink);background:#0c0f15;
-  border:1px solid var(--line-2);border-radius:8px;padding:7px 11px;outline:none;min-width:0}
-input[type=text]:focus,select:focus{border-color:var(--s1);box-shadow:0 0 0 3px rgba(57,135,229,.16)}
+/* Start = mint, Stop = coral, Open = sky — same slot, different job */
+.btn.go{color:var(--good);border-color:rgba(74,222,154,.42)}
+.btn.go:hover:not(:disabled){border-color:var(--good);box-shadow:0 0 0 3px rgba(74,222,154,.14)}
+.btn.stop{color:var(--crit);border-color:rgba(255,122,138,.38)}
+.btn.stop:hover:not(:disabled){border-color:var(--crit);box-shadow:0 0 0 3px rgba(255,122,138,.14)}
+a.btn.open{color:var(--s1);border-color:rgba(110,182,255,.48);text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center}
+a.btn.open:hover{color:var(--ink);border-color:rgba(110,182,255,.75);
+  box-shadow:0 0 0 3px rgba(110,182,255,.14)}
+input[type=text],select{font:13px var(--sans);color:var(--ink);background:#0b0f16;
+  border:1px solid var(--line-2);border-radius:9px;padding:8px 12px;outline:none;min-width:0}
+input[type=text]:focus,select:focus{border-color:var(--s1);box-shadow:0 0 0 3px rgba(110,182,255,.14)}
 
 /* ══════════════════════════ top bar ══════════════════════════ */
-header{display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;
-  background:rgba(12,15,21,.72);backdrop-filter:blur(18px);
-  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
-.brand{display:flex;align-items:center;gap:9px;font-weight:750;font-size:14.5px;
-  letter-spacing:.2px;white-space:nowrap;margin-right:6px}
-.brand .bolt{font-size:17px;filter:drop-shadow(0 0 8px rgba(57,135,229,.8))}
-nav{display:flex;gap:3px;min-width:0;overflow-x:auto;scrollbar-width:none}
+header{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;
+  background:rgba(12,16,24,.78);backdrop-filter:blur(20px) saturate(1.2);
+  -webkit-backdrop-filter:blur(20px) saturate(1.2);
+  border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05)}
+.brand{display:flex;align-items:center;gap:10px;white-space:nowrap;margin-right:4px;
+  text-decoration:none;color:inherit;user-select:none}
+.brand .bolt{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;
+  background:linear-gradient(145deg,rgba(110,182,255,.32),rgba(110,182,255,.06));
+  border:1px solid rgba(110,182,255,.32);flex:none}
+.brand .bolt svg{width:15px;height:15px;display:block}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05;gap:1px}
+.brand-txt b{font-size:13.5px;font-weight:700;letter-spacing:-.02em}
+.brand-txt i{font:500 9px/1 var(--sans);font-style:normal;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3)}
+nav{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none;
+  padding:3px;background:rgba(0,0,0,.22);border-radius:11px;border:1px solid var(--line)}
 nav::-webkit-scrollbar{display:none}
-.tab{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:9px;
-  font-size:13px;font-weight:650;color:var(--ink-3);cursor:pointer;white-space:nowrap;
-  border:1px solid transparent;transition:.16s;position:relative;
+.tab{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
+  font-size:12.5px;font-weight:600;color:var(--ink-3);cursor:pointer;white-space:nowrap;
+  border:1px solid transparent;transition:color .16s,background .16s,border-color .16s;
   user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .tab:hover{color:var(--ink-2);background:rgba(255,255,255,.04)}
-.tab.on{color:var(--ink);background:rgba(57,135,229,.14);border-color:rgba(57,135,229,.4)}
-.tab.on::after{content:"";position:absolute;left:15px;right:15px;bottom:-1px;height:2px;
-  border-radius:2px;background:var(--s1);box-shadow:0 0 10px var(--s1)}
-.tab kbd{font:600 9.5px var(--mono);color:var(--ink-3);border:1px solid var(--line);
+.tab.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.28);
+  box-shadow:0 1px 0 rgba(255,255,255,.04)}
+.tab kbd{font:600 9px var(--mono);color:var(--ink-3);border:1px solid var(--line);
   border-radius:4px;padding:1px 4px;background:rgba(0,0,0,.35)}
 .tab .badge{font:700 10px var(--mono);border-radius:999px;padding:1px 6px;
   background:var(--crit);color:#fff}
@@ -154,20 +174,17 @@ header .sp{flex:1}
 header .err{font-size:12px;color:var(--crit);max-width:30ch;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 header .stamp{font:11px var(--mono);color:var(--ink-3);white-space:nowrap}
-header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padding-right:8px}
+header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;padding-right:6px}
 
-/* Liveness pill — the page animates numbers continuously, so it has to say
-   out loud whether those numbers are still arriving. Glyph + text, not colour
-   alone (same CVD rule as every other status mark on this page). */
 .live{display:inline-flex;align-items:center;gap:6px;flex:none;
-  font:700 9.5px var(--sans);letter-spacing:.13em;text-transform:uppercase;
-  color:var(--good);border:1px solid rgba(12,163,12,.34);border-radius:999px;
-  padding:4px 9px;background:rgba(12,163,12,.09);white-space:nowrap}
+  font:600 9px var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--good);border:1px solid rgba(74,222,154,.28);border-radius:999px;
+  padding:5px 10px;background:rgba(74,222,154,.08);white-space:nowrap}
 .live .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;
-  box-shadow:0 0 8px currentColor;animation:beat 1s ease-in-out infinite}
-@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.72)}}
-.live.stale{color:var(--warn);border-color:rgba(250,178,25,.34);background:rgba(250,178,25,.09)}
-.live.dead{color:var(--crit);border-color:rgba(208,59,59,.4);background:rgba(208,59,59,.1)}
+  box-shadow:0 0 8px currentColor;animation:beat 1.2s ease-in-out infinite}
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+.live.stale{color:var(--warn);border-color:rgba(245,193,90,.32);background:rgba(245,193,90,.08)}
+.live.dead{color:var(--crit);border-color:rgba(255,122,138,.36);background:rgba(255,122,138,.09)}
 .live.stale .dot,.live.dead .dot{animation:none}
 .live.dead .dot{box-shadow:none}
 
@@ -178,71 +195,122 @@ header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padd
 /* ─────────────── PULSE ─────────────── */
 #v-pulse{grid-template-rows:auto auto minmax(180px,1fr)}
 
-/* hero verdict */
-.hero{display:flex;align-items:center;gap:20px;padding:16px 22px;border-radius:var(--r);
+/* hero verdict — first story on Pulse */
+.hero{display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:var(--r);
   border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden;
-  background:linear-gradient(115deg,var(--surface-2),var(--surface) 60%)}
-.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
-  background:radial-gradient(70% 200% at 0% 50%,var(--hero-glow,rgba(12,163,12,.24)),transparent 65%)}
-.hero.ok{--hero-glow:rgba(12,163,12,.26)}
-.hero.warn{--hero-glow:rgba(250,178,25,.24)}
-.hero.bad{--hero-glow:rgba(208,59,59,.3)}
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.035),transparent 42%),
+    linear-gradient(165deg,var(--surface-2),var(--surface))}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(80% 140% at 0% 50%,var(--hero-glow,rgba(45,184,92,.18)),transparent 58%)}
+.hero::after{content:"";position:absolute;left:0;top:14%;bottom:14%;width:3px;border-radius:0 3px 3px 0;
+  background:var(--hero-bar,var(--good));box-shadow:0 0 16px var(--hero-bar,var(--good))}
+.hero.ok{--hero-glow:rgba(74,222,154,.16);--hero-bar:var(--good)}
+.hero.warn{--hero-glow:rgba(245,193,90,.14);--hero-bar:var(--warn)}
+.hero.bad{--hero-glow:rgba(255,122,138,.16);--hero-bar:var(--crit)}
 .hero>*{position:relative}
-.hero .mark{font-size:34px;line-height:1;flex:none;width:46px;text-align:center}
-.hero.ok .mark{color:var(--good);text-shadow:0 0 22px rgba(12,163,12,.7)}
-.hero.warn .mark{color:var(--warn);text-shadow:0 0 22px rgba(250,178,25,.6)}
-.hero.bad .mark{color:var(--crit);text-shadow:0 0 26px rgba(208,59,59,.8)}
+.hero .mark{font-size:28px;line-height:1;flex:none;width:40px;text-align:center;margin-left:6px}
+.hero.ok .mark{color:var(--good)}
+.hero.warn .mark{color:var(--warn)}
+.hero.bad .mark{color:var(--crit)}
 .hero .msg{min-width:0;flex:1}
-.hero .msg b{display:block;font-size:23px;font-weight:750;letter-spacing:-.015em;line-height:1.15}
-.hero .msg span{display:block;font-size:12.5px;color:var(--ink-2);margin-top:3px}
-.hero .stats{display:flex;gap:26px;flex:none}
-.hero .stat{text-align:right}
-.hero .stat b{display:block;font:650 21px/1.1 var(--mono);letter-spacing:-.02em}
-.hero .stat span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-3)}
+.hero .msg b{display:block;font-size:22px;font-weight:650;letter-spacing:-.03em;line-height:1.15}
+.hero .msg span{display:block;font-size:13px;color:var(--ink-2);margin-top:4px;line-height:1.35}
+.hero .stats{display:flex;gap:22px;flex:none}
+.hero .stat{text-align:right;min-width:4.5ch}
+.hero .stat b{display:block;font:600 20px/1.1 var(--mono);letter-spacing:-.03em}
+.hero .stat span{font-size:9.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);font-weight:500}
 
 /* host cards */
-.hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.host{padding:14px 16px 12px;cursor:pointer;transition:border-color .18s,transform .18s}
-.host:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.host{padding:14px 15px 12px;cursor:pointer;
+  transition:border-color .18s,transform .18s var(--ease),box-shadow .18s}
+.host:hover{border-color:rgba(110,182,255,.32);transform:translateY(-2px);
+  box-shadow:0 14px 36px -18px rgba(0,0,0,.7)}
 .host .hh{display:flex;align-items:baseline;gap:0;min-width:0;margin-bottom:2px}
-.host .hh b{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.host .hh b{font-size:13.5px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  letter-spacing:-.02em}
 .host .hh .up{margin-left:auto;font:10.5px var(--mono);color:var(--ink-3);white-space:nowrap;
   padding-left:8px}
-.host .role{font-size:11px;color:var(--ink-3);margin-bottom:8px;overflow:hidden;
+.host .role{font-size:11px;color:var(--ink-3);margin-bottom:10px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.gwrap{display:flex;align-items:center;gap:14px}
-.gauge{width:104px;height:104px;flex:none}
-.gauge circle{fill:none;stroke-width:9;stroke-linecap:round;
+.gwrap{display:flex;align-items:center;gap:12px}
+.gauge{width:104px;height:104px;flex:none;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35))}
+.gauge circle{fill:none;stroke-width:7;stroke-linecap:round;
   transform:rotate(135deg);transform-origin:60px 60px}
-.gauge .track{stroke:rgba(255,255,255,.07)}
-.gauge .fill{transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1),stroke .4s;
+.gauge .track{stroke:rgba(255,255,255,.055)}
+.gauge .fill{transition:stroke-dashoffset .9s var(--ease),stroke .4s;
   filter:drop-shadow(0 0 6px currentColor)}
 .gauge text{fill:var(--ink);font-family:var(--sans);text-anchor:middle}
-.gauge .gv{font-size:26px;font-weight:700}
-.gauge .gl{font-size:9px;fill:var(--ink-3);letter-spacing:.14em;font-weight:600}
-.gside{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.gauge .gv{font-size:23px;font-weight:650;font-family:var(--mono);letter-spacing:-.04em}
+.gauge .gl{font-size:8px;fill:var(--ink-3);letter-spacing:.16em;font-weight:600}
+.gside{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .mrow{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:7px;font-size:11px}
 .mrow label{color:var(--ink-3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
-.bar{height:5px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;min-width:0}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.055);overflow:hidden;min-width:0;
+  box-shadow:inset 0 1px 1px rgba(0,0,0,.25)}
 .bar i{display:block;height:100%;border-radius:99px;background:var(--s1);
-  transition:width .8s cubic-bezier(.22,1,.36,1),background .3s}
-.bar i.w{background:var(--warn)}.bar i.b{background:var(--crit)}
-/* ComfyUI running progress: indeterminate sweep (REST exposes no live step
-   count — ComfyUI pushes that over its websocket — so while a job runs we
-   animate an infinite sweep instead of faking a number). */
+  background:linear-gradient(90deg,#9fd0ff,var(--s1));
+  transition:width .8s var(--ease),background .35s;box-shadow:0 0 10px rgba(110,182,255,.2)}
+.bar i.w{background:var(--warn);background:linear-gradient(90deg,#ffe09a,var(--warn));
+  box-shadow:0 0 10px rgba(245,193,90,.18)}
+.bar i.b{background:var(--crit);background:linear-gradient(90deg,#ffb0ba,var(--crit));
+  box-shadow:0 0 10px rgba(255,122,138,.2)}
+/* ComfyUI progress: determinate % when we have an estimate; indeterminate
+   sweep only when percent is unknown (no create_time / avg yet). */
 .cfy-indet{background:linear-gradient(90deg,var(--s1) 0%,var(--s1) 40%,var(--s2) 60%,var(--s1) 100%)!important;background-size:200% 100%!important;width:60%!important;animation:cfySweep 1.1s linear infinite}
 @keyframes cfySweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.cfy-job{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 9px;margin:6px 0 0;background:rgba(255,255,255,.02)}
+.cfy-job .cfy-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.cfy-job .cfy-title{font:600 12px/1.3 var(--sans);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+.cfy-job .cfy-meta{font:10.5px/1.4 var(--mono);color:var(--ink-3);margin-top:2px}
+.cfy-job .cfy-foot{font:10.5px/1.4 var(--mono);color:var(--ink-3);margin-top:5px}
+.cfy-job .cfy-models{margin:5px 0 0;padding:0;list-style:none}
+.cfy-job .cfy-models li{font:11px/1.35 var(--mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cfy-badge{display:inline-flex;align-items:center;gap:5px;font:10px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:99px;padding:3px 7px}
+.cfy-badge i{width:6px;height:6px;border-radius:50%;background:var(--ink-3);display:inline-block}
+.cfy-badge.run i{background:var(--s1)}
+.cfy-btn{flex:none;font:10.5px/1 var(--sans);color:var(--ink-3);border:1px solid var(--line);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer}
+.cfy-btn:hover{border-color:var(--crit);color:var(--crit)}
+.cfy-btn:disabled{opacity:.45;cursor:default}
+.cfy-idle{border:1px dashed var(--line);border-radius:var(--r-sm);padding:10px 9px;margin-top:6px;color:var(--ink-3);font:12px/1.4 var(--sans)}
+.cfy-prog{margin-top:6px}
+.cfy-prog .cfy-prog-h{display:flex;justify-content:space-between;gap:8px;font:10.5px/1 var(--mono);color:var(--ink-3);margin-bottom:3px}
+.cfy-prog .bar{height:6px}
+.cfy-sub{font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:10px 0 2px;display:flex;justify-content:space-between;gap:8px}
+.cfy-sub b{font:10.5px/1 var(--mono);letter-spacing:0;text-transform:none;font-weight:500;color:var(--ink-3)}
+.cfy-inv{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.cfy-inv summary{cursor:pointer;font:11px/1.3 var(--sans);color:var(--ink-3);list-style:none}
+.cfy-inv summary::-webkit-details-marker{display:none}
+.cfy-inv ul{margin:6px 0 0;padding:0;list-style:none;columns:2;gap:12px}
+.cfy-inv li{font:10.5px/1.35 var(--mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;break-inside:avoid}
+/* LLM token usage — 14d chart + mean/median/mode */
+.tok-card{font:400 11px/1.5 var(--mono);padding:6px 4px 2px}
+.tok-chart-wrap{margin:8px 0 6px;padding:8px 8px 4px;border:1px solid var(--line);
+  border-radius:var(--r-sm);background:rgba(255,255,255,.02)}
+.tok-chart-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  margin-bottom:4px}
+.tok-chart-h b{font:10.5px/1 var(--mono);letter-spacing:0;text-transform:none;font-weight:500;color:var(--ink-2)}
+.tok-chart-h .leg{display:flex;gap:10px;text-transform:none;letter-spacing:0;font:10px var(--mono)}
+.tok-chart-h .leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#tok-chart{width:100%;height:72px;display:block}
+.tok-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin:6px 0 4px}
+.tok-stat{border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;background:rgba(255,255,255,.015)}
+.tok-stat .lbl{font:9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.tok-stat .row{display:flex;justify-content:space-between;gap:6px;font:11px/1.45 var(--mono);color:var(--ink-2)}
+.tok-stat .row span:first-child{color:var(--ink-3)}
 .mrow .v{font:11px var(--mono);color:var(--ink-2);white-space:nowrap}
 .spark{width:100%;height:32px;display:block;margin-top:9px}
-.host .foot{display:flex;gap:12px;margin-top:8px;padding-top:8px;
+.host .foot{display:flex;gap:10px;margin-top:10px;padding-top:9px;
   border-top:1px solid var(--line);font-size:11px;color:var(--ink-3);flex-wrap:wrap}
-.host .foot b{color:var(--ink-2);font-family:var(--mono);font-weight:600}
-.host.bad{border-color:rgba(208,59,59,.5)}
-.host.warn{border-color:rgba(250,178,25,.38)}
+.host .foot b{color:var(--ink);font-family:var(--mono);font-weight:550}
+.host.bad{border-color:rgba(255,122,138,.4)}
+.host.warn{border-color:rgba(245,193,90,.36)}
 
-/* pulse bottom row */
-.prow{display:grid;gap:14px;min-height:0;
-  grid-template-columns:minmax(0,1.5fr) minmax(0,.85fr) minmax(0,.95fr) minmax(0,1.05fr)}
+/* pulse bottom row — Needs you | Projects | Quick actions */
+.prow{display:grid;gap:12px;min-height:0;
+  grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,1.05fr)}
 
 /* projects */
 .prj{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;
@@ -270,24 +338,8 @@ header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padd
   margin-left:8px;flex:none;align-self:flex-start}
 .allclear{display:flex;flex-direction:column;align-items:center;justify-content:center;
   height:100%;gap:9px;color:var(--ink-3);text-align:center;padding:20px}
-.allclear .big{font-size:38px;color:var(--good);text-shadow:0 0 26px rgba(12,163,12,.6)}
+.allclear .big{font-size:36px;color:var(--good)}
 .allclear b{font-size:14px;color:var(--ink-2);font-weight:600}
-
-/* todo */
-.todo{display:flex;align-items:center;gap:9px;padding:6px 2px;font-size:12.5px;
-  border-bottom:1px solid var(--line)}
-.todo:last-child{border-bottom:0}
-.todo input{accent-color:var(--s1);width:14px;height:14px;flex:none;cursor:pointer}
-.todo .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.todo.done .txt{color:var(--ink-3);text-decoration:line-through}
-.todo .tag{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.07em;
-  color:var(--ink-3);background:var(--raise);border-radius:5px;padding:2px 6px;flex:none}
-.todo .del{color:var(--ink-3);cursor:pointer;font-size:12px;flex:none;opacity:0;transition:.15s}
-.todo:hover .del{opacity:1}
-.todo .del:hover{color:var(--crit)}
-.todo-add{display:flex;gap:6px;padding:10px 16px 14px;flex:none}
-.todo-add input{flex:1;min-width:0;padding:6px 10px;font-size:12.5px}
-.todo-add select{padding:6px 8px;font-size:11.5px}
 
 /* quick actions */
 .act{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line)}
@@ -302,6 +354,24 @@ header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padd
 
 /* ─────────────── FLEET ─────────────── */
 #v-fleet{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+#elec-panel{grid-column:1/-1}
+.elec-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px}
+.elec-rate{display:inline-flex;align-items:center;gap:6px;font:11px var(--mono);color:var(--ink-2)}
+.elec-rate[hidden]{display:none!important}
+.elec-rate label{font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.elec-rate input,.elec-rate select{width:5.5rem;padding:5px 8px;font:12px var(--mono);text-align:right;
+  background:var(--raise);border:1px solid var(--line-2);border-radius:7px;color:var(--ink)}
+.elec-rate select{width:8.5rem;text-align:left;cursor:pointer}
+.elec-rate input:focus,.elec-rate select:focus{outline:0;border-color:var(--s1);box-shadow:0 0 0 3px rgba(110,182,255,.14)}
+.elec-note{font:10.5px/1.35 var(--sans);color:var(--ink-3);margin-left:auto;max-width:48ch}
+.elec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.elec-cell{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;background:rgba(255,255,255,.02)}
+.elec-cell.tot{border-color:rgba(110,182,255,.28);background:rgba(110,182,255,.06)}
+.elec-cell .n{font:600 12.5px/1.2 var(--sans);color:var(--ink);margin-bottom:2px;letter-spacing:-.01em}
+.elec-cell .src{font:10px/1.2 var(--mono);color:var(--ink-3);margin-bottom:6px}
+.elec-cell .w{font:12px/1.3 var(--mono);color:var(--ink-2)}
+.elec-cell .c{font:11px/1.35 var(--mono);color:var(--ink-3);margin-top:3px}
+.elec-cell .c b{color:var(--ink-2);font-weight:600}
 .node{padding:15px 17px 14px}
 .node h2{display:flex;align-items:baseline;gap:9px;font-size:16px;font-weight:750;
   margin-bottom:12px;min-width:0}
@@ -314,16 +384,17 @@ header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padd
   align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:11px}
 .subhead .cnt{font:400 10.5px var(--mono);letter-spacing:0;text-transform:none}
 .charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
-.chart{background:#0a0d12;border:1px solid var(--line);border-radius:10px;padding:8px 9px 5px;
-  min-width:0;position:relative}
+.chart{background:linear-gradient(180deg,rgba(255,255,255,.025),transparent 40%),rgba(0,0,0,.32);
+  border:1px solid var(--line);border-radius:12px;padding:9px 10px 6px;
+  min-width:0;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
 .chart h5{display:flex;align-items:center;justify-content:space-between;gap:8px;
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-3);margin-bottom:5px}
 .chart .cur{display:flex;gap:9px;font:11px var(--mono);color:var(--ink-2);
-  letter-spacing:0;text-transform:none;font-weight:400}
+  letter-spacing:0;text-transform:none;font-weight:500}
 .chart .cur span{display:flex;align-items:center;gap:4px}
-.chart .cur i{width:7px;height:7px;border-radius:2px;flex:none}
-.chart canvas{width:100%;height:82px;display:block;cursor:crosshair}
+.chart .cur i{width:7px;height:7px;border-radius:2px;flex:none;box-shadow:0 0 6px currentColor}
+.chart canvas{width:100%;height:86px;display:block;cursor:crosshair}
 .kv{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:4px 0;
   border-bottom:1px solid var(--line)}
 .kv:last-child{border-bottom:0}
@@ -367,14 +438,15 @@ tr:last-child td{border-bottom:0}
   border:1px solid var(--line-2);border-radius:999px;padding:5px 12px;cursor:pointer;
   transition:.15s;white-space:nowrap}
 .pill:hover{color:var(--ink-2);border-color:var(--ink-3)}
-.pill.on{color:var(--ink);background:rgba(57,135,229,.16);border-color:rgba(57,135,229,.5)}
+.pill.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.4)}
 .bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
 
 #v-control,#v-jobs{grid-template-rows:auto auto minmax(0,1fr);align-content:start}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:10px;
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;
   padding:0 14px 14px}
-.svc{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
-  padding:10px 12px;display:flex;flex-direction:column;gap:5px;min-width:0;transition:.15s}
+.svc{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:12px;
+  padding:11px 13px;display:flex;flex-direction:column;gap:5px;min-width:0;
+  transition:border-color .15s,transform .15s}
 .svc:hover{border-color:var(--line-2)}
 .svc.waste{border-color:rgba(250,178,25,.42)}
 .svc .name{display:flex;align-items:center;font-size:12.5px;font-weight:650;min-width:0}
@@ -385,9 +457,6 @@ tr:last-child td{border-bottom:0}
 .svc .acts{display:flex;gap:5px;margin-top:3px;align-items:center;flex-wrap:wrap}
 .svc .acts select{padding:4px 6px;font-size:11px;flex:1;min-width:0}
 .svc .acts .btn{padding:4px 9px;font-size:11px}
-.svc .open{margin-left:auto;padding-left:8px;font-size:11px;color:var(--s1);
-  text-decoration:none;font-weight:600;white-space:nowrap;flex:none}
-.svc .open:hover{text-decoration:underline}
 
 .launch{display:flex;gap:9px;padding:0 14px 12px;flex-wrap:wrap}
 .lt{display:flex;align-items:center;gap:9px;background:var(--surface-2);
@@ -432,7 +501,7 @@ tr:last-child td{border-bottom:0}
 .jdetail{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lay{font:600 9.5px var(--mono);text-transform:uppercase;letter-spacing:.07em;
   border-radius:5px;padding:2px 6px;white-space:nowrap;
-  background:rgba(57,135,229,.16);color:#8fc0f5}
+  background:rgba(110,182,255,.14);color:#9fd0ff}
 .lay.crontab{background:rgba(217,89,38,.16);color:#f0a382}
 .lay.timer{background:rgba(25,158,112,.16);color:#6fd9b2}
 
@@ -458,33 +527,29 @@ tr:last-child td{border-bottom:0}
 
 /* responsive */
 @media (max-width:1680px){.prow{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);
-  grid-auto-rows:minmax(190px,auto)}
-  .prow>:nth-child(4){grid-column:span 3}}
-@media (max-width:1500px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  grid-auto-rows:minmax(190px,auto)}}
+@media (max-width:1280px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
   #v-pulse{grid-template-rows:auto auto auto}
-  .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .prow>:nth-child(4){grid-column:auto}}
+  .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
   .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:860px){
   .prow{grid-template-columns:minmax(0,1fr)}
   .hero{flex-wrap:wrap}.hero .stats{width:100%;justify-content:flex-start}
-  body{padding:9px;gap:9px}header{padding:0 6px 0 11px}
+  body{padding:10px;gap:10px}header{padding:0 8px 0 12px}
   .tab kbd{display:none}header .stamp{display:none}}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TOUCH POINTERS
-   Hover styling on a touchscreen sticks after a tap, and an affordance that
-   only appears on hover (the todo ✕) is unreachable. Both fixed here rather
-   than by weakening the desktop rules. ═══════════════════════════════════ */
+   Hover styling on a touchscreen sticks after a tap — fixed here rather than
+   by weakening the desktop rules. ═══════════════════════════════════════════ */
 @media (hover:none){
   .host:hover,.ltile:hover{transform:none;border-color:var(--line)}
   .btn:hover:not(:disabled){color:var(--ink-2);border-color:var(--line-2);box-shadow:none}
   .att:hover{background:none}
-  .todo .del{opacity:.7}
   /* press feedback replaces hover feedback */
   .btn:active:not(:disabled){transform:scale(.96);border-color:var(--s1);
-    box-shadow:0 0 0 3px rgba(57,135,229,.16)}
+    box-shadow:0 0 0 3px rgba(110,182,255,.14)}
   .pill:active{transform:scale(.96)}
   .host:active,.att:active,.ltile:active,.svc:active{background:rgba(255,255,255,.05)}
 }
@@ -495,19 +560,23 @@ tr:last-child td{border-bottom:0}
    zoom the whole page on focus), 44px touch targets.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width:760px){
-:root{--tabbar:58px;--r:15px}
+:root{--tabbar:62px;--r:16px}
 
 body{
-  grid-template-rows:50px minmax(0,1fr);gap:9px;
-  padding:calc(var(--sat) + 8px) calc(var(--sar) + 9px) 0 calc(var(--sal) + 9px);
+  grid-template-rows:52px minmax(0,1fr);gap:10px;
+  padding:calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px);
 }
-body::before{filter:blur(48px)}          /* fewer blur passes on a mobile GPU */
+body::before{filter:blur(36px)}
+body::after{opacity:.25;background-size:36px 36px}
 
 /* ── top bar: identity + liveness only; navigation moved to the bottom ── */
-header{padding:0 11px;gap:9px;border-radius:13px}
+header{padding:0 12px;gap:8px;border-radius:14px;min-height:52px}
 header nav#tabs,header .stamp{display:none}
-.brand{font-size:14px;gap:7px;margin-right:0}
-header .clock{font-size:13px;padding-right:0}
+.brand{gap:8px;margin-right:0}
+.brand .bolt{width:26px;height:26px;border-radius:8px}
+.brand-txt b{font-size:13px}
+.brand-txt i{font-size:8px}
+header .clock{font-size:12px;padding-right:0}
 
 /* errors become a toast above the tab bar instead of a truncated header chip */
 header .err{display:none}
@@ -544,15 +613,16 @@ header .err:not(:empty){
 
 /* ── PULSE ── */
 #v-pulse{grid-template-rows:auto auto auto}
-.hero{padding:13px 15px;gap:13px;align-items:flex-start}
-.hero .mark{font-size:26px;width:28px}
-.hero .msg b{font-size:17px}
-.hero .msg span{font-size:11.5px;white-space:normal;line-height:1.35}
-.hero .stats{gap:0;width:100%;margin-top:11px;padding-top:11px;
+.hero{padding:14px 14px 14px 16px;gap:12px;align-items:flex-start;border-radius:16px}
+.hero::after{top:12%;bottom:12%;width:3px}
+.hero .mark{font-size:22px;width:26px;margin-left:4px}
+.hero .msg b{font-size:17px;letter-spacing:-.025em}
+.hero .msg span{font-size:12px;white-space:normal;line-height:1.4}
+.hero .stats{gap:0;width:100%;margin-top:12px;padding-top:12px;
   border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
 .hero .stat{text-align:center}
 .hero .stat b{font-size:15px}
-.hero .stat span{font-size:8.5px;letter-spacing:.08em}
+.hero .stat span{font-size:8px;letter-spacing:.1em}
 
 /* four host cards, two up — gauge stacks over its readouts so the bars keep
    enough width to be readable instead of collapsing to slivers */
@@ -579,11 +649,6 @@ header .err:not(:empty){
 .att{padding:11px 9px}                    /* 44px row target */
 .att .m{white-space:normal;font-size:12.5px;line-height:1.35}
 .att .sub{white-space:normal}
-.todo{padding:9px 2px}
-.todo input{width:19px;height:19px}
-.todo-add{flex-wrap:wrap;padding:10px 14px 14px}
-.todo-add input{flex:1 1 100%}
-.todo-add select{flex:1}
 .prj{padding:8px 2px}
 .prj .n{flex:0 0 52%}
 .act{padding:11px 2px}
@@ -598,6 +663,12 @@ header .err:not(:empty){
 .chart .cur{font-size:10px;gap:6px}
 .chart canvas{height:68px}
 .ctrs{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));max-height:none}
+#elec-panel{padding:12px 12px 10px}
+.elec-top{gap:8px 10px;margin-bottom:8px}
+.elec-note{max-width:none;margin-left:0;flex:1 1 100%;font-size:11px;line-height:1.4}
+.elec-rate input,.elec-rate select{font-size:16px;padding:8px 10px;min-height:40px}
+.elec-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.elec-cell{padding:9px 9px}
 
 /* ── CONTROL / JOBS ── */
 /* filter pills stay on ONE line and scroll sideways; wrapping them ate three
@@ -615,7 +686,6 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 .svc .acts{gap:7px;margin-top:6px}
 .svc .acts .btn{flex:1;padding:9px 10px;font-size:12px;text-align:center}
 .svc .acts select{flex:1 1 100%;font-size:16px}
-.svc .open{padding:4px 0 4px 10px}
 .launch{padding:0 12px 12px;gap:8px}
 .lt{min-width:0;width:100%;padding:10px 12px}
 .lt .btn{padding:9px 14px}
@@ -646,25 +716,28 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 /* ══════════════════ bottom tab bar (thumb arc) ══════════════════ */
 .tabbar{
   display:flex;position:fixed;z-index:60;left:0;right:0;bottom:0;
-  padding:0 calc(var(--sar) + 6px) var(--sab) calc(var(--sal) + 6px);
-  background:rgba(10,13,19,.86);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  padding:4px calc(var(--sar) + 8px) calc(var(--sab) + 4px) calc(var(--sal) + 8px);
+  background:rgba(9,11,16,.88);backdrop-filter:blur(24px) saturate(1.25);
+  -webkit-backdrop-filter:blur(24px) saturate(1.25);
   border-top:1px solid var(--line);
+  box-shadow:0 -12px 40px -20px rgba(0,0,0,.55);
 }
 .tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;height:var(--tabbar);min-width:0;background:none;border:0;cursor:pointer;
-  color:var(--ink-3);font:600 9.5px/1 var(--sans);letter-spacing:.04em;
+  gap:3px;height:var(--tabbar);min-width:0;background:none;border:0;cursor:pointer;
+  color:var(--ink-3);font:600 10px/1 var(--sans);letter-spacing:.02em;
   position:relative;-webkit-tap-highlight-color:transparent;transition:color .18s;
-  user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
-  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
-.tb.on{color:var(--s1)}
-.tb.on svg{transform:translateY(-1px) scale(1.06)}
-.tb.on::before{content:"";position:absolute;top:0;left:26%;right:26%;height:2px;
-  border-radius:0 0 3px 3px;background:var(--s1);box-shadow:0 0 10px var(--s1)}
-.tb:active{color:var(--ink-2)}
-.tb .badge{position:absolute;top:5px;left:calc(50% + 6px);font:700 9px var(--mono);
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  border-radius:12px}
+.tb svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.85;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s var(--ease)}
+.tb.on{color:var(--s1);background:rgba(110,182,255,.12)}
+.tb.on svg{transform:translateY(-1px)}
+.tb.on::before{content:"";position:absolute;top:2px;left:30%;right:30%;height:2px;
+  border-radius:99px;background:var(--s1);box-shadow:0 0 8px rgba(110,182,255,.45)}
+.tb:active{color:var(--ink-2);transform:scale(.97)}
+.tb .badge{position:absolute;top:6px;left:calc(50% + 8px);font:700 9px var(--mono);
   border-radius:999px;padding:0 5px;line-height:14px;background:var(--crit);color:#fff;
-  box-shadow:0 0 0 2px rgba(10,13,19,.9)}
+  box-shadow:0 0 0 2px rgba(9,11,16,.9)}
 .tb .badge.w{background:var(--warn);color:#241a03}
 
 /* ══════════════════ pull-to-refresh ══════════════════ */
@@ -708,7 +781,14 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 <body>
 
 <header>
-  <div class="brand"><span class="bolt">⚡</span>Spark Console</div>
+  <div class="brand" aria-label="Spark Console">
+    <span class="bolt" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13 2L6 13h5l-1 9 9-13h-5l1-7z" fill="#6eb6ff"/>
+      </svg>
+    </span>
+    <span class="brand-txt"><b>Spark</b><i>Console</i></span>
+  </div>
   <nav id="tabs">
     <div class="tab on" data-tab="pulse"><kbd>1</kbd>Pulse <span class="badge" id="b-pulse" hidden></span></div>
     <div class="tab" data-tab="fleet"><kbd>2</kbd>Fleet <span class="badge" id="b-fleet" hidden></span></div>
@@ -735,13 +815,6 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
   <div class="prow">
     <div class="card"><h3>Needs you <span class="cnt" id="att-cnt"></span></h3>
       <div class="scroll" id="attention"></div></div>
-    <div class="card"><h3>Todo <span class="cnt" id="todo-cnt"></span></h3>
-      <div class="scroll" id="todos"></div>
-      <div class="todo-add">
-        <input type="text" id="todo-in" placeholder="add item…">
-        <select id="todo-tag"><option>home</option><option>stack</option><option>models</option>
-          <option>hermes</option><option>backups</option><option>fleet</option></select>
-        <button class="btn" onclick="addTodo()">Add</button></div></div>
     <div class="card"><h3>Projects <span class="cnt" id="proj-cnt"></span></h3>
       <div class="scroll" id="projects"></div></div>
     <div class="card"><h3>Quick actions</h3>
@@ -750,7 +823,32 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 </section>
 
 <!-- ═══════════════ FLEET ═══════════════ -->
-<section class="view" id="v-fleet"></section>
+<section class="view" id="v-fleet">
+  <div class="card elec" id="elec-panel">
+    <div class="elec-top">
+      <h3 style="margin:0">Electricity</h3>
+      <div class="elec-rate">
+        <label for="elec-rate">$/kWh</label>
+        <input id="elec-rate" type="number" min="0" max="5" step="0.001" inputmode="decimal"
+               title="Your electricity rate — edits save in this browser">
+      </div>
+      <div class="elec-rate">
+        <label for="elec-mode">Bill basis</label>
+        <select id="elec-mode" title="Measured = GPU/PMIC/RAPL sensors. Wall est = optional Spark calibration.">
+          <option value="sensor">Measured</option>
+          <option value="wall">Wall estimate</option>
+        </select>
+      </div>
+      <div class="elec-rate" id="elec-idle-wrap" hidden>
+        <label for="elec-idle">Spark idle wall W</label>
+        <input id="elec-idle" type="number" min="10" max="200" step="1" inputmode="decimal"
+               title="Outlet watts at idle (USB-C / Kill-A-Watt). Only used for Wall estimate.">
+      </div>
+      <span class="elec-note" id="elec-note">Measured sensor kWh × rate — not a live projection.</span>
+    </div>
+    <div class="elec-grid" id="elec-grid"></div>
+  </div>
+</section>
 
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
@@ -791,25 +889,47 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
   </div>
   <div class="card" style="overflow:auto"><div class="scroll" style="padding-top:0" id="jobs"></div></div>
   <div class="card"><h3>LLM token usage <span class="cnt" id="tok-cnt"></span></h3>
-    <div id="tokenusage" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
+    <div id="tokenusage" class="tok-card">
+      <div class="tok-chart-wrap">
+        <div class="tok-chart-h">
+          <span>14-day tokens</span>
+          <span class="leg"><i style="background:var(--s1)"></i>in <i style="background:var(--s3)"></i>out</span>
+          <b id="tok-chart-sum">…</b>
+        </div>
+        <canvas id="tok-chart" aria-label="14-day input and output tokens"></canvas>
+      </div>
+      <div class="tok-stats">
+        <div class="tok-stat">
+          <div class="lbl">Per session · in+out</div>
+          <div class="row"><span>mean</span><span id="tok-s-mean">…</span></div>
+          <div class="row"><span>median</span><span id="tok-s-median">…</span></div>
+          <div class="row"><span>mode</span><span id="tok-s-mode">…</span></div>
+          <div class="row"><span>p90 / n</span><span id="tok-s-p90">…</span></div>
+        </div>
+        <div class="tok-stat">
+          <div class="lbl">Per API call · in+out</div>
+          <div class="row"><span>mean</span><span id="tok-c-mean">…</span></div>
+          <div class="row"><span>median</span><span id="tok-c-median">…</span></div>
+          <div class="row"><span>mode</span><span id="tok-c-mode">…</span></div>
+          <div class="row"><span>p90 / n</span><span id="tok-c-p90">…</span></div>
+        </div>
+      </div>
       <div class="mrow"><label>24h in/out</label><span class="v" id="tok-24h">…</span></div>
       <div class="mrow"><label>all-time in</label><span class="v" id="tok-in">…</span></div>
       <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
       <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
       <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
     </div></div>
-  <div class="card"><h3>ComfyUI jobs <span class="cnt" id="comfy-chip">…</span></h3>
+  <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
     <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
       <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
-      <div class="mrow"><label>running</label><span class="v" id="comfy-run">…</span></div>
-      <div class="mrow" id="comfy-progress-row" style="display:none"><label>progress</label>
-        <span class="v" style="flex:1;max-width:180px"><span class="bar"><i id="comfy-progress"></i></span></span></div>
-      <div class="mrow"><label>queue / eta</label><span class="v" id="comfy-queue">…</span></div>
-      <div class="mrow"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
-      <div class="mrow"><label>models</label><span class="v" id="comfy-models">…</span></div>
-      <div class="mrow"><label>last finished</label><span class="v" id="comfy-last">…</span></div>
       <div class="mrow" style="border:0"><label>open</label>
         <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
+      <div id="comfy-body">
+        <div class="cfy-idle" id="comfy-empty">offline / on-demand</div>
+      </div>
+      <div class="mrow" id="comfy-vram-row" style="margin-top:8px"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
+      <div id="comfy-inv-wrap"></div>
     </div></div>
 </section>
 
@@ -886,6 +1006,8 @@ function switchTab(name,dir){
   });
   document.querySelectorAll(".tab,.tb").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
   if(name==="fleet")requestAnimationFrame(drawAll);
+  // Token chart lives on Jobs — canvas has no width while the tab is display:none.
+  if(name==="jobs")requestAnimationFrame(()=>drawTokChart(_tokSeries));
 }
 document.querySelectorAll(".tab,.tb").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
 
@@ -987,6 +1109,7 @@ const HIST={};                          /* per-host dial trend, fed at 1 Hz */
 const HIST_N=120;                       /* 120 × 1 s tick = 2 min of trace */
 
 function hostCardHtml(h){
+  const gid=`gg-${h.id}`;
   return `
   <div class="card host" id="hc-${h.id}" onclick="switchTab('fleet')">
     <div class="hh"><i class="st stale" data-f="mark">○</i><b data-f="name">${esc(h.name)}</b>
@@ -994,9 +1117,15 @@ function hostCardHtml(h){
     <div class="role">${esc(h.role)}</div>
     <div class="gwrap">
       <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" data-f="g0" stop-color="#9fd0ff"/>
+            <stop offset="100%" data-f="g1" stop-color="#6eb6ff"/>
+          </linearGradient>
+        </defs>
         <circle class="track" cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"></circle>
         <circle class="fill"  cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"
-          stroke-dashoffset="${ARC}" data-f="arc" stroke="var(--s1)" style="color:var(--s1)"></circle>
+          stroke-dashoffset="${ARC}" data-f="arc" stroke="url(#${gid})" style="color:var(--s1)"></circle>
         <text class="gv" x="60" y="60" data-f="dv">–</text>
         <text class="gl" x="60" y="76" data-f="dl">${esc(h.dialLabel)}</text>
       </svg>
@@ -1013,6 +1142,13 @@ function hostCardHtml(h){
     <div class="foot" data-f="foot"></div>
   </div>`;
 }
+function dialPalette(p, offline){
+  // Soft sky → amber → rose — never harsh neon. Returns hex for canvas + CSS stops.
+  if(offline)return {css:"var(--neutral)", hex:"#7d8494", g0:"#9aa3b2", g1:"#7d8494"};
+  if(p>=90)return {css:"var(--crit)", hex:"#ff7a8a", g0:"#ffb0ba", g1:"#ff7a8a"};
+  if(p>=75)return {css:"var(--warn)", hex:"#f5c15a", g0:"#ffe09a", g1:"#f5c15a"};
+  return {css:"var(--s1)", hex:"#6eb6ff", g0:"#9fd0ff", g1:"#6eb6ff"};
+}
 function renderHosts(hosts){
   const key=hosts.map(h=>h.id).join("|");
   if(key!==cardKeys){$("hosts").innerHTML=hosts.map(hostCardHtml).join("");cardKeys=key;}
@@ -1023,12 +1159,15 @@ function renderHosts(hosts){
     const mark=f("mark");mark.className="st "+h.state;mark.textContent=GLYPH[h.state]||"○";
     f("name").textContent=h.name;
     f("up").textContent=h.up;
-    /* gauge: colour follows load, glyph/label carries the identity */
     const p=clamp(+h.dial||0,0,100);
-    const col=h.offline?"var(--neutral)":p>=90?"var(--crit)":p>=75?"var(--warn)":"var(--s1)";
+    const pal=dialPalette(p, !!h.offline);
     const arc=f("arc");
     arc.setAttribute("stroke-dashoffset",String(ARC*(1-p/100)));
-    arc.setAttribute("stroke",col);arc.style.color=col;
+    arc.setAttribute("stroke",`url(#gg-${h.id})`);
+    arc.style.color=pal.hex;
+    const g0=f("g0"), g1=f("g1");
+    if(g0)g0.setAttribute("stop-color",pal.g0);
+    if(g1)g1.setAttribute("stop-color",pal.g1);
     f("dv").textContent=h.offline?"–":Math.round(p)+"%";
     f("dl").textContent=h.dialLabel;
     for(const[k,val,txt]of[["cpu",h.cpu,Math.round(h.cpu)+"%"],
@@ -1037,11 +1176,15 @@ function renderHosts(hosts){
       f("v"+k).textContent=txt;
     }
     const bits=[];
-    if(h.powerW!=null)bits.push(`<span>power <b>${Math.round(h.powerW*10)/10} W</b></span>`);
+    if(h.powerW!=null){
+      const c=nodeHistCost(h.id);
+      bits.push(`<span>power <b>${Math.round(h.powerW*10)/10} W</b>${
+        c?` · <b>${c.complete?"":"~"}${fmtUsd(c.usd)}/24h</b>`:""}</span>`);
+    }
     if(h.tempC!=null)bits.push(`<span>temp <b class="t-${tempBand(h.tempC,h.tempKind)}">${h.tempC}°C</b></span>`);
     h.foot.forEach(([k,v])=>bits.push(`<span>${esc(k)} <b>${esc(v)}</b></span>`));
     f("foot").innerHTML=bits.join("");
-    drawSpark(f("spark"),HIST[h.id]||[],col);
+    drawSpark(f("spark"),HIST[h.id]||[],pal.hex);
   });
 }
 /* The trend buffer is fed by the 1 Hz tick, NOT by renderHosts — otherwise the
@@ -1063,15 +1206,11 @@ function drawSpark(cv,vals,col){
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
   const mono=cssVar("--mono","monospace");
   if(vals.length<2){
-    x.fillStyle="rgba(255,255,255,.2)";x.font="9px "+mono;
+    x.fillStyle="rgba(255,255,255,.18)";x.font="9px "+mono;
     x.fillText("collecting trend…",0,h/2+3);return;
   }
-  const c=col.startsWith("var")?cssVar(col.slice(4,-1),"#3987e5"):col;
-  /* Autoscale to the data's OWN range. A 0-100 axis turns a flat 95 % GPU into
-     a solid slab that shows nothing; the gauge beside it already carries the
-     absolute level, so this mark's job is purely shape-of-change. Because the
-     axis floats, the range is printed — an unlabelled autoscaled spark makes
-     a ±1 % wobble look like a cliff. */
+  const c=col.startsWith("var")?cssVar(col.slice(4,-1),"#6eb6ff"):(col||"#6eb6ff");
+  /* Autoscale to the data's OWN range — gauge already shows absolute level. */
   const lo=Math.min(...vals),hi=Math.max(...vals);
   const pad=Math.max(1.5,(hi-lo)*.3);
   const y0=Math.max(0,lo-pad),y1=Math.min(100,hi+pad),span=Math.max(1,y1-y0);
@@ -1079,14 +1218,16 @@ function drawSpark(cv,vals,col){
   const plotW=Math.max(1,w-padR);
   const X=i=>i/(vals.length-1)*plotW, Y=v=>h-2-((clamp(v,y0,y1)-y0)/span)*(h-5);
   const gr=x.createLinearGradient(0,0,0,h);
-  gr.addColorStop(0,c+"4d");gr.addColorStop(1,c+"03");
+  gr.addColorStop(0,withAlpha(c,.32));gr.addColorStop(1,withAlpha(c,.02));
   x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
   x.lineTo(plotW,h);x.lineTo(0,h);x.closePath();x.fillStyle=gr;x.fill();
   x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
-  x.strokeStyle=c;x.lineWidth=1.6;x.lineJoin="round";x.lineCap="round";x.stroke();
-  /* live end-point + the floating range, so the scale is never implied */
-  x.beginPath();x.arc(X(vals.length-1),Y(vals[vals.length-1]),2.2,0,7);x.fillStyle=c;x.fill();
-  x.fillStyle=cssVar("--ink-3","#6c7484");x.font="8px "+mono;
+  x.strokeStyle=c;x.lineWidth=1.75;x.lineJoin="round";x.lineCap="round";x.stroke();
+  /* soft live tip */
+  const lx=X(vals.length-1), ly=Y(vals[vals.length-1]);
+  x.beginPath();x.arc(lx,ly,4.5,0,7);x.fillStyle=withAlpha(c,.22);x.fill();
+  x.beginPath();x.arc(lx,ly,2.1,0,7);x.fillStyle=c;x.fill();
+  x.fillStyle=cssVar("--ink-3","#667085");x.font="8px "+mono;
   x.textAlign="right";x.textBaseline="middle";
   x.fillText(`${Math.round(lo)}–${Math.round(hi)}%`,w,h/2);
 }
@@ -1165,18 +1306,6 @@ function renderAttention(items){
 }
 
 /* ══════════════════════ pulse side panels ══════════════════════ */
-function renderTodos(todos){
-  const open=todos.filter(t=>!t.done).length;
-  $("todo-cnt").textContent=`${open} open`;
-  const sorted=[...todos.filter(t=>!t.done),...todos.filter(t=>t.done)];
-  $("todos").innerHTML=sorted.length?sorted.map(t=>
-    `<div class="todo ${t.done?"done":""}">
-      <input type="checkbox" ${t.done?"checked":""} onchange="todoAction('toggle','${esc(t.id)}')">
-      <span class="txt" title="${esc(t.text)}">${esc(t.text)}</span>
-      <span class="tag">${esc(t.tag)}</span>
-      <span class="del" title="delete" onclick="todoAction('delete','${esc(t.id)}')">✕</span></div>`).join("")
-    :`<div class="empty">nothing on the list</div>`;
-}
 function renderProjects(ps){
   const list=ps||[];
   const bad=list.filter(p=>norm(p.status)==="bad").length;
@@ -1200,6 +1329,13 @@ function renderActions(actions){
 
 /* ══════════════════════ charts (Fleet tab) ══════════════════════ */
 const cssVar=(n,f)=>getComputedStyle(document.body).getPropertyValue(n).trim()||f;
+function withAlpha(hex,a){
+  const h=String(hex||"").replace("#","").trim();
+  if(h.length!==6)return hex;
+  const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  if([r,g,b].some(n=>Number.isNaN(n)))return hex;
+  return `rgba(${r},${g},${b},${a})`;
+}
 const CHARTS=[
   {key:"cpu",title:"CPU · GPU",  a:"cpu",b:"gpu", unit:"%",  max:100,an:"CPU",bn:"GPU"},
   {key:"mem",title:"Mem · Swap", a:"mem",b:"swap",unit:"%",  max:100,an:"Mem",bn:"Swap"},
@@ -1221,8 +1357,8 @@ function drawChart(cv,samples,cfg,hoverX){
   if(!w||!h)return null;
   if(cv.width!==w*dpr||cv.height!==h*dpr){cv.width=w*dpr;cv.height=h*dpr;}
   const x=cv.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
-  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926"),
-        ink3=cssVar("--ink-3","#6c7484"),grid="rgba(255,255,255,.07)";
+  const A=cssVar("--s1","#6eb6ff"),B=cssVar("--s2","#ff9b72"),
+        ink3=cssVar("--ink-3","#667085"),grid="rgba(255,255,255,.05)";
   const padL=30,padR=5,padT=5,padB=14;
   const pw=Math.max(1,w-padL-padR),ph=Math.max(1,h-padT-padB);
   const win=60,tmax=samples.length?samples[samples.length-1].t:0,tmin=tmax-win;
@@ -1249,14 +1385,13 @@ function drawChart(cv,samples,cfg,hoverX){
   const series=(f,color)=>{
     if(pts.length<2)return;
     const gr=x.createLinearGradient(0,padT,0,padT+ph);
-    gr.addColorStop(0,color+"59");gr.addColorStop(1,color+"03");
+    gr.addColorStop(0,withAlpha(color,.28));gr.addColorStop(1,withAlpha(color,.02));
     x.beginPath();pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
     x.lineTo(X(pts[pts.length-1].t),padT+ph);x.lineTo(X(pts[0].t),padT+ph);x.closePath();
     x.fillStyle=gr;x.fill();
-    x.save();x.beginPath();
+    x.beginPath();
     pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
-    x.shadowColor=color;x.shadowBlur=9;x.strokeStyle=color;x.lineWidth=2;
-    x.lineJoin="round";x.lineCap="round";x.stroke();x.restore();
+    x.strokeStyle=color;x.lineWidth=1.85;x.lineJoin="round";x.lineCap="round";x.stroke();
   };
   if(cfg.b)series(cfg.b,B);
   series(cfg.a,A);
@@ -1266,13 +1401,16 @@ function drawChart(cv,samples,cfg,hoverX){
     const hx=clamp(hoverX,padL,padL+pw);
     let best=pts[0];for(const p of pts)if(Math.abs(X(p.t)-hx)<Math.abs(X(best.t)-hx))best=p;
     cur=best;
-    x.strokeStyle="rgba(242,244,248,.4)";x.lineWidth=1;
+    x.strokeStyle="rgba(243,245,249,.28)";x.lineWidth=1;
     x.beginPath();x.moveTo(X(cur.t),padT);x.lineTo(X(cur.t),padT+ph);x.stroke();
     const dots=[[cfg.a,A]];if(cfg.b)dots.push([cfg.b,B]);
     for(const[f,c]of dots){
-      x.save();x.shadowColor=c;x.shadowBlur=10;x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),3.5,0,7);
-      x.fillStyle=c;x.fill();x.strokeStyle=cssVar("--surface","#12141b");x.lineWidth=2;
-      x.stroke();x.restore();}
+      x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),5,0,7);
+      x.fillStyle=withAlpha(c,.2);x.fill();
+      x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),2.6,0,7);
+      x.fillStyle=c;x.fill();
+      x.strokeStyle=cssVar("--surface","#10141c");x.lineWidth=1.5;x.stroke();
+    }
   }
   const el=$(cv.id+"-cur");
   if(el)el.innerHTML=cur
@@ -1295,7 +1433,7 @@ document.addEventListener("mousemove",e=>{
   const cur=drawChart(cv,sparks[cv.dataset.node]||[],cfg,e.offsetX);
   drawAll();
   if(!cur){hideTip();return;}
-  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926");
+  const A=cssVar("--s1","#6eb6ff"),B=cssVar("--s2","#ff9b72");
   const ago=Math.max(0,Math.round(((sparks[cv.dataset.node]||[]).slice(-1)[0]||{t:cur.t}).t-cur.t));
   $("tip").innerHTML=`<div class="tt">${ago?`−${ago}s`:"now"}</div>`+
     `<div class="tr"><i style="background:${A}"></i>${cfg.an} ${fmtV(cur[cfg.a]||0,cfg.unit)}</div>`+
@@ -1317,7 +1455,9 @@ async function pollSparks(){
 setInterval(pollSparks,2000);
 
 /* Token usage card — cheap direct DB reads, polled on the 10 s heartbeat
-   along with refresh(). Compact number formatter (1.23M, 45.8k…). */
+   along with refresh(). Compact number formatter (1.23M, 45.8k…). Graph is a
+   14-day in/out area chart; mean/median/mode come from per-session and
+   per-call distributions (mode is bucketed — raw token counts rarely tie). */
 function tokFmt(n){
   if(n==null||isNaN(n))return "—";
   if(Math.abs(n)>=1e9)return (n/1e9).toFixed(2)+"B";
@@ -1326,90 +1466,274 @@ function tokFmt(n){
   return String(Math.round(n));
 }
 function setTok(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function tokModeLabel(st){
+  if(!st||st.mode==null)return "—";
+  const n=st.mode_count||0;
+  // e.g. "~50k (×95)" — mode is a bucket center, not an exact value
+  return `~${tokFmt(st.mode)}${n?` (×${n})`:""}`;
+}
+let _tokSeries=[];
+function drawTokChart(series){
+  const cv=document.getElementById("tok-chart");
+  if(!cv)return;
+  const dpr=window.devicePixelRatio||1;
+  const w=cv.clientWidth||280, h=cv.clientHeight||72;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){
+    cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  }
+  const x=cv.getContext("2d");
+  x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  const mono=getComputedStyle(document.documentElement).getPropertyValue("--mono").trim()||"monospace";
+  const pts=Array.isArray(series)?series:[];
+  if(pts.length<2){
+    x.fillStyle="rgba(255,255,255,.28)";x.font="10px "+mono;
+    x.fillText("collecting daily totals…",8,h/2+3);
+    return;
+  }
+  const inn=pts.map(p=>+p.input_tokens||0);
+  const out=pts.map(p=>+p.output_tokens||0);
+  const totals=pts.map((_,i)=>inn[i]+out[i]);
+  const hi=Math.max(1,...totals);
+  const padL=2,padR=2,padT=4,padB=14;
+  const plotW=Math.max(1,w-padL-padR), plotH=Math.max(1,h-padT-padB);
+  const X=i=>padL+(i/(pts.length-1))*plotW;
+  const Y=v=>padT+plotH-((v/hi)*plotH);
+  const s1=(getComputedStyle(document.documentElement).getPropertyValue("--s1").trim())||"#6eb6ff";
+  const good=(getComputedStyle(document.documentElement).getPropertyValue("--s3").trim())||"#5ed4a8";
+
+  // stacked area: input (bottom) + output (top)
+  const fillArea=(ys,color,alpha)=>{
+    x.beginPath();
+    ys.forEach((v,i)=>{const xx=X(i),yy=Y(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy);});
+    x.lineTo(X(ys.length-1),Y(0));x.lineTo(X(0),Y(0));x.closePath();
+    x.fillStyle=withAlpha(color,alpha);x.fill();
+  };
+  fillArea(inn,s1,.22);
+  fillArea(totals,good,.16);
+  x.beginPath();
+  totals.forEach((v,i)=>{const xx=X(i),yy=Y(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy);});
+  x.strokeStyle=s1;x.lineWidth=1.7;x.lineJoin="round";x.stroke();
+  // soft tip on latest day
+  const li=totals.length-1;
+  x.beginPath();x.arc(X(li),Y(totals[li]),2.4,0,7);x.fillStyle=s1;x.fill();
+  x.fillStyle="rgba(255,255,255,.35)";x.font="9px "+mono;
+  const labels=[0, Math.floor((pts.length-1)/2), pts.length-1];
+  labels.forEach(i=>{
+    const d=String(pts[i].day||"").slice(5); // MM-DD
+    const tw=x.measureText(d).width;
+    let xx=X(i)-tw/2;xx=Math.max(0,Math.min(w-tw,xx));
+    x.fillText(d,xx,h-3);
+  });
+}
+function renderTokStats(block, prefix){
+  if(!block){
+    setTok(prefix+"-mean","—");setTok(prefix+"-median","—");
+    setTok(prefix+"-mode","—");setTok(prefix+"-p90","—");
+    return;
+  }
+  setTok(prefix+"-mean",tokFmt(block.mean));
+  setTok(prefix+"-median",tokFmt(block.median));
+  setTok(prefix+"-mode",tokModeLabel(block));
+  setTok(prefix+"-p90",`${tokFmt(block.p90)} / ${tokFmt(block.n)}`);
+}
 function renderTokenUsage(tu){
   if(!tu)return;
   const c=tu.counts||{},u=tu.last_24h||{},prof=(tu.profiles||[]).length;
+  const series=tu.series_14d||[];
+  _tokSeries=series;
+  const st=tu.stats||{};
   setTok("tok-24h",`${tokFmt(u.input_tokens)} / ${tokFmt(u.output_tokens)}`);
   setTok("tok-in",tokFmt(c.input_tokens));
   setTok("tok-out",tokFmt(c.output_tokens));
   setTok("tok-cache",tokFmt(c.cache_read_tokens));
   setTok("tok-calls",`${tokFmt(c.api_calls)} / ${tokFmt(c.sessions)}`);
-  setTok("tok-cnt",`${prof} profiles`);
+  setTok("tok-cnt",`${prof} profiles · ${ageLabel(tu.updated_unix)||"live"}`);
+  const sumIn=series.reduce((a,p)=>a+(+p.input_tokens||0),0);
+  const sumOut=series.reduce((a,p)=>a+(+p.output_tokens||0),0);
+  setTok("tok-chart-sum",series.length?`${tokFmt(sumIn)} / ${tokFmt(sumOut)}`:"—");
+  renderTokStats(st.per_session,"tok-s");
+  renderTokStats(st.per_call,"tok-c");
+  // Defer draw until layout has a width (Jobs tab may be hidden on first poll).
+  requestAnimationFrame(()=>drawTokChart(series));
 }
 async function pollTokenUsage(){
   if(document.hidden)return;
   try{renderTokenUsage(await(await fetch("/api/token-usage",{cache:"no-store"})).json());}catch(e){}
 }
 
-/* ComfyUI jobs card — job queue + VRAM + last-finished, from the cached
-   /api/comfy snapshot. ComfyUI is on-demand, so the card's whole job is to
-   make "offline / on-demand" obvious and calm when it is down (which is most
-   of the time) and flip to live queue/intensity the moment it comes up. */
+/* ComfyUI jobs card — sparkDash 1.6-shaped: running/pending job blocks with
+   footprint (res · steps · sampler · nodes), model/LoRA list, elapsed clock
+   (no invented %), cancel/remove, queue ETA only from finished-job averages,
+   last finished, installed inventory. ComfyUI is on-demand, so
+   "offline / on-demand" must stay calm when it is down. */
 function setCfy(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
-function cfyFmtRun(r){
-  if(!r)return "—";
-  const label=r.label?esc(r.label):"job";
-  return r.steps?`${label} · ${r.steps} steps` : label;
+function cfyShortId(id){
+  id=String(id||"");
+  return id.length<=12?id:(id.slice(0,8)+"…");
 }
-function cfyFmtDur(jf){
-  if(!jf)return "—";
-  const n=jf.label?esc(jf.label):"job";
-  const st=jf.duration_s!=null?` · ${jf.duration_s}s`:
-          (jf.status?` · ${esc(jf.status)}`:"");
-  return jf.status==="success"?`${n}${st}`:`${n}${st}`;
+function cfyFmtDurMs(ms){
+  if(ms==null||!isFinite(ms)||ms<0)return null;
+  const sec=Math.round(ms/1000);
+  if(sec<60)return sec+"s";
+  const m=Math.floor(sec/60),s=sec%60;
+  if(m<60)return s?`${m}m ${s}s`:`${m}m`;
+  return `${Math.floor(m/60)}h ${m%60}m`;
+}
+function cfyFmtElapsed(createTime){
+  if(createTime==null||!isFinite(createTime))return null;
+  const ms=createTime<1e12?createTime*1000:createTime;
+  return cfyFmtDurMs(Math.max(0,Date.now()-ms));
+}
+function cfyFootprint(job){
+  if(!job)return "";
+  if(job.footprint)return job.footprint;
+  const parts=[];
+  if(job.width!=null&&job.height!=null)parts.push(`${job.width}×${job.height}`);
+  if(job.steps!=null)parts.push(`${job.steps} steps`);
+  if(job.batch_size!=null&&job.batch_size!==1)parts.push(`batch ${job.batch_size}`);
+  if(job.sampler)parts.push(job.sampler);
+  const nc=job.node_count||job.nodes||0;
+  if(nc>0)parts.push(`${nc} nodes`);
+  return parts.join(" · ");
+}
+function cfyJobTitle(job){
+  if(!job)return "job";
+  const t=(job.title||job.label||"").trim();
+  return t||cfyShortId(job.prompt_id||job.id);
+}
+function cfyProgressHtml(progress){
+  if(!progress)return "";
+  // Never show invented completion % — REST has no step meter.
+  const label="Running";
+  const el=progress.elapsed_ms!=null?cfyFmtDurMs(progress.elapsed_ms):"";
+  return `<div class="cfy-prog"><div class="cfy-prog-h"><span>${esc(label)}</span><span>${esc(el)}</span></div>
+    <span class="bar"><i class="cfy-indet"></i></span></div>`;
+}
+function cfyModelsHtml(models){
+  const list=(models||[]).slice(0,6);
+  if(!list.length)return "";
+  const more=(models.length>6)?`<li class="cfy-meta">+${models.length-6} more</li>`:"";
+  return `<ul class="cfy-models">${list.map(m=>`<li title="${esc(m)}">${esc(m)}</li>`).join("")}${more}</ul>`;
+}
+function cfyJobHtml(job,variant,progress,etaLabel){
+  const title=cfyJobTitle(job);
+  const foot=cfyFootprint(job);
+  const elapsed=variant==="running"?cfyFmtElapsed(job.create_time):null;
+  const badge=variant==="running"?"run":"";
+  const badgeTxt=variant==="running"?"Running":"Queued";
+  const btnTxt=variant==="running"?"Cancel":"Remove";
+  const pid=esc(job.prompt_id||job.id||"");
+  const meta=[elapsed,etaLabel?`${etaLabel} left`:null].filter(Boolean).join(" · ");
+  return `<div class="cfy-job" data-pid="${pid}">
+    <div class="cfy-top">
+      <div style="min-width:0;flex:1">
+        <span class="cfy-badge ${badge}"><i></i>${badgeTxt}</span>
+        ${meta?`<span class="cfy-meta" style="margin-left:6px">${esc(meta)}</span>`:""}
+        <div class="cfy-title" title="${esc(title)}">${esc(title)}</div>
+      </div>
+      <button type="button" class="cfy-btn" data-cfy-cancel="${pid}">${btnTxt}</button>
+    </div>
+    ${variant==="running"?cfyProgressHtml(progress):""}
+    ${foot?`<div class="cfy-foot" title="Workflow compute footprint">${esc(foot)}</div>`:""}
+    ${cfyModelsHtml(job.models)}
+  </div>`;
+}
+let _cfyCancelling=null;
+async function cfyCancel(promptId){
+  if(!promptId||_cfyCancelling)return;
+  if(!confirm("Cancel this ComfyUI job?"))return;
+  _cfyCancelling=promptId;
+  try{
+    const r=await fetch("/api/comfy/cancel",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt_id:promptId}),
+    });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||j.ok===false)alert(j.message||j.error||"Cancel failed");
+  }catch(e){alert(String(e));}
+  finally{_cfyCancelling=null;pollComfy();}
 }
 function renderComfy(c){
-  if(!c)return;   // no data yet — leave loading placeholders
+  if(!c)return;
   const off=!!c.offline;
   const state=c.state||"offline";
-  const chip=(c.chip||"offline");
-  const set=(id,v)=>setCfy(id,v);
+  const chip=c.chip||"offline";
+  setCfy("comfy-chip", off?"offline":chip);
 
-  set("comfy-chip", off?"offline":chip);
+  const open=document.getElementById("comfy-open");
+  if(open&&c.open_url){open.href=c.open_url;}
+
+  const body=document.getElementById("comfy-body");
+  const invWrap=document.getElementById("comfy-inv-wrap");
+  const vramRow=document.getElementById("comfy-vram-row");
 
   if(off){
-    // ComfyUI is down — clean, calm on-demand empty state, never an error.
-    set("comfy-state","offline / on-demand · start on demand");
-    set("comfy-run","—");
-    set("comfy-queue","—");
-    set("comfy-vram","—");
-    set("comfy-models","—");
-    set("comfy-last","—");
-    document.getElementById("comfy-progress-row").style.display="none";
-    set("comfy-progress","0%");
+    setCfy("comfy-state","offline / on-demand · start on demand");
+    setCfy("comfy-vram","—");
+    if(vramRow)vramRow.style.display="none";
+    if(body)body.innerHTML=`<div class="cfy-idle" id="comfy-empty">Not reachable — ComfyUI is on-demand (default :8188).</div>`;
+    if(invWrap)invWrap.innerHTML="";
     return;
   }
 
-  const run=c.running||null;
-  set("comfy-state",
-      state==="running"?"running":state==="queued"?"queued (waiting)":"idle · ready");
-  set("comfy-run", cfyFmtRun(run));
+  if(vramRow)vramRow.style.display="";
+  const verBits=[c.version?`v${c.version}`:"",c.device_type||"",c.pytorch_version?`torch ${c.pytorch_version}`:""].filter(Boolean).join(" · ");
+  setCfy("comfy-state",
+    (state==="running"?"running":state==="queued"?"queued":"idle · ready")
+    +(verBits?` · ${verBits}`:""));
+  setCfy("comfy-vram",`${c.vram_used_pct!=null?c.vram_used_pct+"% used":"—"} · ${c.vram_free||"?"} free`);
 
-  const pend=c.pending_count||0, tot=c.queue_total||0;
-  // Queue ETA: rough — each pending job ~last-run duration, else unknown.
-  const eta=(()=>{
-    if(!pend)return "−";
-    const last=(c.last_finished||[])[0];
-    const per=last&&last.duration_s?last.duration_s:null;
-    return per?`${pend} waiting · ~${(per*pend).toFixed(0)}s`:`${pend} waiting`;
-  })();
-  set("comfy-queue",`${tot>0?`${tot} total`:"idle"} · ${eta}`);
-  set("comfy-vram",`${c.vram_used_pct!=null?c.vram_used_pct+"% used":"—"} · ${c.vram_free||"?"} free`);
-  set("comfy-models",(c.models&&c.models.length)?c.models.map(m=>esc(m)).join(", "):"none loaded");
-  set("comfy-last", cfyFmtDur((c.last_finished||[])[0]));
+  const run=c.active_job||c.running||null;
+  const pending=(c.pending_jobs||c.pending||[]).slice(0,2);
+  const pendN=c.pending_count||pending.length||0;
+  const progress=c.progress||null;
+  const etaLabel=c.queue_eta_source==="finished_avg"?cfyFmtDurMs(c.queue_eta_ms):null;
+  const etaShort=etaLabel?`~${etaLabel} avg`:null;
+  const last=c.last_job||(c.last_finished||[])[0]||null;
 
-  // progress bar: animate indeterminate while running (no live step count over
-  // REST — ComfyUI pushes that over its websocket), else show idle zero.
-  const row=document.getElementById("comfy-progress-row");
-  const bar=document.getElementById("comfy-progress");
-  if(state==="running"){
-    row.style.display="";
-    bar.className="cfy-indet";
-    bar.style.width="";
+  let html="";
+  if(run){
+    html+=cfyJobHtml(run,"running",progress,etaShort);
   } else {
-    row.style.display="none";
-    bar.className="";
-    bar.style.width="0%";
+    html+=`<div class="cfy-idle">Idle — no running job</div>`;
+  }
+
+  if(pendN>0){
+    html+=`<div class="cfy-sub"><span>Queue</span><b>${pendN} pending${etaShort?` · ${etaShort}`:""}</b></div>`;
+    pending.forEach(j=>{html+=cfyJobHtml(j,"pending",null,null);});
+    if(pendN>pending.length)html+=`<div class="cfy-meta" style="margin-top:4px">+${pendN-pending.length} more waiting</div>`;
+  }
+
+  if(last){
+    const ld=last.duration_ms!=null?cfyFmtDurMs(last.duration_ms)
+            :(last.duration_s!=null?`${last.duration_s}s`:null);
+    html+=`<div class="cfy-meta" style="margin-top:8px">Last: ${esc(cfyJobTitle(last))}${ld?` · ${ld}`:""} · ${esc(last.status||"done")}</div>`;
+  }
+
+  if(body){
+    body.innerHTML=html;
+    body.querySelectorAll("[data-cfy-cancel]").forEach(btn=>{
+      btn.addEventListener("click",()=>cfyCancel(btn.getAttribute("data-cfy-cancel")));
+      if(_cfyCancelling&&btn.getAttribute("data-cfy-cancel")===_cfyCancelling){
+        btn.disabled=true;btn.textContent="…";
+      }
+    });
+  }
+
+  const inv=c.models_installed;
+  if(invWrap){
+    if(inv&&((inv.checkpoints||[]).length||(inv.loras||[]).length)){
+      const ck=(inv.checkpoints||[]).slice(0,12);
+      const lo=(inv.loras||[]).slice(0,12);
+      invWrap.innerHTML=`<details class="cfy-inv">
+        <summary>Installed: ${ck.length} checkpoints · ${lo.length} loras</summary>
+        <ul>${ck.map(m=>`<li title="${esc(m)}">${esc(m)}</li>`).join("")}
+            ${lo.map(m=>`<li title="${esc(m)}">${esc(m)}</li>`).join("")}</ul>
+      </details>`;
+    } else {
+      invWrap.innerHTML="";
+    }
   }
 }
 async function pollComfy(){
@@ -1433,6 +1757,201 @@ async function pollComfy(){
   }catch(e){}
 })();
 
+/* ══════════════════════ electricity cost (historical) ══════════════════════
+   Integrates logged watts over time → kWh, then $ = kWh × editable $/kWh.
+   Default: measured sensors (GPU / PMIC / RAPL). Optional wall estimate for
+   Sparks. NOT a live projection of current draw. Gaps >2h are not invented. */
+const ELEC_KEY="spark-console-kwh-rate";
+const ELEC_IDLE_KEY="spark-console-idle-wall-w";
+const ELEC_MODE_KEY="spark-console-elec-mode";
+const ELEC_DEFAULT=0.145;
+const ELEC_IDLE_DEFAULT=50;
+let ENERGY=null;   // last /api/energy-cost payload
+const ELEC_NAMES={node1:"sparkmax-10ef",node2:"sparkymaxxx-12ef",
+  pi:"raspberrypi",start9:"cosmic-charcoal"};
+function elecSrcLabel(id, mode){
+  if(id==="pi")return "board PMIC";
+  if(id==="start9")return "RAPL pkg+DRAM";
+  return mode==="wall"?"wall est ← GPU":"GPU draw (measured)";
+}
+function getKwhRate(){
+  const raw=localStorage.getItem(ELEC_KEY);
+  const n=raw==null?ELEC_DEFAULT:parseFloat(raw);
+  return (Number.isFinite(n)&&n>=0)?n:ELEC_DEFAULT;
+}
+function setKwhRate(v){
+  const n=parseFloat(v);
+  if(!Number.isFinite(n)||n<0)return getKwhRate();
+  localStorage.setItem(ELEC_KEY,String(n));
+  return n;
+}
+function getIdleWallW(){
+  const raw=localStorage.getItem(ELEC_IDLE_KEY);
+  const n=raw==null?ELEC_IDLE_DEFAULT:parseFloat(raw);
+  return (Number.isFinite(n)&&n>=10)?n:ELEC_IDLE_DEFAULT;
+}
+function setIdleWallW(v){
+  const n=parseFloat(v);
+  if(!Number.isFinite(n)||n<10)return getIdleWallW();
+  localStorage.setItem(ELEC_IDLE_KEY,String(n));
+  return n;
+}
+function getElecMode(){
+  const m=localStorage.getItem(ELEC_MODE_KEY);
+  return m==="wall"?"wall":"sensor";
+}
+function setElecMode(v){
+  const m=v==="wall"?"wall":"sensor";
+  localStorage.setItem(ELEC_MODE_KEY,m);
+  return m;
+}
+function fmtUsd(n){
+  if(n==null||!Number.isFinite(n))return "—";
+  if(Math.abs(n)<0.01)return "$"+n.toFixed(4);
+  if(Math.abs(n)<1)return "$"+n.toFixed(3);
+  return "$"+n.toFixed(2);
+}
+function fmtKwh(n){
+  if(n==null||!Number.isFinite(n))return "—";
+  if(n<0.01)return n.toFixed(4)+" kWh";
+  if(n<1)return n.toFixed(3)+" kWh";
+  return n.toFixed(2)+" kWh";
+}
+function ageLabel(unix){
+  if(!unix)return "";
+  const s=Math.max(0,Math.round(Date.now()/1000-unix));
+  if(s<5)return "just now";
+  if(s<60)return s+"s ago";
+  return Math.round(s/60)+"m ago";
+}
+function nodeHistCost(id){
+  // Prefer trailing 24h $ for per-node suffixes on power rows / Pulse feet.
+  const n=((ENERGY||{}).window_24h||{}).nodes||{};
+  const row=n[id];
+  if(!row||row.kwh==null)return null;
+  return {kwh:row.kwh, usd:row.kwh*getKwhRate(), hours:row.hours_covered,
+    complete:!!row.complete};
+}
+function costSuffix(nodeId){
+  const c=nodeHistCost(nodeId);
+  if(!c)return "";
+  const tag=c.complete?"":"~";
+  return ` · ${tag}${fmtUsd(c.usd)}/24h`;
+}
+function elecCellHtml(title, src, kwh24, kwh30, hrs24, hrs30, complete24, complete30, cls){
+  if(kwh24==null&&kwh30==null){
+    return `<div class="elec-cell ${cls||""}"><div class="n">${esc(title)}</div>
+      <div class="src">${esc(src||"")}</div><div class="w">—</div>
+      <div class="c">no history yet</div></div>`;
+  }
+  const rate=getKwhRate();
+  const u24=kwh24!=null?kwh24*rate:null;
+  const u30=kwh30!=null?kwh30*rate:null;
+  const cov24=hrs24!=null?`${Math.round(hrs24*10)/10}h`:"—";
+  const cov30=hrs30!=null?`${Math.round(hrs30*10)/10}h`:"—";
+  const mark24=complete24?"":" partial";
+  const mark30=complete30?"":(hrs30>=24?" building":" partial");
+  return `<div class="elec-cell ${cls||""}"><div class="n">${esc(title)}</div>
+    <div class="src">${esc(src)}</div>
+    <div class="w"><b>${fmtUsd(u24)}</b> /24h <span style="color:var(--ink-3)">· ${fmtKwh(kwh24)} · ${cov24}${mark24}</span></div>
+    <div class="c"><b>${fmtUsd(u30)}</b> /30d <span>· ${fmtKwh(kwh30)} · ${cov30}${mark30}</span></div></div>`;
+}
+function paintElecPanel(){
+  const rate=getKwhRate();
+  const idle=getIdleWallW();
+  const mode=getElecMode();
+  const inp=$("elec-rate"), idleInp=$("elec-idle"), modeSel=$("elec-mode");
+  const idleWrap=$("elec-idle-wrap");
+  if(inp&&document.activeElement!==inp)inp.value=String(rate);
+  if(idleInp&&document.activeElement!==idleInp)idleInp.value=String(idle);
+  if(modeSel&&document.activeElement!==modeSel)modeSel.value=mode;
+  if(idleWrap)idleWrap.hidden=mode!=="wall";
+  const grid=$("elec-grid");
+  const note=$("elec-note");
+  if(!grid)return;
+  const e=ENERGY;
+  if(!e||!e.ok){
+    grid.innerHTML=`<div class="elec-cell"><div class="n">Energy log</div>
+      <div class="src">loading…</div><div class="w">—</div>
+      <div class="c">${esc((e&&e.error)||"fetching /api/energy-cost")}</div></div>`;
+    if(note)note.textContent="Loading historical energy…";
+    return;
+  }
+  const w24=e.window_24h||{}, w30=e.window_30d||{};
+  const n24=w24.nodes||{}, n30=w30.nodes||{};
+  const names={...ELEC_NAMES};
+  try{
+    if(DATA.node1&&DATA.node1.hostname)names.node1=DATA.node1.hostname;
+    if(DATA.node2&&DATA.node2.hostname)names.node2=DATA.node2.hostname;
+    if(DATA.pi&&DATA.pi.hostname)names.pi=DATA.pi.hostname;
+    if(DATA.start9&&DATA.start9.hostname)names.start9=DATA.start9.hostname;
+  }catch(err){}
+  let html="";
+  for(const id of["node1","node2","pi","start9"]){
+    const a=n24[id]||{}, b=n30[id]||{};
+    html+=elecCellHtml(names[id], elecSrcLabel(id, mode),
+      a.kwh, b.kwh, a.hours_covered, b.hours_covered,
+      a.complete, b.complete);
+  }
+  const sparksSrc=mode==="wall"?"node1 + node2 · wall estimate":"node1 + node2 · measured GPU";
+  html+=elecCellHtml("Sparks total",sparksSrc,
+    w24.sparks_kwh, w30.sparks_kwh, w24.sparks_hours, w30.sparks_hours,
+    w24.sparks_complete, w30.sparks_complete, "tot");
+  html+=elecCellHtml("Fleet total","all logged nodes",
+    w24.fleet_kwh, w30.fleet_kwh, w24.fleet_hours, w30.fleet_hours,
+    w24.fleet_complete, w30.fleet_complete, "tot");
+  grid.innerHTML=html;
+  if(note){
+    const s24=w24.sparks_kwh!=null?w24.sparks_kwh*rate:null;
+    const s30=w30.sparks_kwh!=null?w30.sparks_kwh*rate:null;
+    const tag=w24.sparks_complete?"":"~";
+    const age=ageLabel(e.updated_unix);
+    const basis=mode==="wall"?`wall est · idle ${idle} W`:"measured GPU/PMIC/RAPL";
+    note.textContent=`Sparks ${basis}: ${tag}${fmtUsd(s24)} /24h · ${fmtUsd(s30)} /30d @ $${rate}/kWh · ${age}`;
+  }
+}
+async function pollEnergy(){
+  if(document.hidden)return;
+  try{
+    const mode=getElecMode();
+    const idle=getIdleWallW();
+    let url=`/api/energy-cost?mode=${encodeURIComponent(mode)}`;
+    if(mode==="wall")url+=`&idle_wall_w=${encodeURIComponent(idle)}`;
+    ENERGY=await(await fetch(url,{cache:"no-store"})).json();
+    paintElecPanel();
+    if(DATA&&Object.keys(DATA).length)renderHosts(fleetHosts(DATA));
+  }catch(e){
+    ENERGY={ok:false,error:String(e)};
+    paintElecPanel();
+  }
+}
+function bindElecRate(){
+  const inp=$("elec-rate"), idleInp=$("elec-idle"), modeSel=$("elec-mode");
+  if(inp&&!inp.dataset.bound){
+    inp.dataset.bound="1";
+    inp.value=String(getKwhRate());
+    inp.addEventListener("input",()=>{setKwhRate(inp.value);paintElecPanel();});
+    inp.addEventListener("change",()=>{
+      setKwhRate(inp.value);paintElecPanel();
+      if(DATA&&Object.keys(DATA).length){renderHosts(fleetHosts(DATA));renderFleet(DATA);}
+    });
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();}});
+  }
+  if(modeSel&&!modeSel.dataset.bound){
+    modeSel.dataset.bound="1";
+    modeSel.value=getElecMode();
+    modeSel.addEventListener("change",()=>{setElecMode(modeSel.value);pollEnergy();});
+  }
+  if(idleInp&&!idleInp.dataset.bound){
+    idleInp.dataset.bound="1";
+    idleInp.value=String(getIdleWallW());
+    // Idle wall changes the server-side integration — refetch, don't just reprice.
+    const applyIdle=()=>{setIdleWallW(idleInp.value);pollEnergy();};
+    idleInp.addEventListener("change",applyIdle);
+    idleInp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();idleInp.blur();applyIdle();}});
+  }
+}
+
 /* ══════════════════════ FLEET tab ══════════════════════ */
 const mrow=(l,p,v)=>`<div class="mrow"><label>${l}</label>
   <div class="bar"><i class="${barCls(p)}" style="width:${clamp(p||0,0,100)}%"></i></div>
@@ -1450,6 +1969,14 @@ const offlineNode=(name,role,h)=>`<div class="card node"><h2>${esc(name)}
   <div class="offline ${booting(h)?"stale":""}">${booting(h)
     ?"connecting…":esc(name)+" unreachable — "+esc((h&&h.error)||"no data")}</div></div>`;
 
+function sampleAgeLabel(unix){
+  if(unix==null||!Number.isFinite(+unix))return "";
+  const age=Math.max(0,Math.round(Date.now()/1000-+unix));
+  if(age<=2)return "now";
+  if(age<60)return age+"s ago";
+  return Math.round(age/60)+"m ago";
+}
+
 function node1Html(n){
   const s=n.system||{},g=(n.gpus||[])[0]||{};
   const mods=(n.endpoints||[]).map(e=>({label:e.id,sub:`${e.engine} :${e.port}`,
@@ -1459,11 +1986,12 @@ function node1Html(n){
   (n.processes||[]).filter(p=>p.mem_mb>4000&&!/llama-server/.test(p.name))
     .forEach(p=>mods.push({label:p.name.split("/").pop(),sub:"proc",
       val:(p.mem_mb/1024).toFixed(1)+" G",state:"ok"}));
-  return `<div class="card node"><h2>${esc(n.hostname||"sparkmax-10ef")}
+  const age=sampleAgeLabel(n.metrics_as_of)||(n.iso_ts?new Date(n.iso_ts).toLocaleTimeString():"");
+  return `<div class="card node" id="fn-node1"><h2>${esc(n.hostname||"sparkmax-10ef")}
     <span class="role">node1 · primary</span>
-    <span class="up">${n.iso_ts?new Date(n.iso_ts).toLocaleTimeString():""}</span></h2>
+    <span class="up" data-live-up>${esc(age)}</span></h2>
     ${mrow("gpu",g.util_gpu||0,`${g.util_gpu??"?"}%`)}
-    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw`)}
+    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw${costSuffix("node1")}`)}
     ${mrow("cpu",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${s.load_1??"?"}/${s.load_5??"?"}/${s.load_15??"?"}`)}
     ${mrow("mem",s.mem_pct||0,`${s.mem_used_gb??"?"} / ${s.mem_total_gb??"?"} G`)}
     ${mrow("swap",pctOf(s.swap_used_gb,s.swap_total_gb),`${s.swap_used_gb??"?"} / ${s.swap_total_gb??"?"} G`)}
@@ -1479,10 +2007,11 @@ function node2Html(n){
   const mods=(n.models||[]).map(m=>({label:m.id,sub:`${m.engine} :${m.port}`,val:"serving",state:"ok"}));
   (n.top_procs||[]).filter(p=>p.mem_gb>=1).forEach(p=>
     mods.push({label:p.name,sub:"proc",val:p.mem_gb+" G",state:"ok"}));
-  return `<div class="card node"><h2>${esc(n.hostname)}
-    <span class="role">node2 · deep lane</span><span class="up">up ${esc(n.uptime)}</span></h2>
+  const age=sampleAgeLabel(n.metrics_as_of)||("up "+(n.uptime||"?"));
+  return `<div class="card node" id="fn-node2"><h2>${esc(n.hostname)}
+    <span class="role">node2 · deep lane</span><span class="up" data-live-up>${esc(age)}</span></h2>
     ${mrow("gpu",g.util_gpu||0,`${g.util_gpu??"?"}%`)}
-    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw`)}
+    ${mrow("power",clamp((g.power_w||0),0,100),`${g.power_w??"?"} W · GPU draw${costSuffix("node2")}`)}
     ${mrow("cpu",n.cpu_pct||0,`load ${esc(n.load)}`)}
     ${mrow("mem",(n.mem||{}).pct||0,`${(n.mem||{}).used_gb} / ${(n.mem||{}).total_gb} G`)}
     ${mrow("swap",n.swap?pctOf(n.swap.used_gb,n.swap.total_gb):0,
@@ -1504,11 +2033,11 @@ function piHtml(p){
   if(!p||!p.reachable)return offlineNode("raspberrypi","Pi 5 · mirror",p);
   const m=p.mem||{},d=p.disk||{},mi=p.mirror||{},wd=p.watchdog||{},hr=p.headroom||{};
   const scale=p.power_scale_w||15;
-  return `<div class="card node"><h2>${esc(p.hostname)}
+  return `<div class="card node" id="fn-pi"><h2>${esc(p.hostname)}
     <span class="role">Pi 5 · mirror + watchdog</span><span class="up">up ${esc(p.uptime)}</span></h2>
     ${mrow("cpu",p.cpu_pct||0,`${p.cpu_pct??"?"}% · ${esc(p.load)}`)}
     ${p.power_w!=null?mrow("power",clamp(p.power_w/scale*100,0,100),
-      `${p.power_w} W · ${esc(p.power_label||"board")} (PMIC)`):""}
+      `${p.power_w} W · ${esc(p.power_label||"board")} (PMIC)${costSuffix("pi")}`):""}
     ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
     ${mrow("disk",d.pct||0,`${d.used_gb??"?"}/${d.total_gb??"?"} G · ${d.free_gb??"?"} G free`)}
     ${tempRow(p.temp_c,"pi",`throttle ${esc(p.throttled||"?")}`)}
@@ -1538,10 +2067,10 @@ function start9Html(s){
     ?`pkg ${s.power_pkg_w}W${s.power_dram_w!=null?` + dram ${s.power_dram_w}W`:""}`
     :(s.power_label||"RAPL");
   const svcs=s.lxc_services||s.podman_services||[];
-  return `<div class="card node"><h2>${esc(s.hostname)}
+  return `<div class="card node" id="fn-start9"><h2>${esc(s.hostname)}
     <span class="role">Start9 · StartOS 0.4</span><span class="up">up ${esc(s.uptime)}</span></h2>
     ${mrow("cpu",s.cpu_pct||0,`${s.cpu_pct??"?"}% · ${esc(s.load)}`)}
-    ${s.power_w!=null?mrow("power",clamp(s.power_w/scale*100,0,100),`${s.power_w} W · ${esc(pd)}`):""}
+    ${s.power_w!=null?mrow("power",clamp(s.power_w/scale*100,0,100),`${s.power_w} W · ${esc(pd)}${costSuffix("start9")}`):""}
     ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
     ${mrow("swap",(s.swap||{}).pct||0,`${(s.swap||{}).used_gb??"?"} / ${(s.swap||{}).total_gb??"?"} G`)}
     ${mrow("data",dd.pct||0,`${Math.round(dd.used_gb||0)} G · ${dd.free_tb??"?"} TB free`)}
@@ -1560,7 +2089,13 @@ function start9Html(s){
       ||'<div class="empty">none</div>'}</div></div>`;
 }
 function renderFleet(d){
-  $("v-fleet").innerHTML=node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9);
+  paintElecPanel();
+  // Keep #elec-panel (rate editor) — only rebuild the four node cards.
+  const root=$("v-fleet");
+  if(!root)return;
+  [...root.children].forEach(c=>{if(c.id!=="elec-panel")c.remove();});
+  root.insertAdjacentHTML("beforeend",
+    node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9));
   if(TAB==="fleet")drawAll();     /* innerHTML wipes the canvases — redraw now */
 }
 
@@ -1602,17 +2137,25 @@ function renderControl(){
       ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
       :(s.unit_missing?"no unit":"stopped");
     const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
+    /* Prefer links catalog, then open_url / port on the service row */
     const L=linkFor[s.id];
-    const url=L?(L.url||`http://${location.hostname}:${L.port}${L.path||"/"}`):null;
+    const url=(L&&(L.url||(L.port!=null?`http://${location.hostname}:${L.port}${L.path||"/"}`:null)))
+      ||s.open_url
+      ||(s.port!=null?`http://${location.hostname}:${s.port}/`:null);
+    /* Same primary slot: Start when down, Open (sky) when up + has a site */
+    let primary="";
+    if(canStart){
+      primary=`<button class="btn go" ${busy?"disabled":""}
+        onclick="svcAction('${esc(s.id)}','start')">Start</button>`;
+    }else if(s.active&&url&&!s.no_open){
+      primary=`<a class="btn open" href="${esc(url)}" target="_blank" rel="noopener"
+        title="${esc(url)}">Open ↗</a>`;
+    }
     return `<div class="svc ${idle==="waste"?"waste":""}" title="${esc(s.hint||s.detail||"")}">
-      <div class="name">${st(state)}<span>${esc(s.label)}</span>
-        ${url&&s.active?`<a class="open" href="${esc(url)}" target="_blank" rel="noopener"
-          onclick="event.stopPropagation()">open ↗</a>`:""}</div>
+      <div class="name">${st(state)}<span>${esc(s.label)}</span></div>
       <div class="meta">${esc(s.detail)}${extra?" · "+extra:""}</div>
       <div class="used ${idle==="waste"?"waste":""}">${used}</div>
-      <div class="acts">${sel}
-        <button class="btn go" ${canStart&&!busy?"":"disabled"}
-          onclick="svcAction('${esc(s.id)}','start')">Start</button>
+      <div class="acts">${sel}${primary}
         <button class="btn stop" ${canStop&&!busy?"":"disabled"}
           onclick="svcAction('${esc(s.id)}','stop')">Stop</button></div></div>`;
   }).join("")||`<div class="empty" style="padding-left:14px">no services match</div>`;
@@ -1745,25 +2288,6 @@ async function runAction(id){
   }catch(e){$("err").textContent="action failed: "+e.message;}
   finally{if($("act-"+id)){$("act-"+id).disabled=false;$("act-"+id).textContent="Run";}}
 }
-async function todoAction(action,id){
-  try{
-    const r=await fetch("/api/todos",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action,id})});
-    renderTodos((await r.json()).todos||[]);
-  }catch(e){$("err").textContent="todo failed: "+e.message;}
-}
-async function addTodo(){
-  const el=$("todo-in"),text=el.value.trim();
-  if(!text)return;
-  el.value="";
-  try{
-    const r=await fetch("/api/todos",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"add",text,tag:$("todo-tag").value})});
-    renderTodos((await r.json()).todos||[]);
-  }catch(e){$("err").textContent="todo failed: "+e.message;}
-}
-$("todo-in").addEventListener("keydown",e=>{if(e.key==="Enter")addTodo();});
-
 /* ══════════════════════════════════════════════════════════════════════════
    TOUCH LAYER
    Everything below exists because a finger is not a mouse: there is no hover
@@ -1784,7 +2308,7 @@ function scrubAt(cv,clientX,clientY){
   if(!cfg)return;
   const cur=drawChart(cv,sparks[cv.dataset.node]||[],cfg,x);
   if(!cur){hideTip();return;}
-  const A=cssVar("--s1","#3987e5"),B=cssVar("--s2","#d95926");
+  const A=cssVar("--s1","#6eb6ff"),B=cssVar("--s2","#ff9b72");
   const ago=Math.max(0,Math.round(((sparks[cv.dataset.node]||[]).slice(-1)[0]||{t:cur.t}).t-cur.t));
   const tip=$("tip");
   tip.innerHTML=`<div class="tt">${ago?`−${ago}s`:"now"}</div>`+
@@ -1900,17 +2424,14 @@ for(const ev of["touchend","touchcancel"])
 })();
 
 /* ══════════════════════ main loop ══════════════════════
-   TWO cadences, because the two payloads cost wildly different amounts:
+   Cadences (split so side panels don't stampede with overview):
 
-     /api/overview  ~62 kB, ~1 s server-side (nvidia-smi + a systemd sweep on
-                    the request path). Carries STRUCTURE: which hosts exist,
-                    alerts, services, jobs, backups.  → 10 s (20 s on a phone)
-     /api/tick      ~400 B, <5 ms (pure cache reads). Carries VALUES only.
-                    → 1 s, which is what actually makes the page feel live.
+     /api/tick      ~400 B, <5 ms — VALUES from 1 Hz hist. → 1 s
+     /api/overview  structure + hist-overlaid gauges.     → 10 s (20 s phone)
+     /api/comfy     → 10 s (server backs off while offline)
+     /api/token-usage / /api/energy-cost → 30 s (server 20 s cache)
 
-   Both stop dead while the tab is hidden — on an iPhone a backgrounded PWA
-   should not be draining battery or cellular data — and both fire immediately
-   on the way back so you never stare at a stale screen. */
+   Both tick and overview stop while the tab is hidden. */
 let HOSTS=[];               /* last host models — patched in place by the tick */
 let LAST_TICK=0, tickBusy=false;
 
@@ -1924,7 +2445,6 @@ async function refresh(){
     renderHero(hosts,items,d);
     renderHosts(hosts);
     renderAttention(items);
-    renderTodos(d.todos||[]);
     renderProjects(d.projects||[]);
     renderActions(d.actions||[]);
     renderLaunch(d.launch||[]);
@@ -1932,7 +2452,8 @@ async function refresh(){
     renderControl();
     renderJobs();
     setBadge("fleet",hosts.filter(h=>h.state==="bad").length,false);
-    $("stamp").textContent="updated "+new Date().toLocaleTimeString();
+    $("stamp").textContent="updated "+(sampleAgeLabel((d.node1||{}).metrics_as_of)
+      ||new Date().toLocaleTimeString());
     $("err").textContent="";
   }catch(e){$("err").textContent="refresh failed: "+e.message;}
 }
@@ -1943,6 +2464,8 @@ async function refresh(){
 function applyTick(t){
   if(!HOSTS.length)return;
   const num=(v,cur)=>typeof v==="number"?v:cur;
+  // Keep DATA in sync so Fleet/Jobs don't show overview-stale gauges.
+  patchDataFromTick(t);
   HOSTS.forEach(h=>{
     const s=t[h.id];
     if(!s||h.offline||s.reachable===false)return;
@@ -1953,9 +2476,109 @@ function applyTick(t){
       h.memTxt=`${(s.mem/100*h.memTotal).toFixed(1)}/${h.memTotal}G`;
     if(typeof s.temp==="number"&&s.temp>0)h.tempC=s.temp;
     if(typeof s.pwr==="number"&&s.pwr>0)h.powerW=s.pwr;
+    const age=sampleAgeLabel(s.t);
+    if(age)h.up=age;
   });
   pushHist(HOSTS);
   renderHosts(HOSTS);
+  patchFleetLive(t);
+}
+function patchDataFromTick(t){
+  if(!DATA||!t)return;
+  const n1=t.node1;
+  if(n1&&DATA.node1){
+    DATA.node1.metrics_as_of=n1.t;
+    const g=(DATA.node1.gpus||(DATA.node1.gpus=[{}]))[0];
+    if(typeof n1.gpu==="number")g.util_gpu=n1.gpu;
+    if(typeof n1.pwr==="number"){g.power_w=n1.pwr;DATA.node1.total_power_watts=n1.pwr;}
+    if(typeof n1.temp==="number")g.temp_c=n1.temp;
+    const sys=DATA.node1.system||(DATA.node1.system={});
+    if(typeof n1.cpu==="number")sys.cpu_pct=n1.cpu;
+    if(typeof n1.mem==="number")sys.mem_pct=n1.mem;
+  }
+  const n2=t.node2;
+  if(n2&&DATA.node2&&n2.reachable!==false){
+    DATA.node2.metrics_as_of=n2.t;
+    const g=(DATA.node2.gpus||(DATA.node2.gpus=[{}]))[0];
+    if(typeof n2.gpu==="number")g.util_gpu=n2.gpu;
+    if(typeof n2.pwr==="number")g.power_w=n2.pwr;
+    if(typeof n2.temp==="number")g.temp_c=n2.temp;
+    if(typeof n2.cpu==="number")DATA.node2.cpu_pct=n2.cpu;
+    if(typeof n2.mem==="number"&&DATA.node2.mem)DATA.node2.mem.pct=n2.mem;
+  }
+  for(const id of["pi","start9"]){
+    const s=t[id];
+    if(!s||!DATA[id]||s.reachable===false)continue;
+    if(typeof s.cpu==="number")DATA[id].cpu_pct=s.cpu;
+    if(typeof s.mem==="number"&&DATA[id].mem)DATA[id].mem.pct=s.mem;
+    if(typeof s.pwr==="number")DATA[id].power_w=s.pwr;
+    if(typeof s.temp==="number")DATA[id].temp_c=s.temp;
+  }
+}
+/* In-place Fleet gauge updates — avoid full HTML rebuild every second (wipes charts). */
+function patchFleetLive(t){
+  if(TAB!=="fleet"||!t)return;
+  const setRow=(card,label,pct,txt)=>{
+    if(!card)return;
+    for(const row of card.querySelectorAll(".mrow")){
+      const lab=row.querySelector("label");
+      if(!lab||lab.textContent!==label)continue;
+      const bar=row.querySelector(".bar i");
+      const v=row.querySelector(".v");
+      if(bar&&typeof pct==="number"){
+        bar.style.width=clamp(pct,0,100)+"%";
+        bar.className=barCls(pct);
+      }
+      if(v&&txt!=null)v.textContent=txt;
+      break;
+    }
+  };
+  const n1=t.node1, c1=$("fn-node1");
+  if(n1&&c1){
+    if(typeof n1.gpu==="number")setRow(c1,"gpu",n1.gpu,`${Math.round(n1.gpu)}%`);
+    if(typeof n1.pwr==="number"){
+      const c=nodeHistCost("node1");
+      const extra=c?` · ${c.complete?"":"~"}${fmtUsd(c.usd)}/24h`:"";
+      setRow(c1,"power",clamp(n1.pwr,0,100),`${n1.pwr} W · GPU draw${extra}`);
+    }
+    if(typeof n1.cpu==="number")setRow(c1,"cpu",n1.cpu,`${Math.round(n1.cpu)}%`);
+    if(typeof n1.mem==="number")setRow(c1,"mem",n1.mem,`${Math.round(n1.mem)}%`);
+    if(typeof n1.temp==="number"){
+      for(const row of c1.querySelectorAll(".mrow")){
+        if((row.querySelector("label")||{}).textContent!=="temp")continue;
+        const v=row.querySelector(".v");
+        if(v)v.innerHTML=`${tempSpan(n1.temp,"gpu")} · GPU`;
+        break;
+      }
+    }
+    const up=c1.querySelector("[data-live-up]");
+    if(up)up.textContent=sampleAgeLabel(n1.t)||up.textContent;
+  }
+  const n2=t.node2, c2=$("fn-node2");
+  if(n2&&c2&&n2.reachable!==false){
+    if(typeof n2.gpu==="number")setRow(c2,"gpu",n2.gpu,`${Math.round(n2.gpu)}%`);
+    if(typeof n2.pwr==="number"){
+      const c=nodeHistCost("node2");
+      const extra=c?` · ${c.complete?"":"~"}${fmtUsd(c.usd)}/24h`:"";
+      setRow(c2,"power",clamp(n2.pwr,0,100),`${n2.pwr} W · GPU draw${extra}`);
+    }
+    if(typeof n2.cpu==="number")setRow(c2,"cpu",n2.cpu,`${Math.round(n2.cpu)}%`);
+    if(typeof n2.mem==="number")setRow(c2,"mem",n2.mem,`${Math.round(n2.mem)}%`);
+    const up=c2.querySelector("[data-live-up]");
+    if(up)up.textContent=sampleAgeLabel(n2.t)||up.textContent;
+  }
+  for(const id of["pi","start9"]){
+    const s=t[id], card=$(`fn-${id}`);
+    if(!s||!card||s.reachable===false)continue;
+    if(typeof s.cpu==="number")setRow(card,"cpu",s.cpu,`${Math.round(s.cpu)}%`);
+    if(typeof s.mem==="number")setRow(card,"mem",s.mem,`${Math.round(s.mem)}%`);
+    if(typeof s.pwr==="number"){
+      const c=nodeHistCost(id);
+      const extra=c?` · ${c.complete?"":"~"}${fmtUsd(c.usd)}/24h`:"";
+      const kind=id==="pi"?"board (PMIC)":"RAPL";
+      setRow(card,"power",clamp(s.pwr/(id==="pi"?15:65)*100,0,100),`${s.pwr} W · ${kind}${extra}`);
+    }
+  }
 }
 async function tickLoop(){
   if(document.hidden||tickBusy)return;
@@ -1983,24 +2606,34 @@ const clockTick=()=>$("clock").textContent=new Date().toLocaleTimeString();
 clockTick();setInterval(clockTick,1000);
 setInterval(paintLive,1000);
 switchTab(TAB);
-refresh();tickLoop();pollTokenUsage();pollComfy();
+bindElecRate();
+refresh();tickLoop();pollTokenUsage();pollComfy();pollEnergy();
 
-/* structural cadence: easier on a phone's radio, since the 1 Hz tick already
-   carries everything that visibly moves */
-setInterval(()=>{if(!document.hidden){refresh();pollTokenUsage();pollComfy();}},phone()?20000:10000);
+/* Cadences split so structural overview isn't piled with every side panel:
+     overview  10s (20s phone) — structure
+     tick      1s              — live gauges (already paid hist)
+     comfy     10s             — Pulse card; server backs off when offline
+     tokens    30s             — Jobs stats (20s server cache)
+     energy    30s             — Fleet $ (20s server cache)
+     sparks    2s on Fleet     — chart hist */
+setInterval(()=>{if(!document.hidden)refresh();},phone()?20000:10000);
 setInterval(tickLoop,1000);
+setInterval(()=>{if(!document.hidden)pollComfy();},10000);
+setInterval(()=>{if(!document.hidden)pollTokenUsage();},30000);
+setInterval(()=>{if(!document.hidden)pollEnergy();},30000);
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden)return;
-  paintLive();refresh();tickLoop();pollTokenUsage();pollComfy();
+  paintLive();refresh();tickLoop();pollTokenUsage();pollComfy();pollEnergy();
   if(TAB==="fleet")pollSparks();
 });
 
 window.addEventListener("resize",()=>{
   if(TAB==="fleet")drawAll();
+  if(TAB==="jobs")drawTokChart(_tokSeries);
   document.querySelectorAll(".spark").forEach(cv=>{
     const id=(cv.closest(".host")||{}).id;
-    if(id)drawSpark(cv,HIST[id.slice(3)]||[],"var(--s1)");});
+    if(id)drawSpark(cv,HIST[id.slice(3)]||[],cssVar("--s1","#6eb6ff"));});
 });
 </script>
 </body>

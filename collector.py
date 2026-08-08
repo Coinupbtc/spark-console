@@ -77,29 +77,62 @@ def _safe_float(v: str | None, default: float = 0.0) -> float:
 
 
 def query_gpu() -> list[dict]:
+    # Prefer 1s average draw — Instantaneous undersamples energy on a 5‑min
+    # cadence. Fall back to power.draw if .average is unavailable.
     out = subprocess.run(
         ["nvidia-smi",
-         "--query-gpu=index,name,power.draw,temperature.gpu,"
+         "--query-gpu=index,name,power.draw.average,power.draw.instant,temperature.gpu,"
          "utilization.gpu,memory.used,memory.total,fan.speed,pstate",
          "--format=csv,noheader,nounits"],
         capture_output=True, text=True, timeout=10,
     )
+    if out.returncode != 0 or not (out.stdout or "").strip():
+        out = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=index,name,power.draw,temperature.gpu,"
+             "utilization.gpu,memory.used,memory.total,fan.speed,pstate",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+        legacy = True
+    else:
+        legacy = False
     gpus = []
     for line in (out.stdout or "").strip().splitlines():
         p = [x.strip() for x in line.split(",")]
-        if len(p) < 7:
-            continue
-        gpus.append({
-            "index": _safe_int(p[0]),
-            "name": p[1] or "unknown",
-            "power_w": _safe_float(p[2]),
-            "temp_c": _safe_int(p[3]),
-            "util_gpu": _safe_float(p[4]),
-            "mem_used_mb": _safe_int(p[5]),
-            "mem_total_mb": _safe_int(p[6]),
-            "fan_pct": _safe_int(p[7]) if len(p) > 7 else 0,
-            "pstate": p[8] if len(p) > 8 else "unknown",
-        })
+        if legacy:
+            if len(p) < 7:
+                continue
+            gpus.append({
+                "index": _safe_int(p[0]),
+                "name": p[1] or "unknown",
+                "power_w": _safe_float(p[2]),
+                "temp_c": _safe_int(p[3]),
+                "util_gpu": _safe_float(p[4]),
+                "mem_used_mb": _safe_int(p[5]),
+                "mem_total_mb": _safe_int(p[6]),
+                "fan_pct": _safe_int(p[7]) if len(p) > 7 else 0,
+                "pstate": p[8] if len(p) > 8 else "unknown",
+            })
+        else:
+            if len(p) < 8:
+                continue
+            avg = _safe_float(p[2])
+            inst = _safe_float(p[3])
+            # Average is the right energy integrator; fall back to instant if 0/N/A.
+            gpus.append({
+                "index": _safe_int(p[0]),
+                "name": p[1] or "unknown",
+                "power_w": avg if avg > 0 else inst,
+                "power_avg_w": avg,
+                "power_instant_w": inst,
+                "temp_c": _safe_int(p[4]),
+                "util_gpu": _safe_float(p[5]),
+                "mem_used_mb": _safe_int(p[6]),
+                "mem_total_mb": _safe_int(p[7]),
+                "fan_pct": _safe_int(p[8]) if len(p) > 8 else 0,
+                "pstate": p[9] if len(p) > 9 else "unknown",
+            })
     return gpus
 
 
@@ -174,21 +207,68 @@ def query_hermes() -> dict:
 
 
 def query_endpoints() -> list[dict]:
-    """Local inference endpoints on this node (llama.cpp :8889 default)."""
+    """Local inference endpoints that explain high unified-memory use.
+
+    Helper/cluster modes bind loopback :8889/:8888. Dual-Spark video (MiniMax
+    H3 etc.) often binds the CX7 fabric IP :8800 — not 127.0.0.1 — so Needs you
+    must probe that too or every healthy video load looks like a RAM emergency.
+    """
     import urllib.request
+    fabric = os.environ.get("SPARK_FABRIC_IP", "192.168.100.10").strip() or "192.168.100.10"
     eps = []
-    for port, engine in ((8889, "llama.cpp"), (8888, "vLLM")):
+    targets = [
+        (8889, "http://127.0.0.1:8889/v1/models", "llama.cpp"),
+        (8888, "http://127.0.0.1:8888/v1/models", "vLLM"),
+        (8800, f"http://{fabric}:8800/v1/models", "vLLM-fabric"),
+    ]
+    for port, url, engine in targets:
         try:
-            with urllib.request.urlopen(
-                    f"http://127.0.0.1:{port}/v1/models", timeout=2) as r:
+            with urllib.request.urlopen(url, timeout=2) as r:
                 data = json.load(r)
             for m in data.get("data") or []:
                 mid = (m.get("id") or "?").rstrip("/").split("/")[-1]
                 eps.append({"id": mid, "port": port,
                             "engine": engine, "status": "ok"})
+            # Reachable with an empty model list still means an engine is up
+            if not (data.get("data") or []):
+                eps.append({"id": "?", "port": port, "engine": engine, "status": "ok"})
         except Exception:
             continue
     return eps
+
+
+# GPU compute names that are desktop chrome, not a loaded model
+_DESKTOP_GPU_PROCS = ("gnome-remote-desktop", "xorg", "xwayland", "gnome-shell")
+# cmdline/name fragments that mean "owner intentionally parked a big model"
+_ENGINE_NAME_HINTS = ("vllm", "llama-server", "llama.cpp", "ray::", "sglang", "deepseek")
+
+
+def resident_engine(endpoints: list[dict] | None,
+                    procs: list[dict] | None) -> dict | None:
+    """Return a short descriptor when high RAM/swap is an expected model cost.
+
+    Needs you should only page unexplained pressure — not 'your MiniMax is
+    loaded and using the unified pool like you asked'.
+    """
+    for e in endpoints or []:
+        if e.get("status") == "ok":
+            return {
+                "engine": e.get("engine") or "inference",
+                "port": e.get("port"),
+                "id": e.get("id") or "?",
+            }
+    for p in procs or []:
+        name = str(p.get("name") or "")
+        low = name.lower()
+        if any(d in low for d in _DESKTOP_GPU_PROCS):
+            continue
+        mb = int(p.get("mem_mb") or 0)
+        hinted = any(h in low for h in _ENGINE_NAME_HINTS)
+        # ~8 GB+ on GPU (or any named engine worker) = the model is the RAM story
+        if hinted or mb >= 8192:
+            short = name.rsplit("/", 1)[-1][:48] or "gpu-worker"
+            return {"engine": short, "port": "gpu", "id": f"{mb}MB"}
+    return None
 
 
 def system_metrics() -> dict:
@@ -224,25 +304,27 @@ def diagnose(
     alerts: list[dict] = []
 
     # A resident inference engine is SUPPOSED to fill the 121GB unified pool —
-    # DS4F TP=2 parks ~118G. Flagging 85% as critical meant every healthy
-    # cluster-mode sample paged Telegram and prescribed stopping the engine,
-    # i.e. tearing down the owner's chosen mode (43 pages on 2026-08-05).
+    # DS4F TP=2 parks ~118G; MiniMax H3 video parks ~100G on the GPU. Flagging
+    # 85% as critical meant every healthy load paged "stop the model".
     # When an engine is serving, high RAM is explained: only >=97% (where swap
-    # thrash actually starts) is critical. With no engine up, 85% is unexplained.
-    engine = next((e for e in (endpoints or []) if e.get("status") == "ok"), None)
+    # thrash actually hurts) is critical. With no engine up, 85% is unexplained.
+    engine = resident_engine(endpoints, procs)
     crit_pct = 97 if engine else 85
 
     if sys_m["mem_pct"] >= crit_pct:
         if engine:
-            why = f" (inference resident: {engine['engine']} :{engine['port']})"
-            action = "Swap-thrash range. Free RAM only if you want this mode down: ~/scripts/dgx/spark-mode.sh status"
+            port = engine.get("port")
+            port_bit = "" if port in (None, "gpu") else f" :{port}"
+            where = f" (inference resident: {engine['engine']}{port_bit})"
+            action = ("Swap-thrash range. Free RAM only if you want this mode down — "
+                      "see ~/scripts/dgx/spark-mode.sh status / CURRENT.md")
         else:
-            why = " with no inference engine resident"
+            where = " with no inference engine resident"
             action = "Unexplained — check `ollama ps`, nvfp4-status.sh, and large procs"
         alerts.append({
             "level": "critical",
             "category": "memory",
-            "message": f"RAM at {sys_m['mem_pct']}% — only {sys_m['mem_avail_gb']} GB free{why}",
+            "message": f"RAM at {sys_m['mem_pct']}% — only {sys_m['mem_avail_gb']} GB free{where}",
             "action": action,
         })
     elif sys_m["mem_pct"] >= 70 and not engine:
@@ -253,12 +335,25 @@ def diagnose(
             "action": "Review vLLM (nvfp4-status.sh) and `ollama ps`",
         })
 
-    if sys_m["swap_used_gb"] >= 2:
+    # Swap spill while a big model is loaded is normal on this box — not actionable.
+    # Only page swap when nothing explains the pressure, or the swap partition is
+    # nearly full (real thrash risk).
+    swap_gb = float(sys_m.get("swap_used_gb") or 0)
+    swap_pct = float(sys_m.get("swap_pct") or 0)
+    if engine:
+        if swap_pct >= 90:
+            alerts.append({
+                "level": "warning",
+                "category": "swap",
+                "message": f"Swap {swap_gb} GB ({swap_pct}%) — thrash risk with model loaded",
+                "action": "Only if the box feels stuck: free another workload, not the model you chose",
+            })
+    elif swap_gb >= 2:
         alerts.append({
             "level": "warning",
             "category": "swap",
-            "message": f"Swap usage {sys_m['swap_used_gb']} GB — memory pressure",
-            "action": "Free RAM by stopping large models",
+            "message": f"Swap usage {swap_gb} GB — memory pressure",
+            "action": "No loaded engine explains this — find the large process",
         })
 
     for m in ollama:
@@ -411,6 +506,19 @@ def collect() -> dict | None:
     }
     append_row(CSV_FILE, CSV_HEADERS, row)
 
+    # Historical electricity: fold this snapshot into the energy sample log so
+    # 24h/30d $ costs are integrated watts×time, not live projections.
+    try:
+        import energy_cost
+        n2 = cluster.get("node2") or {}
+        n2_gpu = (n2.get("gpus") or [{}])[0] if n2.get("reachable") else {}
+        energy_cost.record_sample({
+            "node1": snap.get("total_power_watts") or gpu.get("power_w"),
+            "node2": n2_gpu.get("power_w") if n2.get("reachable") else None,
+        }, force=True)
+    except Exception:
+        pass
+
     with open(JSON_SNAP, "w") as f:
         json.dump(snap, f, indent=2)
 
@@ -421,11 +529,12 @@ def collect() -> dict | None:
     node2 = cluster["node2"]
     if node2["reachable"]:
         node2_gpu = (node2["gpus"] or [{}])[0]
-        logger.info("  Node2 CPU %s%% | RAM %sG free | GPU %s%% %sW",
+        logger.info("  Node2 CPU %s%% | RAM %sG free | GPU %s%% %sW %sC",
                      node2.get('cpu_pct', 0),
                      node2.get('mem', {}).get('avail_gb', 0),
                      node2_gpu.get('util_gpu', 0),
-                     node2_gpu.get('power_w', 0))
+                     node2_gpu.get('power_w', 0),
+                     node2_gpu.get('temp_c', "?"))
     else:
         logger.warning("  [WARNING] Node2 degraded: %s", node2.get('error', 'unreachable'))
     if inv.get("active_vllm"):
