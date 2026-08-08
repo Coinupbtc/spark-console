@@ -70,7 +70,6 @@ import fleet_links  # noqa: E402
 import fleet_nodes  # noqa: E402
 import quick_actions  # noqa: E402
 import desktop_launch  # noqa: E402
-import comfy_api  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -181,11 +180,6 @@ _links_cache: dict = {"groups": [], "counts": {}}
 # on a thread like every other panel instead of rebuilt on the request path.
 _services_cache: dict = {}
 _services_refresh = threading.Event()
-# ComfyUI job panel: on-demand (20 min idle timer) so usually offline. Polled on
-# a thread so GET /api/comfy is a fast cache read; the refresher backs off hard
-# while ComfyUI is down so a dead box can't hammer loopback.
-_comfy_cache: dict = {"offline": True, "state": "offline", "error": "not polled yet"}
-_comfy_offline_backoff = 10.0  # seconds between polls while ComfyUI is down
 
 
 def _gpu_quick() -> tuple[float, float, float] | None:
@@ -305,26 +299,6 @@ def _services_refresher():
         _services_refresh.clear()
 
 
-def _comfy_refresher():
-    """Poll ComfyUI on a thread so GET /api/comfy is a fast cache read.
-
-    ComfyUI is on-demand (20 min idle timer) so it is usually DOWN. When down we
-    back off to _comfy_offline_backoff seconds between polls — a ConnectionRefused
-    is near-instant but we don't want to spin against loopback all day. When it
-    comes alive the module's own live snapshot fans out and state flips cleanly.
-    """
-    while True:
-        try:
-            snap = comfy_api.query_comfy()
-        except Exception:  # never let the thread die
-            snap = {"offline": True, "state": "offline", "error": "comfy poll errored"}
-        was_offline = bool(snap.get("offline"))
-        with _cache_lock:
-            _comfy_cache.clear()
-            _comfy_cache.update(snap)
-        _time.sleep(_comfy_offline_backoff if was_offline else 5)
-
-
 def _projects_refresher():
     while True:
         try:
@@ -434,7 +408,6 @@ threading.Thread(target=_projects_refresher, daemon=True).start()
 threading.Thread(target=_fleet_refresher, daemon=True).start()
 threading.Thread(target=_panels_refresher, daemon=True).start()
 threading.Thread(target=_services_refresher, daemon=True).start()
-threading.Thread(target=_comfy_refresher, daemon=True).start()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -772,18 +745,6 @@ def api_token_usage():
 def api_backups():
     with _cache_lock:
         return dict(_backups_cache)
-
-
-@app.get("/api/comfy")
-def api_comfy():
-    """ComfyUI job-monitor snapshot. Plain def, reads the thread-populated cache.
-
-    ComfyUI is on-demand, so when it is DOWN this returns a clean offline state
-    instead of erroring: {"offline": true, "state": "offline", "chip": "offline"}
-    with all counts zeroed. See _comfy_refresher for the backoff policy.
-    """
-    with _cache_lock:
-        return dict(_comfy_cache)
 
 
 @app.get("/api/links")

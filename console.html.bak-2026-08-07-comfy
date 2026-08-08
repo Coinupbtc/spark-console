@@ -227,11 +227,6 @@ header .clock{font:650 14px var(--mono);color:var(--ink);white-space:nowrap;padd
 .bar i{display:block;height:100%;border-radius:99px;background:var(--s1);
   transition:width .8s cubic-bezier(.22,1,.36,1),background .3s}
 .bar i.w{background:var(--warn)}.bar i.b{background:var(--crit)}
-/* ComfyUI running progress: indeterminate sweep (REST exposes no live step
-   count — ComfyUI pushes that over its websocket — so while a job runs we
-   animate an infinite sweep instead of faking a number). */
-.cfy-indet{background:linear-gradient(90deg,var(--s1) 0%,var(--s1) 40%,var(--s2) 60%,var(--s1) 100%)!important;background-size:200% 100%!important;width:60%!important;animation:cfySweep 1.1s linear infinite}
-@keyframes cfySweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .mrow .v{font:11px var(--mono);color:var(--ink-2);white-space:nowrap}
 .spark{width:100%;height:32px;display:block;margin-top:9px}
 .host .foot{display:flex;gap:12px;margin-top:8px;padding-top:8px;
@@ -798,19 +793,6 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
       <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
       <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
     </div></div>
-  <div class="card"><h3>ComfyUI jobs <span class="cnt" id="comfy-chip">…</span></h3>
-    <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
-      <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
-      <div class="mrow"><label>running</label><span class="v" id="comfy-run">…</span></div>
-      <div class="mrow" id="comfy-progress-row" style="display:none"><label>progress</label>
-        <span class="v" style="flex:1;max-width:180px"><span class="bar"><i id="comfy-progress"></i></span></span></div>
-      <div class="mrow"><label>queue / eta</label><span class="v" id="comfy-queue">…</span></div>
-      <div class="mrow"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
-      <div class="mrow"><label>models</label><span class="v" id="comfy-models">…</span></div>
-      <div class="mrow"><label>last finished</label><span class="v" id="comfy-last">…</span></div>
-      <div class="mrow" style="border:0"><label>open</label>
-        <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
-    </div></div>
 </section>
 
 <div id="tip"></div>
@@ -1339,82 +1321,6 @@ function renderTokenUsage(tu){
 async function pollTokenUsage(){
   if(document.hidden)return;
   try{renderTokenUsage(await(await fetch("/api/token-usage",{cache:"no-store"})).json());}catch(e){}
-}
-
-/* ComfyUI jobs card — job queue + VRAM + last-finished, from the cached
-   /api/comfy snapshot. ComfyUI is on-demand, so the card's whole job is to
-   make "offline / on-demand" obvious and calm when it is down (which is most
-   of the time) and flip to live queue/intensity the moment it comes up. */
-function setCfy(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
-function cfyFmtRun(r){
-  if(!r)return "—";
-  const label=r.label?esc(r.label):"job";
-  return r.steps?`${label} · ${r.steps} steps` : label;
-}
-function cfyFmtDur(jf){
-  if(!jf)return "—";
-  const n=jf.label?esc(jf.label):"job";
-  const st=jf.duration_s!=null?` · ${jf.duration_s}s`:
-          (jf.status?` · ${esc(jf.status)}`:"");
-  return jf.status==="success"?`${n}${st}`:`${n}${st}`;
-}
-function renderComfy(c){
-  if(!c)return;   // no data yet — leave loading placeholders
-  const off=!!c.offline;
-  const state=c.state||"offline";
-  const chip=(c.chip||"offline");
-  const set=(id,v)=>setCfy(id,v);
-
-  set("comfy-chip", off?"offline":chip);
-
-  if(off){
-    // ComfyUI is down — clean, calm on-demand empty state, never an error.
-    set("comfy-state","offline / on-demand · start on demand");
-    set("comfy-run","—");
-    set("comfy-queue","—");
-    set("comfy-vram","—");
-    set("comfy-models","—");
-    set("comfy-last","—");
-    document.getElementById("comfy-progress-row").style.display="none";
-    set("comfy-progress","0%");
-    return;
-  }
-
-  const run=c.running||null;
-  set("comfy-state",
-      state==="running"?"running":state==="queued"?"queued (waiting)":"idle · ready");
-  set("comfy-run", cfyFmtRun(run));
-
-  const pend=c.pending_count||0, tot=c.queue_total||0;
-  // Queue ETA: rough — each pending job ~last-run duration, else unknown.
-  const eta=(()=>{
-    if(!pend)return "−";
-    const last=(c.last_finished||[])[0];
-    const per=last&&last.duration_s?last.duration_s:null;
-    return per?`${pend} waiting · ~${(per*pend).toFixed(0)}s`:`${pend} waiting`;
-  })();
-  set("comfy-queue",`${tot>0?`${tot} total`:"idle"} · ${eta}`);
-  set("comfy-vram",`${c.vram_used_pct!=null?c.vram_used_pct+"% used":"—"} · ${c.vram_free||"?"} free`);
-  set("comfy-models",(c.models&&c.models.length)?c.models.map(m=>esc(m)).join(", "):"none loaded");
-  set("comfy-last", cfyFmtDur((c.last_finished||[])[0]));
-
-  // progress bar: animate indeterminate while running (no live step count over
-  // REST — ComfyUI pushes that over its websocket), else show idle zero.
-  const row=document.getElementById("comfy-progress-row");
-  const bar=document.getElementById("comfy-progress");
-  if(state==="running"){
-    row.style.display="";
-    bar.className="cfy-indet";
-    bar.style.width="";
-  } else {
-    row.style.display="none";
-    bar.className="";
-    bar.style.width="0%";
-  }
-}
-async function pollComfy(){
-  if(document.hidden)return;
-  try{renderComfy(await(await fetch("/api/comfy",{cache:"no-store"})).json());}catch(e){}
 }
 
 /* Seed the Pulse host trends from the 1 Hz ring buffer the collector already
@@ -1983,16 +1889,16 @@ const clockTick=()=>$("clock").textContent=new Date().toLocaleTimeString();
 clockTick();setInterval(clockTick,1000);
 setInterval(paintLive,1000);
 switchTab(TAB);
-refresh();tickLoop();pollTokenUsage();pollComfy();
+refresh();tickLoop();pollTokenUsage();
 
 /* structural cadence: easier on a phone's radio, since the 1 Hz tick already
    carries everything that visibly moves */
-setInterval(()=>{if(!document.hidden){refresh();pollTokenUsage();pollComfy();}},phone()?20000:10000);
+setInterval(()=>{if(!document.hidden){refresh();pollTokenUsage();}},phone()?20000:10000);
 setInterval(tickLoop,1000);
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden)return;
-  paintLive();refresh();tickLoop();pollTokenUsage();pollComfy();
+  paintLive();refresh();tickLoop();pollTokenUsage();
   if(TAB==="fleet")pollSparks();
 });
 
