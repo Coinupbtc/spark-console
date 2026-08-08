@@ -271,6 +271,10 @@ nav .hint{font-size:10.5px;color:var(--faint);padding-right:8px;white-space:nowr
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn.go{border-color:color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok)}
 .btn.stop{border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)}
+/* Same primary slot as Start: sky Open when the service is up and has a URL */
+a.btn.open{border-color:color-mix(in srgb,var(--accent) 50%,transparent);color:var(--accent-hi);
+  text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+a.btn.open:hover{color:var(--fg);border-color:var(--accent);background:var(--accent-soft)}
 .act-out{font:10.5px/1.4 var(--mono);color:var(--dim);background:rgba(0,0,0,.25);border-radius:6px;
   padding:6px 8px;margin-top:6px;max-height:76px;overflow:auto;white-space:pre-wrap;
   border:1px solid var(--row-line)}
@@ -999,13 +1003,24 @@ function renderServices(){
     const used=s.active?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · STOP?":idle==="idle"?" · idle":""}`
       :(s.unit_missing?"no unit":"stopped");
     const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
+    /* Browser builds localhost URLs from its own host (LAN/tailnet), not 127.0.0.1 */
+    const url=s.open_url
+      ||(s.port!=null?`http://${location.hostname}:${s.port}${s.path||"/"}`:null);
+    let primary="";
+    if(canStart){
+      primary=`<button class="btn go" ${busy?"disabled":""}
+        onclick="svcAction('${esc(s.id)}','start')">Start</button>`;
+    }else if(s.active&&url&&!s.no_open){
+      primary=`<a class="btn open" href="${esc(url)}" target="_blank" rel="noopener"
+        title="${esc(url)}">Open ↗</a>`;
+    }
     return `<div class="svc-card ${idle==="waste"||idle==="idle"?idle:""}" title="${esc(s.hint||s.detail||"")}">
       <div class="name">${stDot(st)}${esc(s.label)}</div>
       <div class="meta">${esc(s.detail)}${extra?` · ${extra}`:""}</div>
       <div class="used ${esc(idle)}">${used}</div>
-      <div class="acts">${sel}
-        <button class="btn go" ${canStart&&!busy?"":"disabled"} onclick="svcAction('${esc(s.id)}','start')">Start</button>
-        <button class="btn stop" ${canStop&&!busy?"":"disabled"} onclick="svcAction('${esc(s.id)}','stop')">Stop</button>
+      <div class="acts">${sel}${primary}
+        <button class="btn stop" ${canStop&&!busy?"":"disabled"}
+          onclick="svcAction('${esc(s.id)}','stop')">Stop</button>
       </div></div>`;
   }).join("")||`<div class="empty">no services match</div>`;
 }

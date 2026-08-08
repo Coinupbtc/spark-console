@@ -3,11 +3,15 @@
     "Copy to services.json to populate the console's service board.",
     "Each entry needs an id plus at least one of: unit, port, probe_url.",
     "  unit       systemd unit to report state for (must end in .service)",
-    "  port       shorthand for probe_url http://127.0.0.1:<port>/",
+    "  port       shorthand for probe_url http://127.0.0.1:<port>/; also builds Open URL",
+    "  path       path appended to Open URL (default /)",
+    "  open_url   full http(s) URL for Open when port is not the public site",
+    "  no_open    true = never show Open (tunnels/proxies with a probe but no useful UI)",
     "  probe_url  URL to GET; an OpenAI-style /v1/models body shows the model id",
     "  group      inference | agent | apps | meta   (controls sort order)",
     "  critical   true = raise an alert when it is not running",
-    "This board is read-only. The console never starts or stops anything."
+    "This board is read-only. The console never starts or stops anything.",
+    "When a service is up and has port/open_url, the primary button becomes Open ↗."
   ],
   "services": [
     {
@@ -17,6 +21,7 @@
       "group": "inference",
       "unit": "llama-server.service",
       "probe_url": "http://127.0.0.1:8080/v1/models",
+      "port": 8080,
       "critical": true
     },
     {
@@ -25,14 +30,16 @@
       "detail": "model daemon",
       "group": "inference",
       "unit": "ollama.service",
-      "port": 11434
+      "port": 11434,
+      "no_open": true
     },
     {
       "id": "vllm",
       "label": "vLLM",
       "detail": "optional second engine",
       "group": "inference",
-      "probe_url": "http://127.0.0.1:8000/v1/models"
+      "probe_url": "http://127.0.0.1:8000/v1/models",
+      "port": 8000
     },
     {
       "id": "my-app",

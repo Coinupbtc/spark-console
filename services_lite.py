@@ -113,6 +113,13 @@ def load_catalog() -> dict[str, dict]:
             probe_url = f"http://127.0.0.1:{int(port)}/"
         if not unit and not probe_url:
             continue
+        # Optional public/UI URL when probe is loopback-only or Tailscale-served
+        open_url = str(item.get("open_url") or "").strip()
+        if open_url and not (open_url.startswith("http://") or open_url.startswith("https://")):
+            open_url = ""
+        path = str(item.get("path") or "/").strip() or "/"
+        if not path.startswith("/"):
+            path = "/" + path
         catalog[sid] = {
             "label": str(item.get("label") or sid)[:80],
             "detail": str(item.get("detail") or "")[:160],
@@ -120,6 +127,9 @@ def load_catalog() -> dict[str, dict]:
             "unit": unit,
             "probe_url": probe_url,
             "port": port,
+            "path": path,
+            "open_url": open_url[:400],
+            "no_open": bool(item.get("no_open")),
             "critical": bool(item.get("critical")),
         }
     return catalog
@@ -139,6 +149,18 @@ def list_services() -> dict:
             "state": "unknown", "active": False, "serving": None,
             "extra": "", "unit_missing": False,
         }
+        # So the UI can swap Start → Open when a service is up
+        if meta.get("port") is not None:
+            try:
+                row["port"] = int(meta["port"])
+            except (TypeError, ValueError):
+                pass
+        if meta.get("path"):
+            row["path"] = meta["path"]
+        if meta.get("open_url"):
+            row["open_url"] = meta["open_url"]
+        if meta.get("no_open"):
+            row["no_open"] = True
         if meta["unit"]:
             exists, state = unit_states.get(meta["unit"], (False, "unknown"))
             if not exists:
