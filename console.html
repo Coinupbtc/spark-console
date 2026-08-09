@@ -834,17 +834,17 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
       </div>
       <div class="elec-rate">
         <label for="elec-mode">Bill basis</label>
-        <select id="elec-mode" title="Measured = GPU/PMIC/RAPL sensors. Wall est = optional Spark calibration.">
-          <option value="sensor">Measured</option>
+        <select id="elec-mode" title="Wall est ≈ outlet bill for Sparks. Measured = GPU/PMIC/RAPL only (understates AC).">
           <option value="wall">Wall estimate</option>
+          <option value="sensor">Measured sensors</option>
         </select>
       </div>
-      <div class="elec-rate" id="elec-idle-wrap" hidden>
+      <div class="elec-rate" id="elec-idle-wrap">
         <label for="elec-idle">Spark idle wall W</label>
         <input id="elec-idle" type="number" min="10" max="200" step="1" inputmode="decimal"
                title="Outlet watts at idle (USB-C / Kill-A-Watt). Only used for Wall estimate.">
       </div>
-      <span class="elec-note" id="elec-note">Measured sensor kWh × rate — not a live projection.</span>
+      <span class="elec-note" id="elec-note">Wall estimate × rate — bill-like, not a live projection.</span>
     </div>
     <div class="elec-grid" id="elec-grid"></div>
   </div>
@@ -1759,8 +1759,9 @@ async function pollComfy(){
 
 /* ══════════════════════ electricity cost (historical) ══════════════════════
    Integrates logged watts over time → kWh, then $ = kWh × editable $/kWh.
-   Default: measured sensors (GPU / PMIC / RAPL). Optional wall estimate for
-   Sparks. NOT a live projection of current draw. Gaps >2h are not invented. */
+   Default: wall estimate for Sparks (bill-like). Measured sensors understate
+   AC wall (~GPU-only $2–4/mo). NOT a live projection of current draw.
+   Gaps >2h are not invented. pace_30d scales trailing 24h → monthly. */
 const ELEC_KEY="spark-console-kwh-rate";
 const ELEC_IDLE_KEY="spark-console-idle-wall-w";
 const ELEC_MODE_KEY="spark-console-elec-mode";
@@ -1772,7 +1773,7 @@ const ELEC_NAMES={node1:"sparkmax-10ef",node2:"sparkymaxxx-12ef",
 function elecSrcLabel(id, mode){
   if(id==="pi")return "board PMIC";
   if(id==="start9")return "RAPL pkg+DRAM";
-  return mode==="wall"?"wall est ← GPU":"GPU draw (measured)";
+  return mode==="wall"?"wall est ← GPU":"GPU draw (understates wall)";
 }
 function getKwhRate(){
   const raw=localStorage.getItem(ELEC_KEY);
@@ -1797,8 +1798,19 @@ function setIdleWallW(v){
   return n;
 }
 function getElecMode(){
+  // v2 default = wall (bill-like). One-shot migrate away from the old sensor
+  // default that made 30d look like ~$2–3 (GPU-only, not the electric bill).
+  const verKey="spark-console-elec-mode-v";
+  if(localStorage.getItem(verKey)!=="2"){
+    localStorage.setItem(verKey,"2");
+    const prev=localStorage.getItem(ELEC_MODE_KEY);
+    if(prev==null||prev==="sensor"){
+      localStorage.setItem(ELEC_MODE_KEY,"wall");
+      return "wall";
+    }
+  }
   const m=localStorage.getItem(ELEC_MODE_KEY);
-  return m==="wall"?"wall":"sensor";
+  return m==="sensor"?"sensor":"wall";
 }
 function setElecMode(v){
   const m=v==="wall"?"wall":"sensor";
@@ -1900,14 +1912,25 @@ function paintElecPanel(){
   html+=elecCellHtml("Fleet total","all logged nodes",
     w24.fleet_kwh, w30.fleet_kwh, w24.fleet_hours, w30.fleet_hours,
     w24.fleet_complete, w30.fleet_complete, "tot");
+  // Monthly pace from trailing 24h — answers "what will the bill look like?"
+  const pace=(e.pace_30d||{});
+  const paceFleet=pace.fleet_kwh!=null?pace.fleet_kwh*rate:null;
+  const paceSparks=pace.sparks_kwh!=null?pace.sparks_kwh*rate:null;
+  if(paceFleet!=null){
+    html+=`<div class="elec-cell tot"><div class="n">≈ Monthly pace</div>
+      <div class="src">trailing 24h × 30d · ${mode==="wall"?"wall est":"sensors"}</div>
+      <div class="w"><b>${fmtUsd(paceFleet)}</b> /mo fleet</div>
+      <div class="c">${paceSparks!=null?`<b>${fmtUsd(paceSparks)}</b> /mo sparks · `:""}${fmtKwh(pace.fleet_kwh)} · not a meter</div></div>`;
+  }
   grid.innerHTML=html;
   if(note){
-    const s24=w24.sparks_kwh!=null?w24.sparks_kwh*rate:null;
-    const s30=w30.sparks_kwh!=null?w30.sparks_kwh*rate:null;
-    const tag=w24.sparks_complete?"":"~";
+    const f24=w24.fleet_kwh!=null?w24.fleet_kwh*rate:null;
+    const f30=w30.fleet_kwh!=null?w30.fleet_kwh*rate:null;
+    const tag=w24.fleet_complete?"":"~";
     const age=ageLabel(e.updated_unix);
-    const basis=mode==="wall"?`wall est · idle ${idle} W`:"measured GPU/PMIC/RAPL";
-    note.textContent=`Sparks ${basis}: ${tag}${fmtUsd(s24)} /24h · ${fmtUsd(s30)} /30d @ $${rate}/kWh · ${age}`;
+    const basis=mode==="wall"?`wall est · idle ${idle} W`:"measured (GPU understates wall)";
+    const paceBit=paceFleet!=null?` · ≈${fmtUsd(paceFleet)}/mo pace`:"";
+    note.textContent=`Fleet ${basis}: ${tag}${fmtUsd(f24)} /24h · ${fmtUsd(f30)} /30d${paceBit} @ $${rate}/kWh · ${age}`;
   }
 }
 async function pollEnergy(){

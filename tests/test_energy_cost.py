@@ -47,6 +47,21 @@ class EnergyCostTests(unittest.TestCase):
         # node2: 50W for hour1, then held at 50W for hour2 (one-sided) → 0.1 kWh
         self.assertAlmostEqual(out["kwh"]["node2"], 0.1, places=5)
 
+    def test_pace_from_24h(self) -> None:
+        w24 = {
+            "fleet_kwh": 2.4, "fleet_hours": 24.0,
+            "sparks_kwh": 2.0, "sparks_hours": 24.0,
+            "nodes": {
+                "node1": {"kwh": 1.0, "hours_covered": 24.0},
+                "pi": {"kwh": 0.4, "hours_covered": 24.0},
+            },
+        }
+        pace = energy_cost._pace_from_24h(w24, days=30.0)
+        # 2.4 kWh/day * 30 = 72
+        self.assertAlmostEqual(pace["fleet_kwh"], 72.0, places=4)
+        self.assertAlmostEqual(pace["sparks_kwh"], 60.0, places=4)
+        self.assertAlmostEqual(pace["nodes"]["node1"], 30.0, places=4)
+
     def test_record_and_summary(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -54,7 +69,8 @@ class EnergyCostTests(unittest.TestCase):
                  patch.object(energy_cost, "SAMPLES_PATH", root / "energy_samples.jsonl"), \
                  patch.object(energy_cost, "DAILY_PATH", root / "energy_daily.json"), \
                  patch.object(energy_cost, "BACKFILL_MARKER", root / "energy_backfill.done"), \
-                 patch.object(energy_cost, "_last_sample_t", 0.0):
+                 patch.object(energy_cost, "_last_sample_t", 0.0), \
+                 patch.object(energy_cost, "_SUMMARY_CACHE", {"ts": 0.0, "key": "", "payload": None}):
                 # Pretend backfill already done so summary doesn't try CSV.
                 energy_cost.BACKFILL_MARKER.write_text("{}\n")
                 t0 = 1_700_000_000.0
@@ -66,8 +82,10 @@ class EnergyCostTests(unittest.TestCase):
                     # Re-read: samples are absolute; window is now-86400..now
                     s = energy_cost.energy_summary(mode="sensor")
                     w = energy_cost.energy_summary(mode="wall", idle_wall_w=50)
+                    dflt = energy_cost.energy_summary()
                 self.assertTrue(s["ok"])
                 self.assertEqual(s["mode"], "sensor")
+                self.assertEqual(dflt["mode"], "wall")  # bill-like default
                 self.assertGreater(s["window_24h"]["nodes"]["node1"]["kwh"], 0)
                 self.assertGreater(s["window_24h"]["nodes"]["pi"]["kwh"], 0)
                 # Wall estimate for Sparks must exceed measured GPU kWh
@@ -75,6 +93,8 @@ class EnergyCostTests(unittest.TestCase):
                     w["window_24h"]["nodes"]["node1"]["kwh"],
                     s["window_24h"]["nodes"]["node1"]["kwh"],
                 )
+                self.assertIn("pace_30d", w)
+                self.assertIsNotNone(w["pace_30d"].get("fleet_kwh"))
                 daily = json.loads((root / "energy_daily.json").read_text())
                 self.assertTrue(any(v.get("node1", 0) > 0 for v in daily.values()))
 

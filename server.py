@@ -14,6 +14,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -448,6 +449,28 @@ def _panels_refresher():
         _time.sleep(30)
 
 
+def _inference_up_now() -> bool:
+    """True when any local/fabric chat endpoint answers /v1/models right now.
+
+    Used to demote sticky overnight Connection-error job fails while the
+    owner's chosen mode is already healthy again.
+    """
+    import urllib.request
+    fabric = os.environ.get("SPARK_FABRIC_IP", "192.168.100.10").strip() or "192.168.100.10"
+    for url in (
+        "http://127.0.0.1:8888/v1/models",
+        "http://127.0.0.1:8889/v1/models",
+        f"http://{fabric}:8800/v1/models",
+    ):
+        try:
+            with urllib.request.urlopen(url, timeout=2) as r:
+                if r.status == 200:
+                    return True
+        except Exception:
+            continue
+    return False
+
+
 def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
                   automation: dict, backups: dict, projects: list) -> list[dict]:
     """One ranked alert list for the whole fleet — the console's headline claim
@@ -486,6 +509,18 @@ def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
             add(issue.get("level", "warning"), host, issue.get("message", ""))
     for job in (automation.get("failing") or []):
         if optional_noise(str(job.get("name") or "")):
+            continue
+        err = str(job.get("error") or "")
+        # Overnight Connection errors stick on last_status until next schedule.
+        # When a resident engine is answering NOW, that is stale — warn, don't
+        # paint the whole console red for a cold-load blip.
+        stale_conn = bool(
+            re.search(r"Connection error|APIConnectionError|ConnectError", err, re.I)
+        )
+        if stale_conn and _inference_up_now():
+            add("warning", "automation",
+                f"{job['name']} ({job['layer']}) stale fail — {err[:100]} "
+                f"(inference up now; clears next run)"[:150])
             continue
         add("critical", "automation", f"{job['name']} ({job['layer']}) failed — {job['error']}"[:150])
     for unit in (automation.get("failed_units") or []):
@@ -952,11 +987,12 @@ def api_comfy():
 def api_energy_cost(request: Request):
     """Historical electricity: trailing 24h/30d kWh from integrated watt samples.
 
-    Default mode=sensor (measured GPU/PMIC/RAPL). mode=wall applies optional
-    Spark idle+slope estimate. Returns kWh; UI multiplies by editable $/kWh.
+    Default mode=wall (Spark wall estimate — bill-like). mode=sensor is raw
+    GPU/PMIC/RAPL only (understates AC wall). Returns kWh; UI multiplies by
+    editable $/kWh. Also returns pace_30d scaled from trailing 24h average.
 
     Query params:
-      mode         sensor|wall (default sensor)
+      mode         wall|sensor (default wall)
       idle_wall_w  default 50 — only used when mode=wall
       gpu_floor_w  default 8
       slope        default 1.15
@@ -974,7 +1010,7 @@ def api_energy_cost(request: Request):
         idle_wall_w=_f("idle_wall_w", energy_cost.DEFAULT_IDLE_WALL_W),
         gpu_floor_w=_f("gpu_floor_w", energy_cost.DEFAULT_GPU_FLOOR_W),
         slope=_f("slope", energy_cost.DEFAULT_SLOPE),
-        mode=(q.get("mode") or "sensor"),
+        mode=(q.get("mode") or "wall"),
     )
 
 

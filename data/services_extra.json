@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-08T06:07:00+00:00",
+  "updated_at": "2026-08-09T01:35:45.150578+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -121,6 +121,24 @@
       "port": 8095,
       "show_projects_tile": true,
       "registered_at": "2026-08-08T04:10:16.138652+00:00"
+    },
+    "apollo-descent": {
+      "label": "Apollo Descent (Gravity Lander)",
+      "detail": ":8070",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "apollo-descent-host.service",
+      "probe": [
+        "http://127.0.0.1:8070/",
+        2.0
+      ],
+      "port": 8070,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-09T01:35:45.150514+00:00"
     }
   }
 }

@@ -13,12 +13,13 @@ IMPORTANT — Sparks are NOT wall-metered
 nvidia-smi on GB10 reports GPU / board-slice draw, not AC wall watts. A DGX
 Spark idles ~22–45 W at the outlet (higher with CX7 fabric up) and much more
 under load, while GPU draw alone often sits ~10–20 W. Billing GPU-only made
-the 30d total look like ~$2.60 — that was the bug the owner smelled.
+the 30d total look like ~$2.60 — that was the bug the owner smelled (real
+fleet wall is more like ~$10–40/mo at residential rates, higher under load).
 
-Default bill view is **measured sensor kWh** (GPU / PMIC / RAPL) — not an
-estimate. Optional `mode=wall` applies a Spark calibration curve:
+Default bill view is **wall estimate** for Sparks:
       wall ≈ idle_wall_w + slope * max(0, gpu_w − gpu_floor_w)
 (editable idle W after a USB-C / Kill-A-Watt reading). Pi/Start9 stay sensor.
+`mode=sensor` is still available for raw GPU/PMIC/RAPL integration.
 
 Sources
 -------
@@ -479,16 +480,53 @@ _SUMMARY_CACHE: dict = {"ts": 0.0, "key": "", "payload": None}
 _SUMMARY_TTL = 20.0  # seconds — console polls ~10–20s; avoid re-scanning jsonl
 
 
+def _pace_from_24h(w24: dict, days: float = 30.0) -> dict:
+    """Scale trailing-24h average draw to a full-month kWh pace.
+
+    Historical 30d can under-read when a node only recently joined the log
+    (partial hours). Pace answers "if today continues, what does a month look
+    like?" — closer to the electric-bill question than incomplete history.
+    """
+    min_hrs = 1.0
+
+    def _scale(kwh, hrs):
+        try:
+            kwh_f = float(kwh)
+            hrs_f = float(hrs)
+        except (TypeError, ValueError):
+            return None
+        if hrs_f < min_hrs or kwh_f < 0:
+            return None
+        return round((kwh_f / hrs_f) * 24.0 * float(days), 5)
+
+    nodes_out = {}
+    for n, row in (w24.get("nodes") or {}).items():
+        pk = _scale(row.get("kwh"), row.get("hours_covered"))
+        if pk is not None:
+            nodes_out[n] = pk
+    fleet = _scale(w24.get("fleet_kwh"), w24.get("fleet_hours"))
+    sparks = _scale(w24.get("sparks_kwh"), w24.get("sparks_hours"))
+    return {
+        "days": float(days),
+        "basis": "trailing_24h_average",
+        "fleet_kwh": fleet,
+        "sparks_kwh": sparks,
+        "nodes": nodes_out,
+        "basis_hours": w24.get("fleet_hours"),
+    }
+
+
 def energy_summary(
     idle_wall_w: float = DEFAULT_IDLE_WALL_W,
     gpu_floor_w: float = DEFAULT_GPU_FLOOR_W,
     slope: float = DEFAULT_SLOPE,
-    mode: str = "sensor",
+    mode: str = "wall",
 ) -> dict:
-    """Trailing 24h + 30d kWh.
+    """Trailing 24h + 30d kWh + 30d pace from 24h average.
 
-    mode='sensor' (default): integrate measured watts only (GPU / PMIC / RAPL).
-    mode='wall': apply Spark wall estimate curve (optional, not a meter).
+    mode='wall' (default): Spark wall estimate curve (bill-like; not a meter).
+    mode='sensor': integrate measured watts only (GPU / PMIC / RAPL) — understates
+    AC wall for Sparks (often ~$2–4/mo vs ~$10–40 real).
     """
     if not BACKFILL_MARKER.exists():
         try:
@@ -524,6 +562,7 @@ def energy_summary(
     samples = _read_samples_since(since)
     w24 = _window_payload(samples, now - 86400, now, 86400, calib, mode=mode)
     w30 = _window_payload(samples, now - 30 * 86400, now, 30 * 86400, calib, mode=mode)
+    pace = _pace_from_24h(w24, days=30.0)
     daily = _load_daily()
     days = []
     for i in range(29, -1, -1):
@@ -541,13 +580,14 @@ def energy_summary(
     if mode == "wall":
         note = (
             "Sparks $ use WALL ESTIMATE (idle_wall + slope×GPU above floor) — "
-            "optional, not an outlet meter. Default view is measured sensor kWh."
+            "not an outlet meter. Tune idle wall W after a Kill-A-Watt reading. "
+            "Pi/Start9 stay board/RAPL sensors. Gaps >2h not filled."
         )
     else:
         note = (
-            "Measured only: Sparks = GPU draw (nvidia-smi), Pi = board PMIC, "
-            "Start9 = RAPL pkg+DRAM. Not AC wall. Gaps >2h not filled. "
-            "Toggle wall estimate if you want a calibrated outlet guess."
+            "Measured sensors only: Sparks = GPU draw (nvidia-smi), Pi = board "
+            "PMIC, Start9 = RAPL pkg+DRAM. UNDERSTATES AC wall (GPU-only often "
+            "~$2–4/mo). Switch to Wall estimate for bill-like $."
         )
 
     payload = {
@@ -559,6 +599,7 @@ def energy_summary(
         "calibration": calib,
         "window_24h": w24,
         "window_30d": w30,
+        "pace_30d": pace,
         "daily": days,
         "note": note,
     }
