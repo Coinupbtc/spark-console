@@ -80,7 +80,7 @@ def _workload_overlaps(rows: list[dict]) -> dict[str, int]:
         labels = set(payload.get("node1") or []) | set(payload.get("node2") or [])
         if "inference-busy" in labels:
             labels.add("inference")
-        labels &= {"inference", "scan", "comfyui", "download", "agent-cron"}
+        labels &= {"inference", "pokemon", "comfyui", "download", "agent-cron"}
         for left, right in itertools.combinations(sorted(labels), 2):
             counts[f"{left}+{right}"] += 1
     return dict(sorted(counts.items()))
@@ -147,7 +147,7 @@ def summarize(rows: list[dict], hours: int) -> dict:
 
 
 def _human_summary(report: dict, output_path: Path) -> str:
-    """Keep the completion page short enough for Notify."""
+    """Keep the completion page short enough for Telegram."""
     memory = report["memory"]
     endpoints = report["endpoint_availability_pct"]
     return (

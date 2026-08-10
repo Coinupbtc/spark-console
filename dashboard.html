@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DGX Spark Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+<style>
+:root{
+  --bg:#060a0f;--bg2:#0c1219;--card:#111a24;--card2:#162030;
+  --accent:#00e5c0;--accent-dim:rgba(0,229,192,.12);--accent-glow:rgba(0,229,192,.35);
+  --accent2:#38bdf8;--purple:#a78bfa;--dim:#5a7a8f;--text:#e2edf5;--muted:#8aa4b8;
+  --green:#4ade80;--amber:#fbbf24;--red:#f87171;
+  --border:rgba(0,229,192,.1);--radius:14px;
+  --mono:'JetBrains Mono',monospace;--sans:'DM Sans',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(0,229,192,.08),transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%,rgba(56,189,248,.05),transparent)}
+a{color:var(--accent2);text-decoration:none}
+
+/* Header */
+header{padding:20px 28px;display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--border);flex-wrap:wrap;gap:16px;position:sticky;top:0;z-index:100;
+  background:rgba(6,10,15,.85);backdrop-filter:blur(12px)}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#0891b2);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 0 24px var(--accent-glow)}
+header h1{font-size:1.35rem;font-weight:700;letter-spacing:-.02em}
+.subtitle{color:var(--dim);font-size:.8rem;margin-top:2px;font-family:var(--mono)}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.live-pill{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;
+  background:var(--card);border:1px solid var(--border);font-size:.78rem;color:var(--muted)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.live-dot.off{background:var(--dim);animation:none}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,.5)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(74,222,128,0)}}
+#last-update{font-size:.78rem;color:var(--dim);font-family:var(--mono)}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600;margin-left:6px}
+.badge-crit{background:rgba(248,113,113,.15);color:var(--red)}
+.badge-warn{background:rgba(251,191,36,.15);color:var(--amber)}
+.badge-ok{background:rgba(74,222,128,.15);color:var(--green)}
+
+/* Toolbar */
+.toolbar{max-width:1560px;margin:0 auto;padding:14px 28px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--card);color:var(--muted);border:1px solid var(--border);border-radius:8px;
+  padding:7px 14px;cursor:pointer;font-size:.8rem;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
+.btn.active{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
+.btn-primary{background:linear-gradient(135deg,rgba(0,229,192,.2),rgba(56,189,248,.1));color:var(--accent);border-color:var(--accent)}
+.btn-primary:hover{box-shadow:0 0 16px var(--accent-glow)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+.time-btn{padding:6px 12px}
+.interval-select{background:var(--card);color:var(--muted);border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px;font-size:.8rem;font-family:var(--sans)}
+
+/* Layout */
+.wrap{max-width:1560px;margin:0 auto;padding:0 28px 32px}
+.hero{display:grid;grid-template-columns:220px 1fr 280px;gap:20px;margin-bottom:20px;align-items:stretch}
+@media(max-width:1100px){.hero{grid-template-columns:1fr 1fr}.hero-gauge{grid-column:span 2;justify-self:center}}
+@media(max-width:640px){.hero{grid-template-columns:1fr}.hero-gauge{grid-column:span 1}}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);
+  transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:rgba(0,229,192,.22);box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.card h2{color:var(--accent);margin-bottom:14px;font-size:.92rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .icon{opacity:.7}
+
+/* Health gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.gauge-ring{position:relative;width:160px;height:160px}
+.gauge-ring svg{transform:rotate(-90deg)}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-score{font-size:2.4rem;font-weight:700;font-family:var(--mono);line-height:1}
+.gauge-label{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.health-status{font-size:.82rem;font-weight:600;padding:4px 12px;border-radius:12px}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat-card{background:var(--card2);border-radius:10px;padding:14px 12px;border:1px solid transparent;transition:all .2s}
+.stat-card:hover{border-color:var(--border);transform:translateY(-1px)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.stat-icon{font-size:1rem;opacity:.6}
+.stat-value{font-size:1.55rem;font-weight:700;font-family:var(--mono);line-height:1.1}
+.stat-unit{font-size:.65rem;color:var(--dim);font-weight:400}
+.stat-label{color:var(--dim);font-size:.7rem;text-transform:uppercase;letter-spacing:.6px;margin-top:4px}
+.stat-spark{height:28px;margin-top:8px;opacity:.8}
+.stat-delta{font-size:.68rem;color:var(--dim);margin-top:3px;font-family:var(--mono)}
+
+/* Summary bar */
+.summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.sum-item{background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);text-align:center}
+.sum-val{font-size:1.1rem;font-weight:600;font-family:var(--mono);color:var(--accent2)}
+.sum-lbl{font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.sum-range{font-size:.65rem;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+
+/* Alerts */
+.alerts-bar{margin-bottom:16px}
+.alert{display:flex;gap:12px;padding:12px 16px;border-radius:10px;margin-bottom:8px;font-size:.84rem;
+  align-items:flex-start;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.alert-critical{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25)}
+.alert-warning{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2)}
+.alert-info{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.18)}
+.alert-level{font-size:.65rem;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex-shrink:0;margin-top:2px}
+.alert-critical .alert-level{background:rgba(248,113,113,.2);color:var(--red)}
+.alert-warning .alert-level{background:rgba(251,191,36,.2);color:var(--amber)}
+.alert-info .alert-level{background:rgba(56,189,248,.2);color:var(--accent2)}
+.alert-msg{flex:1}
+.alert-action{color:var(--dim);font-size:.76rem;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.alert-action code{background:rgba(0,0,0,.3);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:.72rem;color:var(--accent)}
+.copy-btn{background:none;border:1px solid var(--border);color:var(--dim);border-radius:4px;padding:2px 8px;
+  cursor:pointer;font-size:.68rem;transition:all .15s}
+.copy-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+/* Charts */
+.charts-wrap{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:960px){.charts-wrap{grid-template-columns:1fr}}
+.chart-tall{grid-row:span 2}
+
+/* GPU bars */
+.gpu-bars{display:flex;flex-direction:column;gap:12px}
+.gpu-card{background:var(--card2);border-radius:10px;border-left:3px solid var(--accent);overflow:hidden}
+.gpu-header{display:flex;justify-content:space-between;padding:10px 14px;font-size:.84rem;font-weight:600;flex-wrap:wrap;gap:6px}
+.gpu-meta{font-size:.76rem;color:var(--dim);font-family:var(--mono)}
+.gpu-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 12px}
+.gpu-metric{text-align:center;padding:8px;background:rgba(0,0,0,.2);border-radius:8px}
+.gpu-metric-val{font-size:.95rem;font-weight:600;font-family:var(--mono);color:var(--accent2)}
+.gpu-metric-lbl{font-size:.62rem;color:var(--dim);text-transform:uppercase;margin-top:2px}
+.bar-wrap{height:6px;background:rgba(0,0,0,.35);margin:0 14px 12px;border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.bar-low{background:linear-gradient(90deg,var(--green),rgba(74,222,128,.4))}
+.bar-med{background:linear-gradient(90deg,var(--amber),rgba(251,191,36,.4))}
+.bar-high{background:linear-gradient(90deg,var(--red),rgba(248,113,113,.4))}
+
+/* Lists */
+.list{max-height:300px;overflow-y:auto;font-size:.82rem;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.list-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center}
+.list-row:last-child{border-bottom:none}
+.list-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:.78rem}
+.list-val{color:var(--accent2);font-weight:600;font-size:.76rem;font-family:var(--mono)}
+.list-bar-wrap{grid-column:1/-1;height:4px;background:rgba(0,0,0,.3);border-radius:2px;margin-top:2px}
+.list-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--purple));transition:width .4s}
+.model-stuck{color:var(--red)}
+.model-meta{font-size:.68rem;color:var(--dim);display:block;margin-top:2px}
+.model-running{color:var(--green)}
+.model-loading{color:var(--amber)}
+.model-missing{color:var(--dim)}
+.tier-daily{color:var(--accent)}
+.tier-agent{color:var(--accent2)}
+.tier-light{color:var(--purple)}
+.tier-frontier{color:var(--amber)}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.inv-card{background:var(--card2);border-radius:10px;padding:12px;border:1px solid var(--border);font-size:.78rem}
+.inv-card.running{border-color:rgba(74,222,128,.35)}
+.inv-card.loading{border-color:rgba(251,191,36,.35)}
+.inv-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-weight:600}
+.inv-port{font-family:var(--mono);color:var(--dim);font-size:.7rem}
+.inv-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.inv-btn{flex:1;min-width:72px;background:rgba(0,0,0,.25);color:var(--muted);border:1px solid var(--border);
+  border-radius:8px;padding:6px 8px;font-size:.7rem;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.inv-btn:hover:not(:disabled){color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
+.inv-btn:disabled{opacity:.35;cursor:not-allowed}
+.inv-btn.active{background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.35)}
+.inv-btn.danger:hover{color:var(--red);border-color:var(--red);background:rgba(248,113,113,.1)}
+.inv-btn.warn:hover{color:var(--amber);border-color:var(--amber)}
+
+.ctrl-panel{margin-bottom:20px}
+.ctrl-quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.ctrl-btn{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+  cursor:pointer;text-align:left;transition:all .15s;position:relative;overflow:hidden}
+.ctrl-btn:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.ctrl-btn:disabled{opacity:.4;cursor:not-allowed}
+.ctrl-btn.running{border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.06)}
+.ctrl-btn.loading{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06)}
+.ctrl-btn.heavy{border-style:dashed}
+.ctrl-name{font-weight:600;font-size:.84rem;display:block}
+.ctrl-meta{font-size:.68rem;color:var(--dim);margin-top:4px;display:block}
+.ctrl-util{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.mem-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;
+  background:var(--card2);border:1px solid var(--border);font-size:.76rem;font-family:var(--mono)}
+.mem-pill.low{color:var(--red);border-color:rgba(248,113,113,.3)}
+.mem-pill.ok{color:var(--green);border-color:rgba(74,222,128,.3)}
+.op-banner{display:none;margin-bottom:12px;padding:12px 16px;border-radius:10px;
+  background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);font-size:.82rem}
+.op-banner.show{display:block}
+.op-banner.failed{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.25)}
+.op-banner.done{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.25)}
+.op-log{margin-top:8px;font-family:var(--mono);font-size:.68rem;color:var(--dim);
+  white-space:pre-wrap;max-height:120px;overflow:auto;background:rgba(0,0,0,.2);padding:8px;border-radius:6px}
+
+/* Detail table */
+table.detail{width:100%;border-collapse:collapse;font-size:.8rem}
+table.detail th{background:rgba(0,229,192,.06);color:var(--accent);text-align:left;padding:9px 14px;font-weight:500;width:35%}
+table.detail td{padding:9px 14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
+.status-active{background:var(--green)}.status-inactive{background:var(--red)}.status-unknown{background:var(--dim)}
+
+/* Footer */
+footer{text-align:center;padding:16px;color:var(--dim);font-size:.72rem;font-family:var(--mono)}
+.empty{color:var(--dim);text-align:center;padding:36px;font-size:.84rem}
+.msg{text-align:center;padding:48px 24px;color:var(--dim)}
+.msg h3{color:var(--amber);margin-bottom:8px;font-size:1rem}
+.loading .stat-value,.loading .gauge-score{animation:shimmer 1.5s infinite;background:linear-gradient(90deg,var(--card2) 25%,var(--card) 50%,var(--card2) 75%);
+  background-size:200% 100%;-webkit-background-clip:text;color:transparent}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card2);border:1px solid var(--accent);color:var(--accent);
+  padding:10px 18px;border-radius:10px;font-size:.82rem;z-index:200;animation:slideIn .3s ease;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>DGX Spark Performance</h1>
+      <div class="subtitle" id="hostname">Loading system info…</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><span class="live-dot" id="liveDot"></span><span id="liveLabel">Live</span></div>
+    <div id="last-update">Connecting…</div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="btn btn-primary" id="btnRefresh" title="Refresh now (R)">↻ Refresh</button>
+  <button class="btn" id="btnSnapshot" title="Run collector now">📸 Snapshot</button>
+  <button class="btn" id="btnExport" title="Download CSV">⬇ Export CSV</button>
+  <div class="sep"></div>
+  <button class="btn time-btn active" data-hr="1">1h</button>
+  <button class="btn time-btn" data-hr="6">6h</button>
+  <button class="btn time-btn" data-hr="24">24h</button>
+  <button class="btn time-btn" data-hr="168">7d</button>
+  <button class="btn time-btn" data-hr="0">All</button>
+  <div class="sep"></div>
+  <label style="font-size:.78rem;color:var(--dim)">Mode</label>
+  <button class="btn active" id="btnCached" title="Use cached snapshot (fast)">Cached</button>
+  <button class="btn" id="btnLive" title="Query live GPU/system (slower)">Live</button>
+  <div class="sep"></div>
+  <select class="interval-select" id="intervalSel">
+    <option value="15">15s</option>
+    <option value="30" selected>30s</option>
+    <option value="60">60s</option>
+    <option value="0">Off</option>
+  </select>
+</div>
+
+<div class="wrap">
+  <div class="alerts-bar" id="alerts"></div>
+
+  <div class="hero">
+    <div class="card gauge-wrap hero-gauge">
+      <div class="gauge-ring" id="healthGauge"></div>
+      <div class="health-status" id="healthStatus">—</div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">📊</span> Key Metrics</h2>
+      <div class="stats-grid" id="stats"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">🚀</span> Active Inference</h2>
+      <div id="vllmList" class="list"></div>
+      <div id="ollamaList" class="list" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="card ctrl-panel">
+    <h2><span class="icon">🎛️</span> Model Control <span style="font-weight:400;color:var(--dim);font-size:.72rem;margin-left:8px">tap to switch — no CLI needed</span></h2>
+    <div id="opBanner" class="op-banner"></div>
+    <div id="memPill" class="mem-pill ok" style="margin-bottom:12px">Memory: —</div>
+    <div id="ctrlQuick" class="ctrl-quick"></div>
+    <div class="ctrl-util">
+      <button class="btn danger inv-btn" id="btnStopModels" type="button">⏹ Stop vLLM</button>
+      <button class="btn inv-btn warn" id="btnKillOrphans" type="button">🧹 Kill Orphans</button>
+      <button class="btn inv-btn" id="btnUnloadOllama" type="button">Unload Ollama</button>
+      <button class="btn inv-btn" id="btnSyncHermes" type="button">Sync Hermes</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <h2><span class="icon">📦</span> Local Model Inventory <span id="invMeta" style="font-weight:400;color:var(--dim);font-size:.75rem;margin-left:auto"></span></h2>
+    <div id="modelInventory" class="inv-grid"></div>
+  </div>
+
+  <div class="summary-bar" id="summaryBar"></div>
+
+  <div class="charts-wrap">
+    <div class="card chart-tall">
+      <h2><span class="icon">📈</span> Utilization Timeline <span id="chartPts" style="font-weight:400;color:var(--dim);font-size:.75rem;margin-left:auto"></span></h2>
+      <div id="chartMain" style="width:100%;height:480px"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">🧠</span> Memory & CPU</h2>
+      <div id="chartMem" style="width:100%;height:210px"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">⚙️</span> GPU Processes</h2>
+      <div id="procList" class="list"></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:16px">
+    <h2 style="color:var(--accent);font-size:.92rem;margin-bottom:12px;display:flex;align-items:center;gap:8px">🖥️ GPU Detail</h2>
+    <div id="gpuBars" class="gpu-bars"></div>
+  </div>
+
+  <div class="charts-wrap">
+    <div class="card">
+      <h2><span class="icon">⚡</span> Power & Temperature</h2>
+      <div id="chartPower" style="width:100%;height:260px"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">📋</span> System Snapshot</h2>
+      <table class="detail" id="detailTbl"></table>
+    </div>
+  </div>
+</div>
+
+<footer id="footer">DGX Spark GPU Monitor</footer>
+
+<script>
+const CFG={displaylogo:false,responsive:true,displayModeBar:'hover',modeBarButtonsToRemove:['lasso2d','select2d']};
+const PLOT={paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#8aa4b8',size:11,family:'DM Sans'},
+  margin:{l:42,r:12,t:8,b:32},
+  xaxis:{gridcolor:'rgba(255,255,255,.04)',tickfont:{size:10},showspikes:true,spikemode:'across',spikecolor:'rgba(0,229,192,.3)'},
+  yaxis:{gridcolor:'rgba(255,255,255,.04)',tickfont:{size:10}}};
+const COLORS={gpu:'#00e5c0',cpu:'#38bdf8',mem:'#a78bfa',power:'#fbbf24',temp:'#f87171',swap:'#fb923c',ram:'#4ade80'};
+
+let csvRows=[], summary={}, currentHr=1, refreshTimer=null, tick=0, liveMode=false, refreshing=false;
+let modelControl=null, activeOpId=null, opPollTimer=null;
+const SWITCH_KEYS={qwen:'qwen','qwen-nvfp4':'qwen',gemma:'gemma','gemma-nvfp4':'gemma',ornith:'ornith','ornith-35b':'ornith',nemotron:'nemotron','nemotron-nvfp4':'nemotron',mistral:'mistral','mistral-nvfp4':'mistral'};
+
+function uc(p){return p<40?COLORS.ram||'#4ade80':p<75?'#fbbf24':'#f87171'}
+function ucl(p){return p<40?'bar-low':p<75?'bar-med':'bar-high'}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':(s||'—')}
+function fmt(n,d=1){return n==null||isNaN(n)?'—':(+n).toFixed(d)}
+
+function healthScore(s){
+  let score=100;
+  const ac=s.alert_count||{};
+  score-=ac.critical*25;score-=ac.warning*10;score-=ac.info*2;
+  if((s.avg_util_pct||0)>90)score-=5;
+  if((s.avg_temp_c||0)>80)score-=10;
+  if((s.system||{}).mem_pct>85)score-=15;
+  return Math.max(0,Math.min(100,score));
+}
+
+function renderHealthGauge(score){
+  const r=70,c=2*Math.PI*r,pct=score/100,offset=c*(1-pct);
+  const color=score>=80?COLORS.ram:score>=50?'#fbbf24':'#f87171';
+  const status=score>=80?'Healthy':score>=50?'Degraded':'Critical';
+  document.getElementById('healthGauge').innerHTML=`
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10"/>
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="${color}" stroke-width="10"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+        style="transition:stroke-dashoffset .6s ease,stroke .3s"/>
+    </svg>
+    <div class="gauge-center">
+      <div class="gauge-score" style="color:${color}">${score}</div>
+      <div class="gauge-label">Health</div>
+    </div>`;
+  const el=document.getElementById('healthStatus');
+  el.textContent=status;el.style.color=color;el.style.background=color+'18';
+}
+
+function miniSpark(elId,values,color){
+  if(!values.length)return;
+  const trace={x:values.map((_,i)=>i),y:values,type:'scatter',mode:'lines',
+    line:{color:color,width:1.5,shape:'spline'},fill:'tozeroy',fillcolor:color+'22'};
+  Plotly.newPlot(elId,[trace],{...PLOT,margin:{l:0,r:0,t:0,b:0},xaxis:{visible:false},yaxis:{visible:false},showlegend:false},CFG);
+}
+
+function toast(msg){
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),2500);
+}
+
+function copyText(text){
+  navigator.clipboard.writeText(text).then(()=>toast('Copied to clipboard'));
+}
+
+document.querySelectorAll('.time-btn').forEach(btn=>{
+  btn.onclick=function(){
+    document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');currentHr=+this.dataset.hr;loadAll()};
+});
+
+document.getElementById('btnCached').onclick=function(){
+  liveMode=false;this.classList.add('active');document.getElementById('btnLive').classList.remove('active');loadAll()};
+document.getElementById('btnLive').onclick=function(){
+  liveMode=true;this.classList.add('active');document.getElementById('btnCached').classList.remove('active');loadAll()};
+
+document.getElementById('intervalSel').onchange=resetAutoRefresh;
+document.getElementById('btnRefresh').onclick=()=>loadAll();
+document.getElementById('btnExport').onclick=()=>{window.open('/api/csv','_blank')};
+document.getElementById('btnSnapshot').onclick=async function(){
+  this.disabled=true;this.textContent='⏳ Collecting…';
+  try{
+    const r=await fetch('/api/refresh',{method:'POST'});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||'Failed');
+    toast('Snapshot collected');await loadAll();
+  }catch(e){toast('Error: '+e.message)}
+  this.disabled=false;this.textContent='📸 Snapshot';
+};
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='r'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();loadAll()}
+});
+
+async function loadAll(){
+  if(refreshing)return;refreshing=true;
+  document.getElementById('liveDot').classList.remove('off');
+  try{
+    const hrs=currentHr||24;
+    const histHrs=hrs===0?8760:hrs;
+    const snapUrl=liveMode?'/api/live':'/api/latest';
+    const [snapR,histR,sumR]=await Promise.all([
+      fetch(snapUrl),
+      fetch('/api/history?hours='+histHrs).catch(()=>({ok:false})),
+      fetch('/api/summary?hours='+histHrs).catch(()=>({ok:false}))
+    ]);
+    if(!snapR.ok)throw new Error('API unreachable — is the server running?');
+    const snap=await snapR.json();
+    if(histR.ok){const hist=await histR.json();csvRows=hist.rows||[]}
+    if(sumR.ok)summary=await sumR.json();else summary={};
+    renderAll(snap);
+    loadTimeline();
+    const ts=(snap.iso_ts||'?').replace('T',' ').slice(0,19);
+    document.getElementById('last-update').innerHTML=
+      ts+' UTC'+(liveMode?' <span class="badge badge-ok">live</span>':'')+
+      (snap.alert_count?.critical>0?'<span class="badge badge-crit">'+snap.alert_count.critical+' critical</span>':'')+
+      (snap.alert_count?.warning>0?'<span class="badge badge-warn">'+snap.alert_count.warning+' warn</span>':'');
+    document.getElementById('liveLabel').textContent=liveMode?'Live query':'Cached';
+    tick++;
+    const iv=+document.getElementById('intervalSel').value;
+    document.getElementById('footer').textContent=
+      `Refresh #${tick}`+(iv?` • auto ${iv}s`:' • auto off')+` • ${csvRows.length} history points`;
+  }catch(e){
+    document.getElementById('liveDot').classList.add('off');
+    document.getElementById('stats').innerHTML=`<div class="msg"><h3>Connection Error</h3>${e.message}</div>`;
+  }
+  refreshing=false;
+}
+
+function renderAll(s){
+  const sys=s.system||{};
+  document.getElementById('hostname').textContent=
+    (s.hostname||'sparkmax')+' • '+(s.gpus?.[0]?.name||'GB10')+' • '+fmt(sys.mem_total_gb)+' GiB RAM';
+
+  renderHealthGauge(healthScore(s));
+
+  const gpuHist=csvRows.map(r=>+r.gpu_util||0);
+  const memHist=csvRows.map(r=>+r.mem_pct||0);
+
+  const stats=[
+    {icon:'🎮',val:Math.round(s.avg_util_pct||0),unit:'%',label:'GPU Util',color:uc(s.avg_util_pct),spark:gpuHist},
+    {icon:'💾',val:sys.mem_pct!=null?Math.round(sys.mem_pct):'—',unit:'%',label:'RAM Used',color:uc(sys.mem_pct),spark:memHist},
+    {icon:'🧊',val:fmt(sys.mem_avail_gb),unit:'GB',label:'RAM Free',color:sys.mem_pct<70?COLORS.ram:'#fbbf24'},
+    {icon:'⚙️',val:sys.cpu_pct!=null?Math.round(sys.cpu_pct):'—',unit:'%',label:'CPU',color:uc(sys.cpu_pct)},
+    {icon:'⚡',val:Math.round(s.total_power_watts||0),unit:'W',label:'GPU Power',color:COLORS.power},
+    {icon:'🌡️',val:s.avg_temp_c!=null?Math.round(s.avg_temp_c)+'°':'—',unit:'',label:'GPU Temp',color:(s.avg_temp_c||0)>80?COLORS.temp:COLORS.ram},
+    {icon:'💿',val:Math.round(sys.disk_used_pct||0),unit:'%',label:'Disk',color:uc(sys.disk_used_pct)},
+    {icon:'📦',val:(s.vllm||[]).length,unit:'',label:'vLLM Active',color:COLORS.gpu},
+  ];
+  document.getElementById('stats').innerHTML=stats.map((st,i)=>{
+    const delta=summary.metrics?.gpu_util&&st.label==='GPU Util'
+      ?`avg ${summary.metrics.gpu_util.avg}%`:'';
+    return`<div class="stat-card">
+      <div class="stat-top"><span class="stat-icon">${st.icon}</span></div>
+      <div class="stat-value" style="color:${st.color}">${st.val}<span class="stat-unit">${st.unit}</span></div>
+      <div class="stat-label">${st.label}</div>
+      ${st.spark?.length>2?`<div class="stat-spark" id="spark${i}"></div>`:''}
+      ${delta?`<div class="stat-delta">${delta}</div>`:''}
+    </div>`}).join('');
+  stats.forEach((st,i)=>{if(st.spark?.length>2)miniSpark('spark'+i,st.spark.slice(-20),st.color)});
+
+  renderSummary();
+  renderAlerts(s.alerts||[]);
+  renderBars(s.gpus||[]);
+  renderProcs(s.processes||[]);
+  renderVllm(s.vllm||[], s.models||{});
+  renderOllama(s.ollama||[]);
+  renderInventory(s.models||{});
+  renderDetail(s);
+  if(tick%2===0)loadModelControl();
+}
+
+function statusClass(st){
+  if(st==='running'||st==='ready')return'model-running';
+  if(st==='loading')return'model-loading';
+  if(st==='installed')return'';
+  return'model-missing';
+}
+
+function renderVllm(active, inv){
+  const t=document.getElementById('vllmList');
+  if(!active.length){
+    t.innerHTML='<div class="empty" style="padding:12px 0">No vLLM server — tap <strong>Qwen</strong> above to start</div>';
+    return;
+  }
+  t.innerHTML=active.map(m=>`<div class="list-row">
+    <span class="list-name ${statusClass(m.status)}">${m.label}
+      <span class="model-meta">:${m.port} · ${m.tier||'local'}${m.model_id?' · '+trunc(m.model_id,28):''}</span></span>
+    <span class="list-val">${m.status==='ready'?'READY':'LOADING…'}</span>
+  </div>`).join('');
+}
+
+function showToast(msg,isErr){
+  const old=document.querySelector('.toast');if(old)old.remove();
+  const el=document.createElement('div');el.className='toast';
+  el.style.borderColor=isErr?'var(--red)':'var(--accent)';
+  el.style.color=isErr?'var(--red)':'var(--accent)';
+  el.textContent=msg;document.body.appendChild(el);
+  setTimeout(()=>el.remove(),4500);
+}
+
+async function modelAction(path,body){
+  const r=await fetch(path,{method:'POST',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+  const d=await r.json().catch(()=>({ok:false,error:'Invalid response'}));
+  if(!r.ok&&!d.error)d.error=d.error||'Request failed';
+  return d;
+}
+
+function renderOpBanner(op){
+  const el=document.getElementById('opBanner');
+  if(!op){el.className='op-banner';el.innerHTML='';return;}
+  const st=op.status||'running';
+  el.className='op-banner show'+(st==='failed'?' failed':st==='completed'?' done':'');
+  const log=op.log_tail?`<div class="op-log">${op.log_tail.replace(/</g,'&lt;')}</div>`:'';
+  el.innerHTML=`<strong>${op.type||'op'} ${op.key||''}</strong> — ${op.message||st}
+    <span style="color:var(--dim);margin-left:8px;font-size:.72rem">${st.toUpperCase()}</span>${log}`;
+}
+
+async function pollOperation(opId){
+  if(!opId)return;
+  try{
+    const r=await fetch('/api/models/operations/'+opId);
+    const d=await r.json();
+    if(d.operation){
+      renderOpBanner(d.operation);
+      if(d.operation.status==='running'){
+        opPollTimer=setTimeout(()=>pollOperation(opId),5000);
+      }else{
+        activeOpId=null;
+        loadModelControl();
+        loadAll();
+      }
+    }
+  }catch(e){console.warn('op poll',e);}
+}
+
+async function loadModelControl(){
+  try{
+    const r=await fetch('/api/models/control');
+    modelControl=await r.json();
+    const avail=modelControl.mem_avail_gb;
+    const memEl=document.getElementById('memPill');
+    memEl.textContent=`${avail??'?'} GB free · ${modelControl.mem_total_gb||121} GB total`;
+    memEl.className='mem-pill '+(avail!=null&&avail<30?'low':'ok');
+    if(modelControl.active_operation&&!activeOpId){
+      activeOpId=modelControl.active_operation.id;
+      pollOperation(activeOpId);
+    }
+    const q=document.getElementById('ctrlQuick');
+    q.innerHTML=(modelControl.models||[]).map(m=>{
+      const st=m.status==='running'?'running':m.status==='loading'?'loading':'';
+      const heavy=m.heavy?' heavy':'';
+      const disabled=!m.can_switch&&!['running','loading'].includes(m.status);
+      const label=m.status==='running'?'Active':m.status==='loading'?'Loading…':m.installed?'Switch':'Missing';
+      return`<button class="ctrl-btn ${st}${heavy}" type="button" data-switch="${m.key}" ${disabled?'disabled':''} title="${m.hint||''}${m.blockers?.length?'\n'+m.blockers.join(' '):''}">
+        <span class="ctrl-name tier-${m.tier}">${m.label}</span>
+        <span class="ctrl-meta">:${m.port} · ${label}</span>
+      </button>`;
+    }).join('');
+    q.querySelectorAll('[data-switch]').forEach(btn=>{
+      btn.onclick=()=>confirmSwitch(btn.dataset.switch);
+    });
+  }catch(e){console.warn('model control',e);}
+}
+
+async function confirmSwitch(key){
+  const m=(modelControl?.models||[]).find(x=>x.key===key);
+  if(m?.heavy&&!confirm(`⚠ ${m.label} is memory-heavy.\n\nStop other models first. Uses 8K context only.\n\nContinue?`))return;
+  if(m?.blockers?.length&&!m.can_switch){showToast(m.blockers[0],true);return;}
+  const d=await modelAction('/api/models/switch',{key,fast:key==='qwen'});
+  if(!d.ok){showToast(d.error||'Switch failed',true);return;}
+  activeOpId=d.operation?.id;
+  renderOpBanner(d.operation);
+  showToast(`Starting ${m?.label||key}…`);
+  if(activeOpId)pollOperation(activeOpId);
+  setTimeout(loadModelControl,2000);
+}
+
+function renderInventory(inv){
+  const el=document.getElementById('modelInventory');
+  const models=inv.models||[];
+  const removed=inv.removed||[];
+  document.getElementById('invMeta').textContent=
+    models.length?`${models.filter(m=>m.installed).length}/${models.length} installed`: '';
+  if(!models.length){
+    el.innerHTML='<div class="empty">No manifest — check ~/models/dgx_bundle/manifest.txt</div>';
+    return;
+  }
+  el.innerHTML=models.map(m=>{
+    const cls=m.status==='running'?'running':m.status==='loading'?'loading':'';
+    const tierCls='tier-'+(m.tier||'other');
+    const sk=SWITCH_KEYS[m.key]||'';
+    const cm=sk?(modelControl?.models||[]).find(x=>x.key===sk):null;
+    const canSwitch=cm?.can_switch;
+    const isActive=m.status==='running'||m.status==='loading';
+    const btnLabel=isActive?(m.status==='loading'?'Loading…':'Active'):canSwitch?'Switch':m.installed?'Blocked':'Download';
+    return`<div class="inv-card ${cls}">
+      <div class="inv-head"><span class="${tierCls}">${m.label||m.key}</span>
+        <span class="inv-port">:${m.port}</span></div>
+      <div class="model-meta">${m.size_disk||m.size_manifest||'?'} · ${m.single_spark||''}</div>
+      <div class="model-meta" style="margin-top:4px">${statusClass(m.status).replace('model-','').toUpperCase()||m.status.toUpperCase()}</div>
+      ${sk?`<div class="inv-actions">
+        <button class="inv-btn ${isActive?'active':''}" type="button" data-switch="${sk}" ${!canSwitch&&!isActive?'disabled':''}>${btnLabel}</button>
+        ${isActive?'<button class="inv-btn danger" type="button" data-stop="1">Stop</button>':''}
+      </div>`:''}
+    </div>`}).join('')+
+    (removed.length?`<div class="inv-card" style="opacity:.6"><div class="inv-head">Removed</div>
+      <div class="model-meta">${removed.join(', ')}</div></div>`:'');
+  el.querySelectorAll('[data-switch]').forEach(btn=>{btn.onclick=()=>confirmSwitch(btn.dataset.switch);});
+  el.querySelectorAll('[data-stop]').forEach(btn=>{btn.onclick=()=>doStopModels();});
+}
+
+async function doStopModels(){
+  if(!confirm('Stop all vLLM models and free GPU memory?'))return;
+  const d=await modelAction('/api/models/stop');
+  if(!d.ok){showToast(d.error||'Stop failed',true);return;}
+  activeOpId=d.operation?.id;
+  renderOpBanner(d.operation);
+  showToast('Stopping vLLM…');
+  if(activeOpId)pollOperation(activeOpId);
+  setTimeout(loadModelControl,2000);
+}
+
+function renderSummary(){
+  const m=summary.metrics||{};
+  const items=[
+    {lbl:'GPU Util',m:m.gpu_util,color:COLORS.gpu,unit:'%'},
+    {lbl:'CPU',m:m.cpu_pct,color:COLORS.cpu,unit:'%'},
+    {lbl:'RAM',m:m.mem_pct,color:COLORS.mem,unit:'%'},
+    {lbl:'Power',m:m.gpu_power_w,color:COLORS.power,unit:'W'},
+    {lbl:'Temp',m:m.gpu_temp_c,color:COLORS.temp,unit:'°C'},
+    {lbl:'RAM Free',m:m.mem_avail_gb,color:COLORS.ram,unit:'GB'},
+  ];
+  const el=document.getElementById('summaryBar');
+  if(!summary.count){el.innerHTML='';return}
+  const label=currentHr===0?'All time':currentHr>=168?(currentHr/168)+'d':currentHr+'h';
+  el.innerHTML=`<div class="sum-item" style="grid-column:span 1"><div class="sum-val">${summary.count}</div>
+    <div class="sum-lbl">Data Points</div><div class="sum-range">${label} window</div></div>`+
+    items.filter(x=>x.m?.avg!=null).map(x=>`<div class="sum-item">
+      <div class="sum-val" style="color:${x.color}">${x.m.avg}${x.unit}</div>
+      <div class="sum-lbl">${x.lbl} Avg</div>
+      <div class="sum-range">${x.m.min}–${x.m.max} ${x.unit}</div></div>`).join('');
+}
+
+function renderAlerts(alerts){
+  const el=document.getElementById('alerts');
+  if(!alerts.length){el.innerHTML='';return}
+  el.innerHTML=alerts.map(a=>{
+    const cmd=a.action?.match(/`([^`]+)`/)?.[1]||a.action?.replace(/^Run:\s*/,'');
+    return`<div class="alert alert-${a.level}">
+      <span class="alert-level">${a.level}</span>
+      <div class="alert-msg"><strong>${a.category}</strong>: ${a.message}
+        <div class="alert-action">${cmd?`<code>${trunc(cmd,60)}</code><button class="copy-btn" onclick="copyText('${cmd.replace(/'/g,"\\'")}')">Copy</button>`:a.action}</div>
+      </div></div>`}).join('');
+}
+
+function renderBars(gpus){
+  const d=document.getElementById('gpuBars');
+  if(!gpus.length){d.innerHTML='<div class="card empty">No GPUs detected</div>';return}
+  d.innerHTML=gpus.map(g=>{
+    const pct=g.util_gpu||0;
+    const memPct=g.mem_total_mb>0?Math.round(g.mem_used_mb/g.mem_total_mb*100):null;
+    return`<div class="gpu-card"><div class="gpu-header">
+      <span>GPU ${g.index}: ${g.name}</span>
+      <span class="gpu-meta">P-state ${g.pstate||'?'}</span></div>
+      <div class="gpu-metrics">
+        <div class="gpu-metric"><div class="gpu-metric-val" style="color:${uc(pct)}">${pct}%</div><div class="gpu-metric-lbl">Utilization</div></div>
+        <div class="gpu-metric"><div class="gpu-metric-val">${g.power_w||'?'}W</div><div class="gpu-metric-lbl">Power</div></div>
+        <div class="gpu-metric"><div class="gpu-metric-val" style="color:${(g.temp_c||0)>75?COLORS.temp:COLORS.ram}">${g.temp_c||'?'}°C</div><div class="gpu-metric-lbl">Temp</div></div>
+        <div class="gpu-metric"><div class="gpu-metric-val">${g.fan_pct||'?'}%</div><div class="gpu-metric-lbl">Fan</div></div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill ${ucl(pct)}" style="width:${Math.min(pct,100)}%"></div></div>
+      ${memPct!=null?`<div style="padding:0 14px 12px;font-size:.72rem;color:var(--dim)">VRAM: ${g.mem_used_mb} / ${g.mem_total_mb} MB (${memPct}%)</div>`:''}
+    </div>`}).join('');
+}
+
+function renderProcs(procs){
+  const t=document.getElementById('procList');
+  if(!procs.length){t.innerHTML='<div class="empty">No active compute processes</div>';return}
+  const maxMem=Math.max(...procs.map(p=>p.mem_mb||0),1);
+  t.innerHTML=procs.map(p=>{
+    const nn=p.name.includes('/')?p.name.split('/').pop():p.name;
+    const pct=Math.round((p.mem_mb||0)/maxMem*100);
+    return`<div class="list-row">
+      <span class="list-name" title="${p.name}">${trunc(nn,36)}</span>
+      <span class="list-val">${(p.mem_mb||0).toLocaleString()} MB</span>
+      <div class="list-bar-wrap"><div class="list-bar-fill" style="width:${pct}%"></div></div>
+    </div>`}).join('');
+}
+
+function renderOllama(models){
+  const t=document.getElementById('ollamaList');
+  if(!models.length){t.innerHTML='';return}
+  t.innerHTML='<div style="font-size:.68rem;color:var(--dim);margin-bottom:6px">Ollama (legacy)</div>'+models.map(m=>
+    `<div class="list-row">
+      <span class="list-name ${m.stuck?'model-stuck':''}">${m.name}${m.stuck?' ⚠ STUCK':''}
+        <span class="model-meta">${m.until||''}</span></span>
+      <span class="list-val">${m.size} · ${m.processor||'?'}</span>
+    </div>`).join('');
+}
+
+function statusDot(v){
+  if(v==='active')return'<span class="status-dot status-active"></span>active';
+  if(v==='inactive'||v==='failed')return'<span class="status-dot status-inactive"></span>'+v;
+  return'<span class="status-dot status-unknown"></span>'+(v||'unknown');
+}
+
+function renderDetail(s){
+  const sys=s.system||{};
+  const rows=[
+    ['Hostname',s.hostname||'—'],
+    ['CPU',sys.cpu_pct+'%'],
+    ['Load avg',`${sys.load_1} / ${sys.load_5} / ${sys.load_15}`],
+    ['RAM',`${sys.mem_used_gb} / ${sys.mem_total_gb} GB (${sys.mem_pct}%)`],
+    ['Swap',`${sys.swap_used_gb} / ${sys.swap_total_gb} GB (${sys.swap_pct||0}%)`],
+    ['Disk free',sys.disk_free_tb+' TB'],
+    ['GPUs',s.num_gpus||0],
+    ['Hermes orchestrator',statusDot(s.hermes?.orchestrator)],
+    ['Hermes light',statusDot(s.hermes?.light)],
+    ['Dashboard svc',statusDot(s.hermes?.dashboard)],
+    ['vLLM active',(s.vllm||[]).map(m=>m.label+':'+m.port).join(', ')||'none'],
+  ];
+  document.getElementById('detailTbl').innerHTML=
+    rows.map(([k,v])=>`<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+}
+
+function loadTimeline(){
+  const rows=csvRows;
+  document.getElementById('chartPts').textContent=rows.length?`${rows.length} pts`:'';
+  if(!rows.length){
+    Plotly.newPlot('chartMain',{data:[],layout:{...PLOT,annotations:[{text:'No history yet — click Snapshot or wait for collector',showarrow:false,
+      font:{size:13,color:'#5a7a8f'},xref:'paper',yref:'paper',x:.5,y:.5}]}},CFG);
+    Plotly.newPlot('chartMem',{data:[],layout:PLOT},CFG);
+    Plotly.newPlot('chartPower',{data:[],layout:PLOT},CFG);
+    return;
+  }
+  const ts=rows.map(r=>r.iso_ts||r.timestamp_utc);
+  const legend={orientation:'h',y:1.12,font:{size:10},bgcolor:'transparent'};
+  Plotly.newPlot('chartMain',[
+    {x:ts,y:rows.map(r=>+r.gpu_util||0),name:'GPU %',line:{color:COLORS.gpu,width:2.5,shape:'spline'},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.cpu_pct||0),name:'CPU %',line:{color:COLORS.cpu,width:1.5,shape:'spline'},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.mem_pct||0),name:'RAM %',line:{color:COLORS.mem,width:1.5,shape:'spline'},type:'scatter'},
+  ],{...PLOT,yaxis:{...PLOT.yaxis,title:'%',range:[0,100]},legend,hovermode:'x unified'},CFG);
+
+  Plotly.newPlot('chartMem',[
+    {x:ts,y:rows.map(r=>+r.mem_avail_gb||0),name:'RAM free GB',fill:'tozeroy',line:{color:COLORS.ram,width:2,shape:'spline'},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.swap_used_gb||0),name:'Swap GB',line:{color:COLORS.swap,width:1.5,shape:'spline'},type:'scatter'},
+  ],{...PLOT,legend:{...legend,y:1.2}},CFG);
+
+  Plotly.newPlot('chartPower',[
+    {x:ts,y:rows.map(r=>+r.gpu_power_w||0),name:'Power W',fill:'tozeroy',line:{color:COLORS.power,width:2,shape:'spline'},type:'scatter'},
+    {x:ts,y:rows.map(r=>+r.gpu_temp_c||0),name:'Temp °C',yaxis:'y2',line:{color:COLORS.temp,width:2,shape:'spline'},type:'scatter'},
+  ],{...PLOT,yaxis2:{overlaying:'y',side:'right',gridcolor:'transparent',title:'°C',tickfont:{color:COLORS.temp}},
+    legend:{...legend,y:1.15}},CFG);
+}
+
+function resetAutoRefresh(){
+  if(refreshTimer)clearTimeout(refreshTimer);
+  scheduleRefresh();
+}
+
+function scheduleRefresh(){
+  loadAll();
+  const iv=+document.getElementById('intervalSel').value;
+  if(iv>0)refreshTimer=setTimeout(scheduleRefresh,iv*1000);
+}
+
+document.getElementById('btnStopModels').onclick=doStopModels;
+document.getElementById('btnKillOrphans').onclick=async()=>{
+  const d=await modelAction('/api/models/kill-orphans');
+  showToast(d.message||d.error||'Done',!d.ok);
+  loadModelControl();loadAll();
+};
+document.getElementById('btnUnloadOllama').onclick=async()=>{
+  const d=await modelAction('/api/models/unload-ollama');
+  showToast(d.message||d.error||'Done',!d.ok);
+  loadAll();
+};
+document.getElementById('btnSyncHermes').onclick=async()=>{
+  const d=await modelAction('/api/models/sync-hermes');
+  if(!d.ok){showToast(d.error||'Sync failed',true);return;}
+  activeOpId=d.operation?.id;
+  renderOpBanner(d.operation);
+  showToast('Syncing Hermes providers…');
+  if(activeOpId)pollOperation(activeOpId);
+};
+
+loadModelControl();
+scheduleRefresh();
+</script>
+</body>
+</html>

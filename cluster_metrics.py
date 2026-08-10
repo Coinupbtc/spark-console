@@ -13,11 +13,7 @@ import psutil
 from remote_node import query_node2
 
 
-# Optional pager hook: any executable taking ("--plain", "<message>"). Set
-# NOTIFY_HOOK to its path to enable paging on a degraded second node. Unset (the
-# default) means degradation still shows in the UI and the CSV, but nothing is
-# paged — the portable tree cannot assume a notification system exists.
-NOTIFY_HOOK = os.getenv("NOTIFY_HOOK", "")
+ALERTBOT = Path.home() / ".hermes/scripts/alertbot-send.sh"
 NODE2_ALERT_STATE = Path(
     os.getenv(
         "DGX_NODE2_ALERT_STATE",
@@ -35,15 +31,15 @@ CLUSTER_CSV_HEADERS = [
     "node2_swap_pct",
     "node2_gpu_util",
     "node2_gpu_power_w",
+    "node2_gpu_temp_c",
     "node2_active_model",
     "node2_endpoint_8100_ok",
     "workloads_json",
 ]
 
-# Generic process fingerprints only — no private project pathnames in the public tree.
 _WORKLOAD_PATTERNS = {
-    "scan": ("daily_scan",),
-    "trader": ("run_cycle",),
+    "pokemon": ("daily_scan", "pokemon-arb"),
+    "crypto": ("run_cycle", "crypto-machine"),
     "comfyui": ("comfyui",),
     "download": ("huggingface-cli download", "hf download", "aria2c", "wget "),
     "bakeoff": ("bakeoff.py",),
@@ -90,7 +86,7 @@ def query_local_workloads() -> list[str]:
             if any(pattern in text for pattern in patterns):
                 labels.add(label)
     try:
-        jobs_path = Path.home() / ".agent/profiles/orchestrator/cron/jobs.json"
+        jobs_path = Path.home() / ".hermes/profiles/orchestrator/cron/jobs.json"
         jobs = json.loads(jobs_path.read_text()).get("jobs") or []
         if any(job.get("fire_claim") or job.get("state") == "running" for job in jobs):
             labels.add("agent-cron")
@@ -103,7 +99,7 @@ def query_local_workloads() -> list[str]:
 def normalize_node2(raw: dict) -> dict:
     """Keep the durable node2 payload compact and schema-stable."""
     node = {
-        "name": raw.get("name", "spark-node2"),
+        "name": raw.get("name", "sparkymaxxx-12ef"),
         "role": "node2",
         "iso_ts": raw.get("iso_ts"),
         "reachable": bool(raw.get("reachable")),
@@ -146,31 +142,19 @@ def notify_node2_state(node2: dict, state_path: Path = NODE2_ALERT_STATE) -> str
             state_path.unlink()
         return "healthy"
 
-    # No second node configured is the single-node default, not an outage.
-    if "not configured" in str(node2.get("error") or ""):
-        return "not-configured"
-
     if state_path.exists():
         return "already-alerted"
 
     detail = str(node2.get("error") or "node2 unreachable")[:300]
     message = f"DGX baseline degraded: node2 collection failed. {detail}"
-
-    # Record the episode even with no pager installed, so the caller does not
-    # retry every cycle — and so a missing hook can never crash the collector.
-    if not NOTIFY_HOOK or not Path(NOTIFY_HOOK).exists():
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(message + "\n")
-        return "no-hook"
-
     result = subprocess.run(
-        [str(NOTIFY_HOOK), "--plain", message],
+        [str(ALERTBOT), "--plain", message],
         capture_output=True,
         text=True,
         timeout=20,
     )
     if result.returncode != 0:
-        raise RuntimeError((result.stderr or result.stdout or "notify hook failed").strip())
+        raise RuntimeError((result.stderr or result.stdout or "alertbot failed").strip())
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(message + "\n")
     return "alerted"
@@ -199,6 +183,8 @@ def cluster_csv_values(cluster: dict) -> dict:
         "node2_swap_pct": node2.get("swap", {}).get("pct", ""),
         "node2_gpu_util": node2_gpu.get("util_gpu", ""),
         "node2_gpu_power_w": node2_gpu.get("power_w", ""),
+        # Persist node2 GPU temp so cooling A/B (case/fan) can use both nodes.
+        "node2_gpu_temp_c": node2_gpu.get("temp_c", ""),
         "node2_active_model": deep_model.get("id", ""),
         "node2_endpoint_8100_ok": node2_8100.get("status") == "ok",
         "workloads_json": json.dumps(workloads, separators=(",", ":")),

@@ -26,7 +26,7 @@ class BaselineSummaryTests(unittest.TestCase):
                 "node2_endpoint_8100_ok": "True",
                 "node2_reachable": "True",
                 "workloads_json": json.dumps(
-                    {"node1": ["scan"], "node2": ["llama", "inference-busy"]}
+                    {"node1": ["pokemon"], "node2": ["llama", "inference-busy"]}
                 ),
             },
             {
@@ -54,7 +54,7 @@ class BaselineSummaryTests(unittest.TestCase):
         self.assertEqual(report["memory"]["samples_below_15gb"], 1)
         self.assertEqual(report["memory"]["node1_longest_swap_over_8gb_samples"], 2)
         self.assertEqual(report["endpoint_availability_pct"]["node1_8889"], 50.0)
-        self.assertEqual(report["overlap_samples"]["inference+scan"], 1)
+        self.assertEqual(report["overlap_samples"]["inference+pokemon"], 1)
         self.assertEqual(report["overlap_samples"]["agent-cron+inference"], 1)
 
 
