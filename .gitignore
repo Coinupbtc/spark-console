@@ -3,4 +3,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
-data/
+.env.*
+!.env.example
+venv/
+node_modules/
