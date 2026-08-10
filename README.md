@@ -6,7 +6,6 @@
 ![CI](https://github.com/Coinupbtc/spark-console/actions/workflows/ci.yml/badge.svg)
 
 
-![Screenshot](docs/screenshots/hero.png)
 
 Local **GPU + fleet dashboard** for NVIDIA DGX Spark (Grace Blackwell, unified memory) — and any Linux box with an NVIDIA GPU.
 
