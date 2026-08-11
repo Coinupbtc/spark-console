@@ -1,0 +1,41 @@
+{
+  "name": "case-fan-cooling",
+  "nodes": [
+    "node1",
+    "node2"
+  ],
+  "created_at": "2026-08-07T14:21:48.965634+00:00",
+  "before_start": "2026-08-07T14:21:48.965644+00:00",
+  "before_end": "2026-08-08T00:35:57.970028+00:00",
+  "after_start": "2026-08-08T00:35:57.970028+00:00",
+  "after_end": null,
+  "notes": {
+    "before": "pre case+fan; mark started ~7h before install",
+    "after": "case+fan installed; dual reboot 19:15 and 19:32 CDT; post-install mark",
+    "fan_1700": "case fan 1700 RPM; video/H3 load included; dual reboot 19:15/19:32 CDT install",
+    "plan": "3-way: no_fan \u2192 fan_1700 (current) \u2192 fan_3000 (tomorrow). When 3000 RPM installed: mark-phase --id fan_3000 --label '3000 RPM'"
+  },
+  "collector": {
+    "csv": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/performance_timeseries.csv",
+    "interval_hint_s": 300,
+    "node1_temp_col": "gpu_temp_c",
+    "node2_temp_col": "node2_gpu_temp_c"
+  },
+  "schema": "phases-v1",
+  "phases": [
+    {
+      "id": "no_fan",
+      "label": "no fan",
+      "start": "2026-08-07T14:21:48.965644+00:00",
+      "end": "2026-08-08T00:35:57.970028+00:00",
+      "note": "pre case+fan; mark started ~7h before install"
+    },
+    {
+      "id": "fan_1700",
+      "label": "1700 RPM",
+      "start": "2026-08-08T00:35:57.970028+00:00",
+      "end": null,
+      "note": "case fan 1700 RPM; video/H3 load included; dual reboot 19:15/19:32 CDT install"
+    }
+  ]
+}

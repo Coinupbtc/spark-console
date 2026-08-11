@@ -8,12 +8,13 @@
   "before_start": "2026-08-07T14:21:48.965644+00:00",
   "before_end": "2026-08-08T00:35:57.970028+00:00",
   "after_start": "2026-08-08T00:35:57.970028+00:00",
-  "after_end": null,
+  "after_end": "2026-08-09T22:40:00+00:00",
   "notes": {
     "before": "pre case+fan; mark started ~7h before install",
-    "after": "case+fan installed; dual reboot 19:15 and 19:32 CDT; post-install mark",
+    "after": "swapped 1700\u21923000 RPM ~2026-08-09 17:40 CDT (human report; backdated mark)",
     "fan_1700": "case fan 1700 RPM; video/H3 load included; dual reboot 19:15/19:32 CDT install",
-    "plan": "3-way: no_fan \u2192 fan_1700 (current) \u2192 fan_3000 (tomorrow). When 3000 RPM installed: mark-phase --id fan_3000 --label '3000 RPM'"
+    "plan": "3-way: no_fan \u2192 fan_1700 \u2192 fan_3000 (3000 marked backdated to 17:40 CDT Aug 9)",
+    "fan_3000": "swapped 1700\u21923000 RPM ~2026-08-09 17:40 CDT (human report; backdated mark)"
   },
   "collector": {
     "csv": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/performance_timeseries.csv",
@@ -34,8 +35,15 @@
       "id": "fan_1700",
       "label": "1700 RPM",
       "start": "2026-08-08T00:35:57.970028+00:00",
-      "end": null,
+      "end": "2026-08-09T22:40:00+00:00",
       "note": "case fan 1700 RPM; video/H3 load included; dual reboot 19:15/19:32 CDT install"
+    },
+    {
+      "id": "fan_3000",
+      "label": "3000 RPM",
+      "start": "2026-08-09T22:40:00+00:00",
+      "end": null,
+      "note": "swapped 1700\u21923000 RPM ~2026-08-09 17:40 CDT (human report; backdated mark)"
     }
   ]
 }
