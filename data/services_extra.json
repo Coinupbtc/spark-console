@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-09T01:35:45.150578+00:00",
+  "updated_at": "2026-08-12T01:36:23.269666+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -139,6 +139,40 @@
       "port": 8070,
       "show_projects_tile": true,
       "registered_at": "2026-08-09T01:35:45.150514+00:00"
+    },
+    "blackjack3d": {
+      "label": "Blackjack 3D (Three.js)",
+      "detail": ":8075",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8075/",
+        2.0
+      ],
+      "port": 8075,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-11T18:00:05.108327+00:00"
+    },
+    "paintball-fps": {
+      "label": "Paintball FPS",
+      "detail": ":8071",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8071/",
+        2.0
+      ],
+      "port": 8071,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-12T01:36:23.269594+00:00"
     }
   }
 }

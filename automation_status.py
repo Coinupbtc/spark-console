@@ -343,6 +343,12 @@ def failed_units() -> list[str]:
         # Same parked-app rule as timers — don't inventory owner-stop noise
         if _optional_app_parked(name.replace(".service", "").replace(".timer", "")):
             continue
+        # Desktop portal timeouts are normal on this box (no full GNOME session
+        # for portals). They sticky-fail and paint Needs attention red without
+        # being stack-actionable — same class as masked update-notifier junk.
+        base = name.rsplit(".", 1)[0].lower()
+        if base.startswith("xdg-desktop-portal"):
+            continue
         actionable.append(name)
     return actionable
 
