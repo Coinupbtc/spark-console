@@ -17,9 +17,13 @@ the 30d total look like ~$2.60 — that was the bug the owner smelled (real
 fleet wall is more like ~$10–40/mo at residential rates, higher under load).
 
 Default bill view is **wall estimate** for Sparks:
-      wall ≈ idle_wall_w + slope * max(0, gpu_w − gpu_floor_w)
-(editable idle W after a USB-C / Kill-A-Watt reading). Pi/Start9 stay sensor.
+      wall ≈ idle_wall_w + slope * max(0, gpu_w − gpu_floor_w)   capped at 240 W PSU
+(editable idle W after a USB-C / Kill-A-Watt reading). Pi applies a USB-C PSU
+factor; Start9 stays RAPL (CPU+DRAM, still understates the outlet).
 `mode=sensor` is still available for raw GPU/PMIC/RAPL integration.
+
+This cluster runs CX7 fabric for DS4F, so idle wall is NOT the 22 W headless
+CX7-down figure. NVIDIA/Toms: ~37 W idle with CX7 always-on; 240 W adapter.
 
 Sources
 -------
@@ -53,9 +57,13 @@ NODE_SOURCE = {
 
 # Default wall calibration for Sparks (CX7 fabric typically up on this cluster).
 # Override via energy_summary(idle_wall_w=…) / console localStorage.
-DEFAULT_IDLE_WALL_W = 50.0   # outlet watts at "idle-ish" with fabric
-DEFAULT_GPU_FLOOR_W = 8.0    # GPU draw treated as "idle floor"
+# gpu_floor matches this fleet's measured idle nvidia-smi (~11 W median), so
+# idle_wall_w is "outlet watts at that GPU reading" — not double-counted.
+DEFAULT_IDLE_WALL_W = 50.0   # outlet watts at idle-ish with CX7 up (conservative)
+DEFAULT_GPU_FLOOR_W = 11.0   # GPU draw treated as that idle point
 DEFAULT_SLOPE = 1.15         # wall rises ~1.15 W per extra GPU watt above floor
+WALL_CAP_W = 240.0           # DGX Spark external PSU rating
+PI_PSU_EFF = 1.12            # USB-C brick; PMIC is board DC, not wall
 
 PROJECT_DIR = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_DIR / "data"
@@ -66,6 +74,10 @@ BACKFILL_MARKER = DATA_DIR / "energy_backfill.done"
 
 # Don't invent energy across long outages / missing polls.
 MAX_GAP_S = 2 * 3600
+# One-sided hold (node missing from one endpoint) only across a couple of
+# missed 30 s ticks. A 1 h hold after a node goes unreachable used to bill
+# last-known watts as if it were still on.
+HOLD_MAX_S = 90.0
 # Keep raw samples long enough for a rolling 30d window + slack.
 SAMPLE_RETENTION_S = 45 * 86400
 # Reuse live hist (~1 Hz already paid for). 30s is dense enough for $ without
@@ -114,10 +126,11 @@ def gpu_to_wall(
 ) -> float | None:
     """Estimate AC wall watts from GPU draw for one Spark.
 
-    wall ≈ idle_wall + slope * max(0, gpu − floor)
+    wall ≈ min(idle_wall + slope * max(0, gpu − floor), 240 W PSU)
 
     This is a calibration curve, not a meter. Tune idle_wall_w after a USB-C /
     Kill-A-Watt reading at idle with your normal fabric/display config.
+    gpu_floor should be nvidia-smi at that same idle reading (this fleet ~11 W).
     """
     if gpu_w is None:
         return None
@@ -127,11 +140,24 @@ def gpu_to_wall(
         return None
     if g != g or g < 0:  # NaN
         return None
-    return float(idle_wall_w) + float(slope) * max(0.0, g - float(gpu_floor_w))
+    wall = float(idle_wall_w) + float(slope) * max(0.0, g - float(gpu_floor_w))
+    return min(wall, float(WALL_CAP_W))
+
+
+def _finite_w(v) -> float | None:
+    if v is None or v == "":
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    if f != f or f < 0:
+        return None
+    return f
 
 
 def _billable_w(node: str, sensor_w, calib: dict) -> float | None:
-    """Watts we integrate for $ — wall estimate on Sparks, sensor elsewhere."""
+    """Watts we integrate for $ — wall estimate on Sparks, PSU-adjusted Pi."""
     if node in SPARK_NODES:
         return gpu_to_wall(
             sensor_w,
@@ -139,28 +165,37 @@ def _billable_w(node: str, sensor_w, calib: dict) -> float | None:
             gpu_floor_w=calib.get("gpu_floor_w", DEFAULT_GPU_FLOOR_W),
             slope=calib.get("slope", DEFAULT_SLOPE),
         )
-    if sensor_w is None:
+    v = _finite_w(sensor_w)
+    if v is None:
         return None
-    try:
-        v = float(sensor_w)
-    except (TypeError, ValueError):
-        return None
-    return v if v == v and v >= 0 else None
+    if node == "pi":
+        return v * float(calib.get("pi_psu_eff", PI_PSU_EFF))
+    return v
 
 
 # ---- integration ------------------------------------------------------------
 
 
-def _trap_kwh(t0: float, w0, t1: float, w1) -> float | None:
-    """Trapezoidal kWh for one interval. None if gap too large or both missing."""
+def _trap_kwh(t0: float, w0, t1: float, w1,
+              hold_max_s: float = HOLD_MAX_S) -> float | None:
+    """Trapezoidal kWh for one interval. None if gap too large or both missing.
+
+    One-sided (a node present on only one endpoint) is allowed only for
+    hold_max_s — a couple of missed 30 s ticks, not an hour of invented draw.
+    """
     dt = t1 - t0
     if dt <= 0 or dt > MAX_GAP_S:
         return None
-    vals = [float(w) for w in (w0, w1) if w is not None and w == w]
-    if not vals:
+    a = _finite_w(w0)
+    b = _finite_w(w1)
+    if a is not None and b is not None:
+        avg = (a + b) / 2.0
+    elif a is not None or b is not None:
+        if dt > float(hold_max_s):
+            return None
+        avg = a if a is not None else b
+    else:
         return None
-    # One-sided: hold the known wattage across the short interval.
-    avg = sum(vals) / len(vals)
     if avg < 0:
         return None
     return (avg / 1000.0) * (dt / 3600.0)
@@ -447,19 +482,25 @@ def _window_payload(samples: list[dict], t_from: float, t_to: float,
         src = NODE_SOURCE[n]
         if mode == "wall" and n in SPARK_NODES:
             src = "wall_est←gpu"
+        elif mode == "wall" and n == "pi":
+            src = "board_pmic×psu"
         elif mode != "wall" and n in SPARK_NODES:
             src = "gpu_draw"  # honest: measured sensor, not wall estimate
+        target_h = target_s / 3600.0
         nodes[n] = {
             "kwh": round(kwh[n], 5),
             "sensor_kwh": round(skwh[n], 5),
             "hours_covered": round(hrs, 2),
-            "complete": hrs >= target_s / 3600.0 * 0.85,
+            "complete": hrs >= target_h * 0.85,
             "source": src,
+            # Clock-window average (missing samples count as 0 W — meter-like).
+            "avg_w": round(kwh[n] / target_h * 1000.0, 1) if target_h else None,
         }
     sparks = kwh["node1"] + kwh["node2"]
     fleet = sum(kwh[n] for n in NODES)
     fleet_hrs = max((covered[n] / 3600.0) for n in NODES)
     sparks_hrs = max(covered["node1"], covered["node2"]) / 3600.0
+    target_h = target_s / 3600.0
     return {
         "nodes": nodes,
         "sparks_kwh": round(sparks, 5),
@@ -467,12 +508,13 @@ def _window_payload(samples: list[dict], t_from: float, t_to: float,
         "fleet_kwh": round(fleet, 5),
         "sparks_hours": round(sparks_hrs, 2),
         "fleet_hours": round(fleet_hrs, 2),
-        "sparks_complete": sparks_hrs >= target_s / 3600.0 * 0.85,
-        "fleet_complete": all(nodes[n]["complete"] or nodes[n]["kwh"] == 0
-                              for n in NODES)
-        and fleet_hrs >= target_s / 3600.0 * 0.5,
-        "target_hours": round(target_s / 3600.0, 1),
+        "sparks_complete": sparks_hrs >= target_h * 0.85,
+        # Never treat "no samples → 0 kWh" as a complete window.
+        "fleet_complete": all(nodes[n]["complete"] for n in NODES),
+        "target_hours": round(target_h, 1),
         "mode": mode,
+        "avg_w": round(fleet / target_h * 1000.0, 1) if target_h else None,
+        "sparks_avg_w": round(sparks / target_h * 1000.0, 1) if target_h else None,
     }
 
 
@@ -481,15 +523,16 @@ _SUMMARY_TTL = 20.0  # seconds — console polls ~10–20s; avoid re-scanning js
 
 
 def _pace_from_24h(w24: dict, days: float = 30.0) -> dict:
-    """Scale trailing-24h average draw to a full-month kWh pace.
+    """Scale trailing-24h kWh to a full-month pace (clock hours, gaps = 0 W).
 
-    Historical 30d can under-read when a node only recently joined the log
-    (partial hours). Pace answers "if today continues, what does a month look
-    like?" — closer to the electric-bill question than incomplete history.
+    Uses last-24h kWh × 30 d — the last day's meter-like total, not
+    (kWh / hours_sampled) which would treat downtime as "still drawing."
+    Fleet pace is the sum of per-node paces so a short-coverage node cannot
+    steal the window length from a complete sibling.
     """
     min_hrs = 1.0
 
-    def _scale(kwh, hrs):
+    def _scale_clock(kwh, hrs):
         try:
             kwh_f = float(kwh)
             hrs_f = float(hrs)
@@ -497,22 +540,23 @@ def _pace_from_24h(w24: dict, days: float = 30.0) -> dict:
             return None
         if hrs_f < min_hrs or kwh_f < 0:
             return None
-        return round((kwh_f / hrs_f) * 24.0 * float(days), 5)
+        # Window is trailing 24 clock hours. Monthly = that day's kWh × 30.
+        return round(kwh_f * float(days), 5)
 
     nodes_out = {}
     for n, row in (w24.get("nodes") or {}).items():
-        pk = _scale(row.get("kwh"), row.get("hours_covered"))
+        pk = _scale_clock(row.get("kwh"), row.get("hours_covered"))
         if pk is not None:
             nodes_out[n] = pk
-    fleet = _scale(w24.get("fleet_kwh"), w24.get("fleet_hours"))
-    sparks = _scale(w24.get("sparks_kwh"), w24.get("sparks_hours"))
+    sparks_parts = [nodes_out[n] for n in SPARK_NODES if n in nodes_out]
+    fleet_parts = list(nodes_out.values())
     return {
         "days": float(days),
-        "basis": "trailing_24h_average",
-        "fleet_kwh": fleet,
-        "sparks_kwh": sparks,
+        "basis": "trailing_24h_clock",
+        "fleet_kwh": round(sum(fleet_parts), 5) if fleet_parts else None,
+        "sparks_kwh": round(sum(sparks_parts), 5) if sparks_parts else None,
         "nodes": nodes_out,
-        "basis_hours": w24.get("fleet_hours"),
+        "basis_hours": 24.0,
     }
 
 
@@ -547,8 +591,10 @@ def energy_summary(
         "idle_wall_w": idle_wall_w,
         "gpu_floor_w": gpu_floor_w,
         "slope": slope,
+        "pi_psu_eff": PI_PSU_EFF,
+        "wall_cap_w": WALL_CAP_W,
     }
-    cache_key = f"{mode}|{idle_wall_w}|{gpu_floor_w}|{slope}"
+    cache_key = f"{mode}|{idle_wall_w}|{gpu_floor_w}|{slope}|{PI_PSU_EFF}"
     now = time.time()
     cached = _SUMMARY_CACHE.get("payload")
     if (cached and _SUMMARY_CACHE.get("key") == cache_key
@@ -579,9 +625,11 @@ def energy_summary(
 
     if mode == "wall":
         note = (
-            "Sparks $ use WALL ESTIMATE (idle_wall + slope×GPU above floor) — "
-            "not an outlet meter. Tune idle wall W after a Kill-A-Watt reading. "
-            "Pi/Start9 stay board/RAPL sensors. Gaps >2h not filled."
+            "Sparks $ use WALL ESTIMATE (idle_wall + slope×GPU above 11 W floor, "
+            "capped at 240 W PSU) — not an outlet meter. Tune idle wall W after "
+            "a Kill-A-Watt reading with CX7 in its usual state. Pi = PMIC×1.12 "
+            "USB-C PSU. Start9 = RAPL CPU+DRAM (still understates wall). "
+            "Gaps >90s with a node missing are not filled; gaps >2h never are."
         )
     else:
         note = (

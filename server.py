@@ -552,11 +552,56 @@ threading.Thread(target=_services_refresher, daemon=True).start()
 threading.Thread(target=_comfy_refresher, daemon=True).start()
 
 
+# iPhone PWA will otherwise keep a stale console.html forever. HTML is the
+# app — never let WKWebView treat it as cacheable.
+_NO_STORE = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+def console_build_info() -> dict:
+    """Visible page version: mtime stamp + last git hash that touched console.html.
+
+    mtime changes on every save so a dirty tree still bumps the label; git
+    hash is the durable compare against another device.
+    """
+    mtime = os.path.getmtime(CONSOLE_HTML) if os.path.exists(CONSOLE_HTML) else 0
+    stamp = datetime.fromtimestamp(mtime).strftime("%m%d-%H%M") if mtime else "dev"
+    git = ""
+    try:
+        git = subprocess.check_output(
+            [
+                "git", "-C", os.path.dirname(CONSOLE_HTML),
+                "log", "-1", "--format=%h", "--", "console.html",
+            ],
+            timeout=1.5,
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        git = ""
+    build = f"{stamp}-{git}" if git else stamp
+    return {"build": build, "git": git or None, "html_mtime": int(mtime), "stamp": stamp}
+
+
+def _serve_console_html(path: str) -> HTMLResponse:
+    if not os.path.exists(path):
+        return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500, headers=_NO_STORE)
+    html = open(path, encoding="utf-8").read()
+    html = html.replace("{{CONSOLE_BUILD}}", console_build_info()["build"])
+    return HTMLResponse(content=html, headers=_NO_STORE)
+
+
 @app.get("/", response_class=HTMLResponse)
 def console():
-    if os.path.exists(CONSOLE_HTML):
-        return HTMLResponse(content=open(CONSOLE_HTML).read())
-    return HTMLResponse(content="<h1>console.html missing</h1>", status_code=500)
+    return _serve_console_html(CONSOLE_HTML)
+
+
+@app.get("/api/version")
+def api_version():
+    """What the Spark is serving right now — iPhone compares this to its baked-in build."""
+    return JSONResponse(console_build_info(), headers=_NO_STORE)
 
 
 _PWA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pwa")
@@ -994,7 +1039,7 @@ def api_energy_cost(request: Request):
     Query params:
       mode         wall|sensor (default wall)
       idle_wall_w  default 50 — only used when mode=wall
-      gpu_floor_w  default 8
+      gpu_floor_w  default 11
       slope        default 1.15
     """
     q = request.query_params

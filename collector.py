@@ -515,7 +515,7 @@ def collect() -> dict | None:
         energy_cost.record_sample({
             "node1": snap.get("total_power_watts") or gpu.get("power_w"),
             "node2": n2_gpu.get("power_w") if n2.get("reachable") else None,
-        }, force=True)
+        })  # respect 30s throttle — dashboard is the dense writer; we fill gaps
     except Exception:
         pass
 
