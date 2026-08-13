@@ -2,16 +2,13 @@
 
 ![Screenshot](docs/screenshots/hero.png)
 
-
 ![CI](https://github.com/Coinupbtc/spark-console/actions/workflows/ci.yml/badge.svg)
-
-
 
 Local **GPU + fleet dashboard** for NVIDIA DGX Spark (Grace Blackwell, unified memory) — and any Linux box with an NVIDIA GPU.
 
 Default UI: **http://127.0.0.1:8085/**
 
-This public tree is the **portable core**: collectors, the UI, and a read-only service board. It runs standalone with no homelab-specific modules.
+This public tree is the **portable core**: collectors, the UI, and a read-only service board. It runs standalone. The hero screenshot is a **live dual-Spark run** on the author’s box (your clone shows *your* hosts and units, not that fleet).
 
 ## At a glance
 
