@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-12T01:36:23.269666+00:00",
+  "updated_at": "2026-08-12T21:16:43.959753+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -173,6 +173,24 @@
       "port": 8071,
       "show_projects_tile": true,
       "registered_at": "2026-08-12T01:36:23.269594+00:00"
+    },
+    "pokemon-kart": {
+      "label": "Pokemon Kart (browser game)",
+      "detail": ":8096",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "pokemon-kart-host.service",
+      "probe": [
+        "http://127.0.0.1:8096/",
+        2.0
+      ],
+      "port": 8096,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-12T21:16:43.959683+00:00"
     }
   }
 }

@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#090b10">
+<meta name="console-build" content="{{CONSOLE_BUILD}}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -24,10 +25,13 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Spark Console — instrument-panel theme (desktop + iPhone PWA).
 
-   Direction: precision hardware console, not neon cyberpunk.
+   Direction: precision hardware console with a spark of personality —
+   not neon cyberpunk, not a generic admin theme.
    Series hexes kept for chart continuity (validated earlier). Status still
    uses distinct glyphs (● ▲ ✕ ○) — never hue alone.
    Type: Sora (UI) + IBM Plex Mono (numbers).
+   Layout: Control groups by function (Inference / Hermes / Apps / Meta);
+   Jobs leads with the job list; Fleet leads with machines, bill last.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root{
   /* Midnight ice — soft, high-end dark UI (desktop + iPhone) */
@@ -149,12 +153,21 @@ header{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;
   text-decoration:none;color:inherit;user-select:none}
 .brand .bolt{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;
   background:linear-gradient(145deg,rgba(110,182,255,.32),rgba(110,182,255,.06));
-  border:1px solid rgba(110,182,255,.32);flex:none}
+  border:1px solid rgba(110,182,255,.32);flex:none;position:relative}
+.brand .bolt::after{content:"";position:absolute;inset:-5px;border-radius:inherit;
+  background:radial-gradient(circle,rgba(110,182,255,.4),transparent 70%);
+  opacity:.35;animation:spark 2.8s ease-in-out infinite;pointer-events:none;z-index:-1}
 .brand .bolt svg{width:15px;height:15px;display:block}
+@keyframes spark{0%,100%{opacity:.2;transform:scale(.92)}50%{opacity:.7;transform:scale(1.08)}}
 .brand-txt{display:flex;flex-direction:column;line-height:1.05;gap:1px}
 .brand-txt b{font-size:13.5px;font-weight:700;letter-spacing:-.02em}
-.brand-txt i{font:500 9px/1 var(--sans);font-style:normal;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--ink-3)}
+.brand-txt i{font:500 9px/1 var(--mono);font-style:normal;letter-spacing:.02em;
+  text-transform:none;color:var(--ink-3)}
+.status{display:flex;align-items:center;gap:6px;flex:none;min-width:0}
+#ver-bar{display:none;font:600 12.5px var(--sans);color:var(--ink);cursor:pointer;
+  background:rgba(110,182,255,.14);border:1px solid rgba(110,182,255,.4);
+  border-radius:11px;padding:10px 14px;min-height:44px;text-align:left}
+#ver-bar:not([hidden]){display:block}
 nav{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none;
   padding:3px;background:rgba(0,0,0,.22);border-radius:11px;border:1px solid var(--line)}
 nav::-webkit-scrollbar{display:none}
@@ -187,6 +200,15 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .live.dead{color:var(--crit);border-color:rgba(255,122,138,.36);background:rgba(255,122,138,.09)}
 .live.stale .dot,.live.dead .dot{animation:none}
 .live.dead .dot{box-shadow:none}
+/* What's actually answering on :8888 / :8889 — story, not a dump of ports */
+.serve{display:inline-flex;align-items:center;gap:6px;flex:none;
+  font:600 11px var(--mono);color:var(--s1);letter-spacing:-.02em;
+  border:1px solid rgba(110,182,255,.28);border-radius:999px;
+  padding:5px 10px;background:rgba(110,182,255,.08);
+  max-width:28ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.serve[hidden]{display:none!important}
+.serve::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor;
+  box-shadow:0 0 8px currentColor;flex:none;transform:rotate(45deg)}
 
 /* ══════════════════════════ views ══════════════════════════ */
 .view{display:none;min-height:0;min-width:0;overflow:auto;gap:14px}
@@ -223,7 +245,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 
 /* host cards */
 .hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.host{padding:14px 15px 12px;cursor:pointer;
+.host{padding:14px 15px 12px;cursor:pointer;overflow:visible;
   transition:border-color .18s,transform .18s var(--ease),box-shadow .18s}
 .host:hover{border-color:rgba(110,182,255,.32);transform:translateY(-2px);
   box-shadow:0 14px 36px -18px rgba(0,0,0,.7)}
@@ -235,27 +257,38 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .host .role{font-size:11px;color:var(--ink-3);margin-bottom:10px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 .gwrap{display:flex;align-items:center;gap:12px}
-.gauge{width:104px;height:104px;flex:none;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35))}
-.gauge circle{fill:none;stroke-width:7;stroke-linecap:round;
+.gauge{width:108px;height:108px;flex:none;
+  filter:drop-shadow(0 10px 22px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(110,182,255,.16))}
+.host.warn .gauge{filter:drop-shadow(0 10px 22px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(245,193,90,.18))}
+.host.bad .gauge{filter:drop-shadow(0 10px 22px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,122,138,.2))}
+.gauge circle.track,.gauge circle.halo,.gauge circle.fill{fill:none;stroke-linecap:round;
   transform:rotate(135deg);transform-origin:60px 60px}
-.gauge .track{stroke:rgba(255,255,255,.055)}
-.gauge .fill{transition:stroke-dashoffset .9s var(--ease),stroke .4s;
-  filter:drop-shadow(0 0 6px currentColor)}
+.gauge .gwell{fill:rgba(0,0,0,.32);stroke:rgba(255,255,255,.06);stroke-width:1}
+.gauge .track{stroke:rgba(255,255,255,.08);stroke-width:10}
+.gauge .halo{stroke-width:14;opacity:.48;filter:blur(2.4px)}
+.gauge .fill{stroke-width:6.5;transition:stroke-dashoffset .9s var(--ease),stroke .4s}
+.gauge .gtick{stroke:rgba(255,255,255,.18);stroke-width:1.2;stroke-linecap:round}
+.gauge .gcore,.gauge .gcap-halo,.gauge .gcap{pointer-events:none}
+.gauge .gcap-halo{filter:blur(1.4px);opacity:.42}
+.gauge .gcap{filter:drop-shadow(0 0 3px rgba(255,255,255,.85))}
 .gauge text{fill:var(--ink);font-family:var(--sans);text-anchor:middle}
-.gauge .gv{font-size:23px;font-weight:650;font-family:var(--mono);letter-spacing:-.04em}
+.gauge .gv{font-size:22px;font-weight:650;font-family:var(--mono);letter-spacing:-.04em}
 .gauge .gl{font-size:8px;fill:var(--ink-3);letter-spacing:.16em;font-weight:600}
 .gside{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .mrow{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:7px;font-size:11px}
 .mrow label{color:var(--ink-3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
-.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.055);overflow:hidden;min-width:0;
-  box-shadow:inset 0 1px 1px rgba(0,0,0,.25)}
-.bar i{display:block;height:100%;border-radius:99px;background:var(--s1);
-  background:linear-gradient(90deg,#9fd0ff,var(--s1));
-  transition:width .8s var(--ease),background .35s;box-shadow:0 0 10px rgba(110,182,255,.2)}
-.bar i.w{background:var(--warn);background:linear-gradient(90deg,#ffe09a,var(--warn));
-  box-shadow:0 0 10px rgba(245,193,90,.18)}
-.bar i.b{background:var(--crit);background:linear-gradient(90deg,#ffb0ba,var(--crit));
-  box-shadow:0 0 10px rgba(255,122,138,.2)}
+.bar{height:7px;border-radius:99px;background:rgba(255,255,255,.045);overflow:hidden;min-width:0;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.45)}
+.bar i{display:block;height:100%;border-radius:99px;
+  background:linear-gradient(180deg,rgba(255,255,255,.38),transparent 42%),
+             linear-gradient(90deg,#c4e4ff,var(--s1) 55%,#3d8ee8);
+  transition:width .8s var(--ease),background .35s;box-shadow:0 0 12px rgba(110,182,255,.32)}
+.bar i.w{background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 42%),
+             linear-gradient(90deg,#ffe9b0,var(--warn));
+  box-shadow:0 0 12px rgba(245,193,90,.28)}
+.bar i.b{background:linear-gradient(180deg,rgba(255,255,255,.32),transparent 42%),
+             linear-gradient(90deg,#ffc2ca,var(--crit));
+  box-shadow:0 0 12px rgba(255,122,138,.28)}
 /* ComfyUI progress: determinate % when we have an estimate; indeterminate
    sweep only when percent is unknown (no create_time / avg yet). */
 .cfy-indet{background:linear-gradient(90deg,var(--s1) 0%,var(--s1) 40%,var(--s2) 60%,var(--s1) 100%)!important;background-size:200% 100%!important;width:60%!important;animation:cfySweep 1.1s linear infinite}
@@ -287,21 +320,27 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 /* LLM token usage — 14d chart + mean/median/mode */
 .tok-card{font:400 11px/1.5 var(--mono);padding:6px 4px 2px}
 .tok-chart-wrap{margin:8px 0 6px;padding:8px 8px 4px;border:1px solid var(--line);
-  border-radius:var(--r-sm);background:rgba(255,255,255,.02)}
+  border-radius:var(--r-sm);
+  background:radial-gradient(110% 80% at 50% 0%,rgba(110,182,255,.08),transparent 60%),rgba(0,0,0,.28)}
 .tok-chart-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
   font:10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
   margin-bottom:4px}
 .tok-chart-h b{font:10.5px/1 var(--mono);letter-spacing:0;text-transform:none;font-weight:500;color:var(--ink-2)}
 .tok-chart-h .leg{display:flex;gap:10px;text-transform:none;letter-spacing:0;font:10px var(--mono)}
 .tok-chart-h .leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:-1px}
-#tok-chart{width:100%;height:72px;display:block}
+#tok-chart{width:100%;height:96px;display:block}
 .tok-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin:6px 0 4px}
 .tok-stat{border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 8px;background:rgba(255,255,255,.015)}
 .tok-stat .lbl{font:9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
 .tok-stat .row{display:flex;justify-content:space-between;gap:6px;font:11px/1.45 var(--mono);color:var(--ink-2)}
 .tok-stat .row span:first-child{color:var(--ink-3)}
 .mrow .v{font:11px var(--mono);color:var(--ink-2);white-space:nowrap}
-.spark{width:100%;height:32px;display:block;margin-top:9px}
+.spark{width:100%;height:40px;display:block;margin-top:9px;border-radius:8px;
+  background:
+    radial-gradient(90% 140% at 88% 50%,rgba(110,182,255,.12),transparent 58%),
+    linear-gradient(180deg,rgba(255,255,255,.045),transparent 52%),
+    rgba(0,0,0,.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 .host .foot{display:flex;gap:10px;margin-top:10px;padding-top:9px;
   border-top:1px solid var(--line);font-size:11px;color:var(--ink-3);flex-wrap:wrap}
 .host .foot b{color:var(--ink);font-family:var(--mono);font-weight:550}
@@ -384,9 +423,13 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
   align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:11px}
 .subhead .cnt{font:400 10.5px var(--mono);letter-spacing:0;text-transform:none}
 .charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
-.chart{background:linear-gradient(180deg,rgba(255,255,255,.025),transparent 40%),rgba(0,0,0,.32);
+.chart{background:
+    radial-gradient(120% 90% at 50% -10%,rgba(110,182,255,.09),transparent 58%),
+    linear-gradient(180deg,rgba(255,255,255,.035),transparent 42%),
+    rgba(0,0,0,.42);
   border:1px solid var(--line);border-radius:12px;padding:9px 10px 6px;
-  min-width:0;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+  min-width:0;position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 28px -18px rgba(0,0,0,.55)}
 .chart h5{display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-3);margin-bottom:5px}
@@ -394,7 +437,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
   letter-spacing:0;text-transform:none;font-weight:500}
 .chart .cur span{display:flex;align-items:center;gap:4px}
 .chart .cur i{width:7px;height:7px;border-radius:2px;flex:none;box-shadow:0 0 6px currentColor}
-.chart canvas{width:100%;height:86px;display:block;cursor:crosshair}
+.chart canvas{width:100%;height:104px;display:block;cursor:crosshair}
 .kv{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:4px 0;
   border-bottom:1px solid var(--line)}
 .kv:last-child{border-bottom:0}
@@ -441,14 +484,41 @@ tr:last-child td{border-bottom:0}
 .pill.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.4)}
 .bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
 
-#v-control,#v-jobs{grid-template-rows:auto auto minmax(0,1fr);align-content:start}
+#v-control{grid-template-rows:auto minmax(0,1fr);align-content:start}
+#v-jobs{grid-template-rows:auto auto auto;align-content:start}
+.jobs-aux{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;min-width:0}
+.board{display:flex;flex-direction:column;min-height:0}
+.board>.bar-row{flex:none}
+.qwrap{position:relative;flex:1;min-width:160px;max-width:340px}
+.qwrap input{width:100%;padding-right:2.4rem}
+.qwrap kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  font:600 10px var(--mono);color:var(--ink-3);border:1px solid var(--line);
+  border-radius:4px;padding:1px 5px;background:rgba(0,0,0,.35);pointer-events:none}
+
+/* Function bays — Control groups by what the tile *does*, not a flat dump */
+.bay{min-width:0}
+.bay-h{display:flex;align-items:baseline;gap:8px;padding:10px 16px 6px}
+.bay-h i{width:8px;height:8px;border-radius:2px;background:var(--bay,var(--s1));flex:none;
+  box-shadow:0 0 8px var(--bay,var(--s1));transform:translateY(1px)}
+.bay-h b{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2)}
+.bay-h .hint{font-size:11px;color:var(--ink-3);font-weight:500;letter-spacing:0;text-transform:none}
+.bay-h .cnt{margin-left:auto;font:500 11px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.bay.inference,.svc.inference{--bay:var(--s1)}
+.bay.hermes,.svc.hermes{--bay:var(--s3)}
+.bay.apps,.svc.apps{--bay:var(--s2)}
+.bay.meta,.svc.meta,.bay.other,.svc.other{--bay:var(--neutral)}
+
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;
   padding:0 14px 14px}
 .svc{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:12px;
-  padding:11px 13px;display:flex;flex-direction:column;gap:5px;min-width:0;
-  transition:border-color .15s,transform .15s}
-.svc:hover{border-color:var(--line-2)}
+  padding:11px 13px 11px 16px;display:flex;flex-direction:column;gap:5px;min-width:0;
+  transition:border-color .15s,transform .15s;position:relative}
+.svc::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;
+  border-radius:0 3px 3px 0;background:var(--bay,transparent)}
+.svc:hover{border-color:var(--line-2);transform:translateY(-1px)}
 .svc.waste{border-color:rgba(250,178,25,.42)}
+.svc.off{opacity:.7}
 .svc .name{display:flex;align-items:center;font-size:12.5px;font-weight:650;min-width:0}
 .svc .name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .svc .meta{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -459,10 +529,14 @@ tr:last-child td{border-bottom:0}
 .svc .acts .btn{padding:4px 9px;font-size:11px}
 
 .launch{display:flex;gap:9px;padding:0 14px 12px;flex-wrap:wrap}
-.lt{display:flex;align-items:center;gap:9px;background:var(--surface-2);
-  border:1px solid var(--line);border-radius:10px;padding:8px 11px;min-width:190px;transition:.15s}
-.lt.up{border-color:rgba(12,163,12,.4)}
-.lt .ico{font-size:17px;flex:none}
+.lt{display:flex;align-items:center;gap:10px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:220px;
+  flex:1 1 220px;max-width:380px;transition:.15s}
+.lt.up{border-color:rgba(74,222,154,.42)}
+.lt .ico{width:36px;height:36px;display:grid;place-items:center;flex:none;
+  font-size:18px;border-radius:10px;
+  background:linear-gradient(165deg,rgba(110,182,255,.16),rgba(255,255,255,.03));
+  border:1px solid var(--line)}
 .lt .txt{min-width:0;flex:1}
 .lt .txt b{display:flex;align-items:center;font-size:12.5px;font-weight:650}
 .lt .txt span{display:block;font-size:10.5px;color:var(--ink-3);overflow:hidden;
@@ -483,9 +557,9 @@ tr:last-child td{border-bottom:0}
 .ltile.down{opacity:.62}
 
 /* backup tiers */
-.bks{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:10px;padding:0 14px 12px}
-.bk{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
-  display:flex;flex-direction:column;gap:4px;min-width:0}
+.bks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;padding:0 14px 12px}
+.bk{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  display:flex;flex-direction:column;gap:3px;min-width:0}
 .bk.warn{border-color:rgba(250,178,25,.42)}
 .bk.fail{border-color:rgba(208,59,59,.5)}
 .bk .h{display:flex;align-items:center;gap:0;font-size:12.5px;font-weight:650;min-width:0}
@@ -533,18 +607,27 @@ tr:last-child td{border-bottom:0}
   .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
   .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:761px){
+  /* Pin filter/dock; only the tile list / job table scrolls on desktop */
+  #v-control .board #svc-body{flex:1;min-height:0;overflow:auto}
+  /* Jobs table gets a real pane (~12 rows). Token/Comfy sit below; the view scrolls. */
+  #v-jobs{grid-template-rows:auto auto auto;align-content:start}
+  #v-jobs .board{height:min(58vh,640px);min-height:360px}
+  #v-jobs .board .scroll{flex:1;min-height:0;overflow:auto}
+}
 @media (max-width:860px){
   .prow{grid-template-columns:minmax(0,1fr)}
   .hero{flex-wrap:wrap}.hero .stats{width:100%;justify-content:flex-start}
   body{padding:10px;gap:10px}header{padding:0 8px 0 12px}
-  .tab kbd{display:none}header .stamp{display:none}}
+  .tab kbd{display:none}header .stamp{display:none}
+  .jobs-aux{grid-template-columns:minmax(0,1fr)}}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TOUCH POINTERS
    Hover styling on a touchscreen sticks after a tap — fixed here rather than
    by weakening the desktop rules. ═══════════════════════════════════════════ */
 @media (hover:none){
-  .host:hover,.ltile:hover{transform:none;border-color:var(--line)}
+  .host:hover,.ltile:hover,.svc:hover{transform:none;border-color:var(--line)}
   .btn:hover:not(:disabled){color:var(--ink-2);border-color:var(--line-2);box-shadow:none}
   .att:hover{background:none}
   /* press feedback replaces hover feedback */
@@ -555,11 +638,12 @@ tr:last-child td{border-bottom:0}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PHONE  (≤760px) — iOS-shaped: bottom tab bar in the thumb arc, swipe between
-   sections, safe-area insets, 16px form text (anything smaller makes Safari
-   zoom the whole page on focus), 44px touch targets.
+   PHONE  (≤760px, or landscape phone: hover:none + short viewport) — iOS-shaped:
+   bottom tab bar in the thumb arc, swipe between sections, safe-area insets,
+   16px form text (anything smaller makes Safari zoom the whole page on focus),
+   44px touch targets.
    ═══════════════════════════════════════════════════════════════════════════ */
-@media (max-width:760px){
+@media (max-width:760px), (max-height:500px) and (max-width:950px){
 :root{--tabbar:62px;--r:16px}
 
 body{
@@ -569,14 +653,22 @@ body{
 body::before{filter:blur(36px)}
 body::after{opacity:.25;background-size:36px 36px}
 
-/* ── top bar: identity + liveness only; navigation moved to the bottom ── */
-header{padding:0 12px;gap:8px;border-radius:14px;min-height:52px}
-header nav#tabs,header .stamp{display:none}
+/* ── top bar: identity + what's serving + live. Clock is already in the
+   iOS status bar, so it yields the slot to the DS4F chip. Build id stays
+   under Spark so you can tell a cached PWA from desktop. ── */
+header{padding:0 12px;gap:6px;border-radius:14px;min-height:52px}
+header nav#tabs,header .stamp,header .clock{display:none}
 .brand{gap:8px;margin-right:0}
 .brand .bolt{width:26px;height:26px;border-radius:8px}
 .brand-txt b{font-size:13px}
 .brand-txt i{font-size:8px}
-header .clock{font-size:12px;padding-right:0}
+.serve{font-size:10px;padding:5px 8px;max-width:14ch;gap:5px}
+.live{padding:5px 8px}
+#ver-bar:not([hidden]){
+  display:block;position:fixed;z-index:71;
+  left:calc(var(--sal) + 10px);right:calc(var(--sar) + 10px);
+  bottom:calc(var(--sab) + var(--tabbar) + 10px);
+  max-width:none}
 
 /* errors become a toast above the tab bar instead of a truncated header chip */
 header .err{display:none}
@@ -643,7 +735,6 @@ header .err:not(:empty){
 .mrow{grid-template-columns:24px 1fr auto;gap:5px}
 .mrow label{font-size:8.5px}
 .mrow .v{font-size:9.5px}
-.spark{height:26px;margin-top:6px}
 .host .foot{gap:7px;font-size:9.5px;margin-top:6px;padding-top:6px}
 
 .att{padding:11px 9px}                    /* 44px row target */
@@ -661,7 +752,8 @@ header .err:not(:empty){
 .chart{padding:7px 7px 4px}
 .chart h5{font-size:9px}
 .chart .cur{font-size:10px;gap:6px}
-.chart canvas{height:68px}
+.chart canvas{height:80px}
+.spark{height:30px;margin-top:6px}
 .ctrs{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));max-height:none}
 #elec-panel{padding:12px 12px 10px}
 .elec-top{gap:8px 10px;margin-bottom:8px}
@@ -675,20 +767,27 @@ header .err:not(:empty){
    rows of vertical space on a 390px screen */
 .bar-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:10px 12px;gap:7px}
 .bar-row::-webkit-scrollbar{display:none}
-.bar-row input[type=text]{flex:0 0 auto;width:44vw;max-width:none;min-width:0}
+.bar-row .qwrap{flex:0 0 auto;width:44vw;max-width:none;min-width:0}
+.bar-row .qwrap kbd{display:none}
+.bar-row .qwrap input{width:100%;max-width:none;min-width:0;padding-right:12px}
 .bar-row .note{margin-left:0;flex:0 0 auto;padding-right:4px}
-.pill{padding:8px 14px}                   /* 36px tall, thumb-sized */
+.board,#v-control .board #svc-body,#v-jobs .board .scroll{overflow:visible;flex:none}
+#v-jobs .board{height:auto;min-height:0}
+.jobs-aux{display:flex;flex-direction:column;gap:11px}
+.bay-h{padding:8px 12px 4px}
+.pill{padding:10px 14px;min-height:44px;display:inline-flex;align-items:center}
 input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom */
 
 .tiles{grid-template-columns:minmax(0,1fr);gap:9px;padding:0 12px 12px}
-.svc{padding:12px 13px}
+.svc{padding:12px 13px 12px 16px}
 .svc .name{font-size:13.5px}
 .svc .acts{gap:7px;margin-top:6px}
-.svc .acts .btn{flex:1;padding:9px 10px;font-size:12px;text-align:center}
+.svc .acts .btn{flex:1;padding:9px 10px;font-size:12px;text-align:center;min-height:44px}
 .svc .acts select{flex:1 1 100%;font-size:16px}
 .launch{padding:0 12px 12px;gap:8px}
-.lt{min-width:0;width:100%;padding:10px 12px}
-.lt .btn{padding:9px 14px}
+.lt{min-width:0;width:100%;max-width:none;padding:10px 12px}
+.lt .btn{padding:9px 14px;min-height:44px}
+.lt .ico{width:40px;height:40px}
 .lgroup{padding:0 12px 4px}
 .ltiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .bks{grid-template-columns:minmax(0,1fr);gap:9px;padding:0 12px 12px}
@@ -769,12 +868,13 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
   .ltiles{grid-template-columns:minmax(0,1fr)}
 }
 
-/* landscape phone: the bar bar would eat a third of a 390px-tall viewport */
+/* landscape phone: compact tab bar; 2 host columns so names stay readable
+   (4-col at 844px truncated sparkmax-10ef / sparkymaxxx-12ef to lookalikes) */
 @media (max-height:460px) and (max-width:900px){
   :root{--tabbar:46px}
   .tb{font-size:8.5px}
   .tb svg{width:18px;height:18px}
-  .hosts{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>
 </head>
@@ -787,7 +887,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
         <path d="M13 2L6 13h5l-1 9 9-13h-5l1-7z" fill="#6eb6ff"/>
       </svg>
     </span>
-    <span class="brand-txt"><b>Spark</b><i>Console</i></span>
+    <span class="brand-txt"><b>Spark</b><i id="build-label" title="This page's build. If it doesn't match desktop, the iPhone still has a cached copy.">{{CONSOLE_BUILD}}</i></span>
   </div>
   <nav id="tabs">
     <div class="tab on" data-tab="pulse"><kbd>1</kbd>Pulse <span class="badge" id="b-pulse" hidden></span></div>
@@ -797,10 +897,14 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
   </nav>
   <span class="sp"></span>
   <span class="err" id="err"></span>
-  <span class="live" id="live" title="live heartbeat"><i class="dot"></i><span id="live-txt">live</span></span>
+  <div class="status">
+    <span class="serve" id="serve" hidden title="What's answering right now"></span>
+    <span class="live" id="live" title="live heartbeat"><i class="dot"></i><span id="live-txt">live</span></span>
+  </div>
   <span class="stamp" id="stamp"></span>
   <span class="clock" id="clock"></span>
 </header>
+<button type="button" id="ver-bar" hidden>New console on the Spark — tap to reload</button>
 
 <!-- ═══════════════ PULSE ═══════════════ -->
 <section class="view on" id="v-pulse">
@@ -830,7 +934,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
       <div class="elec-rate">
         <label for="elec-rate">$/kWh</label>
         <input id="elec-rate" type="number" min="0" max="5" step="0.001" inputmode="decimal"
-               title="Your electricity rate — edits save in this browser">
+               title="Energy charge only (Ameren MO 1(M) Evening/Morning Saver: 15.24¢/kWh Jun–Sep, 10.45¢ winter first 750 kWh). Does not include the $9.19/mo customer charge.">
       </div>
       <div class="elec-rate">
         <label for="elec-mode">Bill basis</label>
@@ -842,7 +946,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
       <div class="elec-rate" id="elec-idle-wrap">
         <label for="elec-idle">Spark idle wall W</label>
         <input id="elec-idle" type="number" min="10" max="200" step="1" inputmode="decimal"
-               title="Outlet watts at idle (USB-C / Kill-A-Watt). Only used for Wall estimate.">
+               title="Outlet watts at idle with CX7 in its usual state (this cluster ~50 W with fabric up). Measure with a USB-C / Kill-A-Watt. GPU floor is 11 W (this fleet's idle nvidia-smi).">
       </div>
       <span class="elec-note" id="elec-note">Wall estimate × rate — bill-like, not a live projection.</span>
     </div>
@@ -852,33 +956,40 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
-  <div class="card">
+  <div class="card dock-card">
+    <h3>This desk <span class="cnt">opens on the physical display</span></h3>
+    <div class="launch" id="launch-apps"></div></div>
+  <div class="card board">
     <div class="bar-row">
-      <input type="text" id="svc-q" placeholder="filter services & apps…" oninput="renderControl()">
+      <div class="qwrap">
+        <input type="text" id="svc-q" placeholder="Find a service or app…" autocomplete="off"
+               oninput="renderControl()" aria-label="Filter services">
+        <kbd>/</kbd>
+      </div>
       <span class="pill on" data-g="all" onclick="svcGroup(this)">All</span>
       <span class="pill" data-g="inference" onclick="svcGroup(this)">Inference</span>
       <span class="pill" data-g="hermes" onclick="svcGroup(this)">Hermes</span>
       <span class="pill" data-g="apps" onclick="svcGroup(this)">Apps</span>
       <span class="pill" data-g="meta" onclick="svcGroup(this)">Meta</span>
       <span class="note" id="svc-op"></span>
+      <span class="cnt" id="svc-cnt" hidden></span>
     </div>
-  </div>
-  <div class="card"><h3>Desktop apps <span class="cnt">launch on the physical display :0</span></h3>
-    <div class="launch" id="launch-apps"></div></div>
-  <div class="card" style="overflow:auto">
-    <h3>Services <span class="cnt" id="svc-cnt"></span></h3>
-    <div class="tiles" id="services"></div>
-    <div id="remote-links"></div>
+    <div id="svc-body">
+      <div id="services"></div>
+      <div id="remote-links"></div>
+    </div>
   </div>
 </section>
 
 <!-- ═══════════════ JOBS ═══════════════ -->
 <section class="view" id="v-jobs">
-  <div class="card"><h3>Backup tiers <span class="cnt" id="bk-cnt"></span></h3>
-    <div class="bks" id="backups"></div></div>
-  <div class="card">
+  <div class="card board">
     <div class="bar-row">
-      <input type="text" id="auto-q" placeholder="filter jobs…" oninput="renderJobs()">
+      <div class="qwrap">
+        <input type="text" id="auto-q" placeholder="Find a job…" autocomplete="off"
+               oninput="renderJobs()" aria-label="Filter jobs">
+        <kbd>/</kbd>
+      </div>
       <span class="pill on" data-l="all" onclick="autoLayer(this)">All</span>
       <span class="pill" data-l="hermes" onclick="autoLayer(this)">Hermes</span>
       <span class="pill" data-l="crontab" onclick="autoLayer(this)">Crontab</span>
@@ -886,51 +997,55 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
       <span class="pill" data-l="problem" onclick="autoLayer(this)">Problems</span>
       <span class="note" id="auto-summary"></span>
     </div>
+    <div class="scroll" id="jobs"></div>
   </div>
-  <div class="card" style="overflow:auto"><div class="scroll" style="padding-top:0" id="jobs"></div></div>
-  <div class="card"><h3>LLM token usage <span class="cnt" id="tok-cnt"></span></h3>
-    <div id="tokenusage" class="tok-card">
-      <div class="tok-chart-wrap">
-        <div class="tok-chart-h">
-          <span>14-day tokens</span>
-          <span class="leg"><i style="background:var(--s1)"></i>in <i style="background:var(--s3)"></i>out</span>
-          <b id="tok-chart-sum">…</b>
+  <div class="card"><h3>Backup tiers <span class="cnt" id="bk-cnt"></span></h3>
+    <div class="bks" id="backups"></div></div>
+  <div class="jobs-aux">
+    <div class="card"><h3>LLM token usage <span class="cnt" id="tok-cnt"></span></h3>
+      <div id="tokenusage" class="tok-card">
+        <div class="tok-chart-wrap">
+          <div class="tok-chart-h">
+            <span>14-day tokens</span>
+            <span class="leg"><i style="background:var(--s1)"></i>in <i style="background:var(--s3)"></i>out</span>
+            <b id="tok-chart-sum">…</b>
+          </div>
+          <canvas id="tok-chart" aria-label="14-day input and output tokens"></canvas>
         </div>
-        <canvas id="tok-chart" aria-label="14-day input and output tokens"></canvas>
-      </div>
-      <div class="tok-stats">
-        <div class="tok-stat">
-          <div class="lbl">Per session · in+out</div>
-          <div class="row"><span>mean</span><span id="tok-s-mean">…</span></div>
-          <div class="row"><span>median</span><span id="tok-s-median">…</span></div>
-          <div class="row"><span>mode</span><span id="tok-s-mode">…</span></div>
-          <div class="row"><span>p90 / n</span><span id="tok-s-p90">…</span></div>
+        <div class="tok-stats">
+          <div class="tok-stat">
+            <div class="lbl">Per session · in+out</div>
+            <div class="row"><span>mean</span><span id="tok-s-mean">…</span></div>
+            <div class="row"><span>median</span><span id="tok-s-median">…</span></div>
+            <div class="row"><span>mode</span><span id="tok-s-mode">…</span></div>
+            <div class="row"><span>p90 / n</span><span id="tok-s-p90">…</span></div>
+          </div>
+          <div class="tok-stat">
+            <div class="lbl">Per API call · in+out</div>
+            <div class="row"><span>mean</span><span id="tok-c-mean">…</span></div>
+            <div class="row"><span>median</span><span id="tok-c-median">…</span></div>
+            <div class="row"><span>mode</span><span id="tok-c-mode">…</span></div>
+            <div class="row"><span>p90 / n</span><span id="tok-c-p90">…</span></div>
+          </div>
         </div>
-        <div class="tok-stat">
-          <div class="lbl">Per API call · in+out</div>
-          <div class="row"><span>mean</span><span id="tok-c-mean">…</span></div>
-          <div class="row"><span>median</span><span id="tok-c-median">…</span></div>
-          <div class="row"><span>mode</span><span id="tok-c-mode">…</span></div>
-          <div class="row"><span>p90 / n</span><span id="tok-c-p90">…</span></div>
+        <div class="mrow"><label>24h in/out</label><span class="v" id="tok-24h">…</span></div>
+        <div class="mrow"><label>all-time in</label><span class="v" id="tok-in">…</span></div>
+        <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
+        <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
+        <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
+      </div></div>
+    <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
+      <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
+        <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
+        <div class="mrow" style="border:0"><label>open</label>
+          <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
+        <div id="comfy-body">
+          <div class="cfy-idle" id="comfy-empty">offline / on-demand</div>
         </div>
-      </div>
-      <div class="mrow"><label>24h in/out</label><span class="v" id="tok-24h">…</span></div>
-      <div class="mrow"><label>all-time in</label><span class="v" id="tok-in">…</span></div>
-      <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
-      <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
-      <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
-    </div></div>
-  <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
-    <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
-      <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
-      <div class="mrow" style="border:0"><label>open</label>
-        <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
-      <div id="comfy-body">
-        <div class="cfy-idle" id="comfy-empty">offline / on-demand</div>
-      </div>
-      <div class="mrow" id="comfy-vram-row" style="margin-top:8px"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
-      <div id="comfy-inv-wrap"></div>
-    </div></div>
+        <div class="mrow" id="comfy-vram-row" style="margin-top:8px"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
+        <div id="comfy-inv-wrap"></div>
+      </div></div>
+  </div>
 </section>
 
 <div id="tip"></div>
@@ -982,7 +1097,7 @@ const tempSpan=(c,kind)=>{const b=tempBand(c,kind);
 
 let DATA={},TAB=(location.hash||"#pulse").slice(1);
 const TABS=["pulse","fleet","control","jobs"];
-const phone=()=>window.matchMedia("(max-width:760px)").matches;
+const phone=()=>window.matchMedia("(max-width:760px), (max-height: 500px) and (max-width: 950px)").matches;
 
 /* ══════════════════════ tabs ══════════════════════
    Two tab surfaces drive the same switchTab(): the desktop strip in the header
@@ -1104,12 +1219,29 @@ function offlineHost(id,name,role,h){
    gauges would snap instead of sweep. Build the DOM when the host SET changes;
    after that only write values. ────────────────────────────────────────── */
 const ARC=216.8, CIRC=289.0;           /* 270° of r=46 · full circumference */
+const CARD_MARK="g3";                  /* bump to force in-place card rebuild */
 let cardKeys="";
 const HIST={};                          /* per-host dial trend, fed at 1 Hz */
 const HIST_N=120;                       /* 120 × 1 s tick = 2 min of trace */
 
+function gaugeTicks(){
+  const cx=60,cy=60,r=46;
+  let s="";
+  for(let i=0;i<=4;i++){
+    const rad=(135+i*(270/4))*Math.PI/180;
+    const x1=cx+Math.cos(rad)*(r-6), y1=cy+Math.sin(rad)*(r-6);
+    const x2=cx+Math.cos(rad)*(r+1.5), y2=cy+Math.sin(rad)*(r+1.5);
+    s+=`<line class="gtick" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
+  }
+  return s;
+}
+function gaugeCapXY(p){
+  const rad=(135+(270*clamp(p,0,100)/100))*Math.PI/180;
+  return [60+Math.cos(rad)*46, 60+Math.sin(rad)*46];
+}
 function hostCardHtml(h){
   const gid=`gg-${h.id}`;
+  const [cx0,cy0]=gaugeCapXY(0);
   return `
   <div class="card host" id="hc-${h.id}" onclick="switchTab('fleet')">
     <div class="hh"><i class="st stale" data-f="mark">○</i><b data-f="name">${esc(h.name)}</b>
@@ -1122,12 +1254,25 @@ function hostCardHtml(h){
             <stop offset="0%" data-f="g0" stop-color="#9fd0ff"/>
             <stop offset="100%" data-f="g1" stop-color="#6eb6ff"/>
           </linearGradient>
+          <radialGradient id="${gid}-core" cx="50%" cy="42%" r="58%">
+            <stop offset="0%" data-f="gc0" stop-color="#6eb6ff" stop-opacity=".32"/>
+            <stop offset="70%" stop-color="#6eb6ff" stop-opacity="0"/>
+          </radialGradient>
         </defs>
+        <circle class="gwell" cx="60" cy="60" r="38"></circle>
+        <circle class="gcore" cx="60" cy="60" r="36" fill="url(#${gid}-core)"></circle>
+        ${gaugeTicks()}
         <circle class="track" cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"></circle>
+        <circle class="halo"  cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"
+          stroke-dashoffset="${ARC}" data-f="halo" stroke="url(#${gid})"></circle>
         <circle class="fill"  cx="60" cy="60" r="46" stroke-dasharray="${ARC} ${CIRC}"
           stroke-dashoffset="${ARC}" data-f="arc" stroke="url(#${gid})" style="color:var(--s1)"></circle>
-        <text class="gv" x="60" y="60" data-f="dv">–</text>
-        <text class="gl" x="60" y="76" data-f="dl">${esc(h.dialLabel)}</text>
+        <circle class="gcap-halo" data-f="caph" cx="${cx0.toFixed(1)}" cy="${cy0.toFixed(1)}"
+          r="7" fill="#6eb6ff"></circle>
+        <circle class="gcap" data-f="cap" cx="${cx0.toFixed(1)}" cy="${cy0.toFixed(1)}"
+          r="3.15" fill="#fff"></circle>
+        <text class="gv" x="60" y="58" data-f="dv">–</text>
+        <text class="gl" x="60" y="74" data-f="dl">${esc(h.dialLabel)}</text>
       </svg>
       <div class="gside">
         <div class="mrow"><label>cpu</label><div class="bar"><i data-f="bcpu"></i></div>
@@ -1150,7 +1295,7 @@ function dialPalette(p, offline){
   return {css:"var(--s1)", hex:"#6eb6ff", g0:"#9fd0ff", g1:"#6eb6ff"};
 }
 function renderHosts(hosts){
-  const key=hosts.map(h=>h.id).join("|");
+  const key=CARD_MARK+"|"+hosts.map(h=>h.id).join("|");
   if(key!==cardKeys){$("hosts").innerHTML=hosts.map(hostCardHtml).join("");cardKeys=key;}
   hosts.forEach(h=>{
     const c=$("hc-"+h.id); if(!c)return;
@@ -1161,13 +1306,23 @@ function renderHosts(hosts){
     f("up").textContent=h.up;
     const p=clamp(+h.dial||0,0,100);
     const pal=dialPalette(p, !!h.offline);
+    const off=String(ARC*(1-p/100));
     const arc=f("arc");
-    arc.setAttribute("stroke-dashoffset",String(ARC*(1-p/100)));
+    arc.setAttribute("stroke-dashoffset",off);
     arc.setAttribute("stroke",`url(#gg-${h.id})`);
     arc.style.color=pal.hex;
-    const g0=f("g0"), g1=f("g1");
+    const halo=f("halo");
+    if(halo){halo.setAttribute("stroke-dashoffset",off);halo.setAttribute("stroke",pal.hex);}
+    const [cx,cy]=gaugeCapXY(h.offline?0:p);
+    const cap=f("cap"), caph=f("caph");
+    if(cap){cap.setAttribute("cx",cx.toFixed(1));cap.setAttribute("cy",cy.toFixed(1));
+      cap.setAttribute("fill",h.offline?"#9aa3b2":"#fff");}
+    if(caph){caph.setAttribute("cx",cx.toFixed(1));caph.setAttribute("cy",cy.toFixed(1));
+      caph.setAttribute("fill",pal.hex);caph.style.opacity=h.offline?".12":".42";}
+    const g0=f("g0"), g1=f("g1"), gc0=f("gc0");
     if(g0)g0.setAttribute("stop-color",pal.g0);
     if(g1)g1.setAttribute("stop-color",pal.g1);
+    if(gc0)gc0.setAttribute("stop-color",pal.hex);
     f("dv").textContent=h.offline?"–":Math.round(p)+"%";
     f("dl").textContent=h.dialLabel;
     for(const[k,val,txt]of[["cpu",h.cpu,Math.round(h.cpu)+"%"],
@@ -1210,23 +1365,19 @@ function drawSpark(cv,vals,col){
     x.fillText("collecting trend…",0,h/2+3);return;
   }
   const c=col.startsWith("var")?cssVar(col.slice(4,-1),"#6eb6ff"):(col||"#6eb6ff");
-  /* Autoscale to the data's OWN range — gauge already shows absolute level. */
   const lo=Math.min(...vals),hi=Math.max(...vals);
   const pad=Math.max(1.5,(hi-lo)*.3);
   const y0=Math.max(0,lo-pad),y1=Math.min(100,hi+pad),span=Math.max(1,y1-y0);
   const padR=vals.length?30:0;
   const plotW=Math.max(1,w-padR);
-  const X=i=>i/(vals.length-1)*plotW, Y=v=>h-2-((clamp(v,y0,y1)-y0)/span)*(h-5);
-  const gr=x.createLinearGradient(0,0,0,h);
-  gr.addColorStop(0,withAlpha(c,.32));gr.addColorStop(1,withAlpha(c,.02));
-  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
-  x.lineTo(plotW,h);x.lineTo(0,h);x.closePath();x.fillStyle=gr;x.fill();
-  x.beginPath();vals.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
-  x.strokeStyle=c;x.lineWidth=1.75;x.lineJoin="round";x.lineCap="round";x.stroke();
-  /* soft live tip */
-  const lx=X(vals.length-1), ly=Y(vals[vals.length-1]);
-  x.beginPath();x.arc(lx,ly,4.5,0,7);x.fillStyle=withAlpha(c,.22);x.fill();
-  x.beginPath();x.arc(lx,ly,2.1,0,7);x.fillStyle=c;x.fill();
+  const X=i=>i/(vals.length-1)*plotW, Y=v=>h-3-((clamp(v,y0,y1)-y0)/span)*(h-6);
+  const pts=vals.map((v,i)=>[X(i),Y(v)]);
+  x.strokeStyle="rgba(255,255,255,.05)";x.lineWidth=1;
+  x.beginPath();x.moveTo(0,h/2);x.lineTo(plotW,h/2);x.stroke();
+  fillSmooth(x,pts,h,c,.42,.02);
+  strokeGlow(x,pts,c,1.9);
+  const lx=pts[pts.length-1][0], ly=pts[pts.length-1][1];
+  drawTip(x,lx,ly,c,2.2);
   x.fillStyle=cssVar("--ink-3","#667085");x.font="8px "+mono;
   x.textAlign="right";x.textBaseline="middle";
   x.fillText(`${Math.round(lo)}–${Math.round(hi)}%`,w,h/2);
@@ -1243,7 +1394,8 @@ function renderHero(hosts,items,d){
   else if(warn){$("hero-title").textContent=`${warn} warning${warn>1?"s":""}`;
     $("hero-sub").textContent=items.find(i=>i.sev==="warn").msg;}
   else{$("hero-title").textContent="All systems nominal";
-    $("hero-sub").textContent="nothing on the fleet needs you right now";}
+    const serve=servingBits(d).map(e=>shortModel(e.id)+(e.port?` :${e.port}`:"")).join(" · ");
+    $("hero-sub").textContent=serve?`Serving ${serve}`:"nothing on the fleet needs you right now";}
   const up=hosts.filter(h=>!h.offline).length;
   const svc=(((d.services||{}).services)||[]);
   const auto=(d.automation||{}).counts||{},bk=(d.backups||{}).counts||{};
@@ -1301,7 +1453,7 @@ function renderAttention(items){
        <div class="body"><div class="m" title="${esc(i.msg)}">${esc(i.msg)}</div>
          ${i.sub?`<div class="sub" title="${esc(i.sub)}">${esc(i.sub)}</div>`:""}</div>
        <span class="src">${esc(i.src)}</span></div>`).join("")
-    :`<div class="allclear"><div class="big">●</div><b>Fleet healthy</b>
+    :`<div class="allclear"><div class="big">●</div><b>Quiet watch</b>
        <span>no alerts, no failing jobs, backups current</span></div>`;
 }
 
@@ -1336,6 +1488,39 @@ function withAlpha(hex,a){
   if([r,g,b].some(n=>Number.isNaN(n)))return hex;
   return `rgba(${r},${g},${b},${a})`;
 }
+/* Midpoint quadratic — reads as a trace, not a seismograph. */
+function walkSmooth(ctx,pts){
+  if(!pts.length)return;
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  if(pts.length===1)return;
+  if(pts.length===2){ctx.lineTo(pts[1][0],pts[1][1]);return;}
+  for(let i=1;i<pts.length-1;i++){
+    ctx.quadraticCurveTo(pts[i][0],pts[i][1],(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2);
+  }
+  ctx.lineTo(pts[pts.length-1][0],pts[pts.length-1][1]);
+}
+function fillSmooth(ctx,pts,yBot,color,a0,a1){
+  if(pts.length<2)return;
+  const gr=ctx.createLinearGradient(0,pts.reduce((m,p)=>Math.min(m,p[1]),1e9),0,yBot);
+  gr.addColorStop(0,withAlpha(color,a0));gr.addColorStop(1,withAlpha(color,a1));
+  ctx.beginPath();walkSmooth(ctx,pts);
+  ctx.lineTo(pts[pts.length-1][0],yBot);ctx.lineTo(pts[0][0],yBot);ctx.closePath();
+  ctx.fillStyle=gr;ctx.fill();
+}
+function strokeGlow(ctx,pts,color,width){
+  if(pts.length<2)return;
+  ctx.lineJoin="round";ctx.lineCap="round";
+  ctx.beginPath();walkSmooth(ctx,pts);
+  ctx.strokeStyle=withAlpha(color,.18);ctx.lineWidth=width*2.6;ctx.stroke();
+  ctx.beginPath();walkSmooth(ctx,pts);
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+}
+function drawTip(ctx,x,y,color,r){
+  r=r||2.2;
+  ctx.beginPath();ctx.arc(x,y,r*2.45,0,7);ctx.fillStyle=withAlpha(color,.24);ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,r*1.15,0,7);ctx.fillStyle="#fff";ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,r*.72,0,7);ctx.fillStyle=color;ctx.fill();
+}
 const CHARTS=[
   {key:"cpu",title:"CPU · GPU",  a:"cpu",b:"gpu", unit:"%",  max:100,an:"CPU",bn:"GPU"},
   {key:"mem",title:"Mem · Swap", a:"mem",b:"swap",unit:"%",  max:100,an:"Mem",bn:"Swap"},
@@ -1369,13 +1554,20 @@ function drawChart(cv,samples,cfg,hoverX){
     :v>=1024?(v/1024).toFixed(v>=10240?0:1)+"M":Math.round(v)+"";
 
   x.font="9px "+cssVar("--mono","monospace");
+  const well=x.createLinearGradient(0,padT,0,padT+ph);
+  well.addColorStop(0,"rgba(110,182,255,.055)");well.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=well;x.fillRect(padL,padT,pw,ph);
+  x.setLineDash([3,5]);
   for(const fr of[0,.5,1]){
     const yy=padT+ph*(1-fr);
     x.strokeStyle=grid;x.lineWidth=1;
     x.beginPath();x.moveTo(padL,yy);x.lineTo(padL+pw,yy);x.stroke();
+    x.setLineDash([]);
     x.fillStyle=ink3;x.textAlign="right";x.textBaseline="middle";
     x.fillText(tick(ymax*fr),padL-4,yy+(fr===0?-1:fr===1?1:0));
+    x.setLineDash([3,5]);
   }
+  x.setLineDash([]);
   x.textAlign="left";x.textBaseline="top";x.fillText(cfg.unit,padL+2,padT+1);
   x.textAlign="center";
   for(const[t,lab,al]of[[tmin,"−60s","left"],[tmin+win/2,"−30s","center"],[tmax,"now","right"]]){
@@ -1384,17 +1576,17 @@ function drawChart(cv,samples,cfg,hoverX){
 
   const series=(f,color)=>{
     if(pts.length<2)return;
-    const gr=x.createLinearGradient(0,padT,0,padT+ph);
-    gr.addColorStop(0,withAlpha(color,.28));gr.addColorStop(1,withAlpha(color,.02));
-    x.beginPath();pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
-    x.lineTo(X(pts[pts.length-1].t),padT+ph);x.lineTo(X(pts[0].t),padT+ph);x.closePath();
-    x.fillStyle=gr;x.fill();
-    x.beginPath();
-    pts.forEach((p,i)=>i?x.lineTo(X(p.t),Y(p[f]||0)):x.moveTo(X(p.t),Y(p[f]||0)));
-    x.strokeStyle=color;x.lineWidth=1.85;x.lineJoin="round";x.lineCap="round";x.stroke();
+    const pts2=pts.map(p=>[X(p.t),Y(p[f]||0)]);
+    fillSmooth(x,pts2,padT+ph,color,.36,.02);
+    strokeGlow(x,pts2,color,2.05);
   };
   if(cfg.b)series(cfg.b,B);
   series(cfg.a,A);
+  if(pts.length){
+    const last=pts[pts.length-1];
+    drawTip(x,X(last.t),Y(last[cfg.a]||0),A,2.15);
+    if(cfg.b)drawTip(x,X(last.t),Y(last[cfg.b]||0),B,1.85);
+  }
 
   let cur=pts[pts.length-1];
   if(hoverX!=null&&pts.length){
@@ -1405,11 +1597,7 @@ function drawChart(cv,samples,cfg,hoverX){
     x.beginPath();x.moveTo(X(cur.t),padT);x.lineTo(X(cur.t),padT+ph);x.stroke();
     const dots=[[cfg.a,A]];if(cfg.b)dots.push([cfg.b,B]);
     for(const[f,c]of dots){
-      x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),5,0,7);
-      x.fillStyle=withAlpha(c,.2);x.fill();
-      x.beginPath();x.arc(X(cur.t),Y(cur[f]||0),2.6,0,7);
-      x.fillStyle=c;x.fill();
-      x.strokeStyle=cssVar("--surface","#10141c");x.lineWidth=1.5;x.stroke();
+      drawTip(x,X(cur.t),Y(cur[f]||0),c,2.45);
     }
   }
   const el=$(cv.id+"-cur");
@@ -1494,29 +1682,30 @@ function drawTokChart(series){
   const out=pts.map(p=>+p.output_tokens||0);
   const totals=pts.map((_,i)=>inn[i]+out[i]);
   const hi=Math.max(1,...totals);
-  const padL=2,padR=2,padT=4,padB=14;
+  const padL=2,padR=2,padT=6,padB=15;
   const plotW=Math.max(1,w-padL-padR), plotH=Math.max(1,h-padT-padB);
   const X=i=>padL+(i/(pts.length-1))*plotW;
   const Y=v=>padT+plotH-((v/hi)*plotH);
   const s1=(getComputedStyle(document.documentElement).getPropertyValue("--s1").trim())||"#6eb6ff";
   const good=(getComputedStyle(document.documentElement).getPropertyValue("--s3").trim())||"#5ed4a8";
-
-  // stacked area: input (bottom) + output (top)
-  const fillArea=(ys,color,alpha)=>{
-    x.beginPath();
-    ys.forEach((v,i)=>{const xx=X(i),yy=Y(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy);});
-    x.lineTo(X(ys.length-1),Y(0));x.lineTo(X(0),Y(0));x.closePath();
-    x.fillStyle=withAlpha(color,alpha);x.fill();
-  };
-  fillArea(inn,s1,.22);
-  fillArea(totals,good,.16);
-  x.beginPath();
-  totals.forEach((v,i)=>{const xx=X(i),yy=Y(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy);});
-  x.strokeStyle=s1;x.lineWidth=1.7;x.lineJoin="round";x.stroke();
-  // soft tip on latest day
+  const yBase=padT+plotH;
+  const innPts=inn.map((v,i)=>[X(i),Y(v)]);
+  const totPts=totals.map((v,i)=>[X(i),Y(v)]);
+  x.setLineDash([3,4]);
+  x.strokeStyle="rgba(255,255,255,.07)";x.lineWidth=1;
+  x.beginPath();x.moveTo(padL,yBase);x.lineTo(padL+plotW,yBase);x.stroke();
+  x.beginPath();x.moveTo(padL,(padT+yBase)/2);x.lineTo(padL+plotW,(padT+yBase)/2);x.stroke();
+  x.setLineDash([]);
+  fillSmooth(x,totPts,yBase,good,.32,.03);
+  fillSmooth(x,innPts,yBase,s1,.40,.04);
+  strokeGlow(x,totPts,good,1.85);
+  strokeGlow(x,innPts,s1,1.5);
   const li=totals.length-1;
-  x.beginPath();x.arc(X(li),Y(totals[li]),2.4,0,7);x.fillStyle=s1;x.fill();
-  x.fillStyle="rgba(255,255,255,.35)";x.font="9px "+mono;
+  drawTip(x,X(li),Y(totals[li]),s1,2.25);
+  x.fillStyle="rgba(255,255,255,.38)";x.font="9px "+mono;
+  x.textAlign="right";x.textBaseline="top";
+  x.fillText(tokFmt(hi),w-2,1);
+  x.textAlign="left";x.textBaseline="alphabetic";
   const labels=[0, Math.floor((pts.length-1)/2), pts.length-1];
   labels.forEach(i=>{
     const d=String(pts[i].day||"").slice(5); // MM-DD
@@ -1765,17 +1954,35 @@ async function pollComfy(){
 const ELEC_KEY="spark-console-kwh-rate";
 const ELEC_IDLE_KEY="spark-console-idle-wall-w";
 const ELEC_MODE_KEY="spark-console-elec-mode";
-const ELEC_DEFAULT=0.145;
+/* Ameren MO 1(M) Evening/Morning Saver energy charge (tariff effective 2026-06-01).
+   Summer Jun–Sep 15.24¢; winter first 750 kWh 10.45¢. Energy only — not $9.19/mo customer charge. */
+function amerenEnergyDefault(){
+  const m=new Date().getMonth()+1;
+  return (m>=6&&m<=9)?0.1524:0.1045;
+}
+const ELEC_DEFAULT=amerenEnergyDefault();
 const ELEC_IDLE_DEFAULT=50;
 let ENERGY=null;   // last /api/energy-cost payload
 const ELEC_NAMES={node1:"sparkmax-10ef",node2:"sparkymaxxx-12ef",
   pi:"raspberrypi",start9:"cosmic-charcoal"};
 function elecSrcLabel(id, mode){
-  if(id==="pi")return "board PMIC";
-  if(id==="start9")return "RAPL pkg+DRAM";
+  if(id==="pi")return mode==="wall"?"board PMIC × 1.12 PSU":"board PMIC";
+  if(id==="start9")return "RAPL pkg+DRAM (not wall)";
   return mode==="wall"?"wall est ← GPU":"GPU draw (understates wall)";
 }
 function getKwhRate(){
+  // v3: replace the old baked-in 14.5¢ default with the Jun 2026 Ameren energy charge.
+  // Do not overwrite a rate the human actually typed.
+  const verKey="spark-console-kwh-rate-v";
+  if(localStorage.getItem(verKey)!=="3"){
+    localStorage.setItem(verKey,"3");
+    const prev=localStorage.getItem(ELEC_KEY);
+    if(prev==null||prev==="0.145"){
+      const n=amerenEnergyDefault();
+      localStorage.setItem(ELEC_KEY,String(n));
+      return n;
+    }
+  }
   const raw=localStorage.getItem(ELEC_KEY);
   const n=raw==null?ELEC_DEFAULT:parseFloat(raw);
   return (Number.isFinite(n)&&n>=0)?n:ELEC_DEFAULT;
@@ -1850,7 +2057,8 @@ function costSuffix(nodeId){
   const tag=c.complete?"":"~";
   return ` · ${tag}${fmtUsd(c.usd)}/24h`;
 }
-function elecCellHtml(title, src, kwh24, kwh30, hrs24, hrs30, complete24, complete30, cls){
+function elecCellHtml(title, src, kwh24, kwh30, hrs24, hrs30, complete24, complete30, cls, extra){
+  extra=extra||{};
   if(kwh24==null&&kwh30==null){
     return `<div class="elec-cell ${cls||""}"><div class="n">${esc(title)}</div>
       <div class="src">${esc(src||"")}</div><div class="w">—</div>
@@ -1863,9 +2071,11 @@ function elecCellHtml(title, src, kwh24, kwh30, hrs24, hrs30, complete24, comple
   const cov30=hrs30!=null?`${Math.round(hrs30*10)/10}h`:"—";
   const mark24=complete24?"":" partial";
   const mark30=complete30?"":(hrs30>=24?" building":" partial");
+  const avg=extra.avg24!=null?` · ≈${Math.round(extra.avg24)} W avg`:"";
+  const sens=extra.sensor24!=null?` · GPU ${fmtKwh(extra.sensor24)}`:"";
   return `<div class="elec-cell ${cls||""}"><div class="n">${esc(title)}</div>
-    <div class="src">${esc(src)}</div>
-    <div class="w"><b>${fmtUsd(u24)}</b> /24h <span style="color:var(--ink-3)">· ${fmtKwh(kwh24)} · ${cov24}${mark24}</span></div>
+    <div class="src">${esc(src)}${avg}</div>
+    <div class="w"><b>${fmtUsd(u24)}</b> /24h <span style="color:var(--ink-3)">· ${fmtKwh(kwh24)} · ${cov24}${mark24}${sens}</span></div>
     <div class="c"><b>${fmtUsd(u30)}</b> /30d <span>· ${fmtKwh(kwh30)} · ${cov30}${mark30}</span></div></div>`;
 }
 function paintElecPanel(){
@@ -1901,24 +2111,28 @@ function paintElecPanel(){
   let html="";
   for(const id of["node1","node2","pi","start9"]){
     const a=n24[id]||{}, b=n30[id]||{};
+    const extra={avg24:a.avg_w};
+    if(mode==="wall"&&(id==="node1"||id==="node2")&&a.sensor_kwh!=null)extra.sensor24=a.sensor_kwh;
     html+=elecCellHtml(names[id], elecSrcLabel(id, mode),
       a.kwh, b.kwh, a.hours_covered, b.hours_covered,
-      a.complete, b.complete);
+      a.complete, b.complete, "", extra);
   }
   const sparksSrc=mode==="wall"?"node1 + node2 · wall estimate":"node1 + node2 · measured GPU";
   html+=elecCellHtml("Sparks total",sparksSrc,
     w24.sparks_kwh, w30.sparks_kwh, w24.sparks_hours, w30.sparks_hours,
-    w24.sparks_complete, w30.sparks_complete, "tot");
+    w24.sparks_complete, w30.sparks_complete, "tot",
+    {avg24:w24.sparks_avg_w, sensor24:mode==="wall"?w24.sparks_sensor_kwh:null});
   html+=elecCellHtml("Fleet total","all logged nodes",
     w24.fleet_kwh, w30.fleet_kwh, w24.fleet_hours, w30.fleet_hours,
-    w24.fleet_complete, w30.fleet_complete, "tot");
+    w24.fleet_complete, w30.fleet_complete, "tot",
+    {avg24:w24.avg_w});
   // Monthly pace from trailing 24h — answers "what will the bill look like?"
   const pace=(e.pace_30d||{});
   const paceFleet=pace.fleet_kwh!=null?pace.fleet_kwh*rate:null;
   const paceSparks=pace.sparks_kwh!=null?pace.sparks_kwh*rate:null;
   if(paceFleet!=null){
     html+=`<div class="elec-cell tot"><div class="n">≈ Monthly pace</div>
-      <div class="src">trailing 24h × 30d · ${mode==="wall"?"wall est":"sensors"}</div>
+      <div class="src">last 24h × 30d (gaps = 0 W) · ${mode==="wall"?"wall est":"sensors"}</div>
       <div class="w"><b>${fmtUsd(paceFleet)}</b> /mo fleet</div>
       <div class="c">${paceSparks!=null?`<b>${fmtUsd(paceSparks)}</b> /mo sparks · `:""}${fmtKwh(pace.fleet_kwh)} · not a meter</div></div>`;
   }
@@ -1928,9 +2142,10 @@ function paintElecPanel(){
     const f30=w30.fleet_kwh!=null?w30.fleet_kwh*rate:null;
     const tag=w24.fleet_complete?"":"~";
     const age=ageLabel(e.updated_unix);
-    const basis=mode==="wall"?`wall est · idle ${idle} W`:"measured (GPU understates wall)";
+    const basis=mode==="wall"?`wall est · idle ${idle} W`: "measured (GPU understates wall)";
     const paceBit=paceFleet!=null?` · ≈${fmtUsd(paceFleet)}/mo pace`:"";
-    note.textContent=`Fleet ${basis}: ${tag}${fmtUsd(f24)} /24h · ${fmtUsd(f30)} /30d${paceBit} @ $${rate}/kWh · ${age}`;
+    const tariff=`Ameren energy ${ELEC_DEFAULT===0.1524?"15.24¢ summer":"10.45¢ winter"}`;
+    note.textContent=`Fleet ${basis}: ${tag}${fmtUsd(f24)} /24h · ${fmtUsd(f30)} /30d${paceBit} @ $${rate}/kWh (${tariff}) · ${age}`;
   }
 }
 async function pollEnergy(){
@@ -2117,16 +2332,73 @@ function renderFleet(d){
   const root=$("v-fleet");
   if(!root)return;
   [...root.children].forEach(c=>{if(c.id!=="elec-panel")c.remove();});
-  root.insertAdjacentHTML("beforeend",
+  root.insertAdjacentHTML("afterbegin",
     node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9));
   if(TAB==="fleet")drawAll();     /* innerHTML wipes the canvases — redraw now */
 }
 
 /* ══════════════════════ CONTROL tab ══════════════════════ */
 let SVC_GROUP="all";
+const GROUP_META={
+  inference:{label:"Inference",hint:"models & engines"},
+  hermes:{label:"Hermes",hint:"gateways"},
+  apps:{label:"Apps",hint:"sites & games"},
+  meta:{label:"Meta",hint:"this console"},
+  other:{label:"Other",hint:""},
+};
+const GROUP_ORDER=["inference","hermes","apps","meta","other"];
+function servingBits(d){
+  return (((d&&d.node1)||{}).endpoints||[]).filter(e=>e&&e.status==="ok");
+}
+function shortModel(id){
+  return String(id||"").replace(/^deepseek-v4-flash-?/i,"DS4F ").trim();
+}
+function renderServe(d){
+  const el=$("serve"); if(!el)return;
+  const ok=servingBits(d);
+  if(!ok.length){el.hidden=true;el.textContent="";return;}
+  el.hidden=false;
+  el.textContent=ok.map(e=>shortModel(e.id)).join(" · ");
+  el.title=ok.map(e=>`${e.id} · ${e.engine||"?"} :${e.port||"?"}`).join("\n");
+}
 function svcGroup(el){
   document.querySelectorAll("#v-control .pill").forEach(p=>p.classList.toggle("on",p===el));
   SVC_GROUP=el.dataset.g;renderControl();
+}
+function svcTile(s,busy,linkFor){
+  const state=s.active?"ok":(s.state==="failed"||s.unit_missing?"bad":"stale");
+  const canStop=!s.no_stop&&s.active&&!s.unit_missing,canStart=!s.active&&!s.unit_missing;
+  let sel="";
+  if(s.id==="node2-deep"&&s.models&&s.models.length){
+    const cur=s.model_key||s.default_model||s.models[0];
+    sel=`<select id="svc-model-${esc(s.id)}" ${busy?"disabled":""}>${s.models.map(m=>
+      `<option value="${esc(m)}" ${m===cur?"selected":""}>${esc(m)}</option>`).join("")}</select>`;
+  }
+  const idle=s.idle||"unknown";
+  const used=s.active
+    ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
+    :(s.unit_missing?"no unit":"stopped");
+  const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
+  const L=linkFor[s.id];
+  const url=(L&&(L.url||(L.port!=null?`http://${location.hostname}:${L.port}${L.path||"/"}`:null)))
+    ||s.open_url
+    ||(s.port!=null?`http://${location.hostname}:${s.port}/`:null);
+  let primary="";
+  if(canStart){
+    primary=`<button class="btn go" ${busy?"disabled":""}
+      onclick="svcAction('${esc(s.id)}','start')">Start</button>`;
+  }else if(s.active&&url&&!s.no_open){
+    primary=`<a class="btn open" href="${esc(url)}" target="_blank" rel="noopener"
+      title="${esc(url)}">Open ↗</a>`;
+  }
+  const g=s.group||"other";
+  return `<div class="svc ${esc(g)}${s.active?"":" off"}${idle==="waste"?" waste":""}" title="${esc(s.hint||s.detail||"")}">
+    <div class="name">${st(state)}<span>${esc(s.label)}</span></div>
+    <div class="meta">${esc(s.detail)}${extra?" · "+extra:""}</div>
+    <div class="used ${idle==="waste"?"waste":""}">${used}</div>
+    <div class="acts">${sel}${primary}
+      <button class="btn stop" ${canStop&&!busy?"":"disabled"}
+        onclick="svcAction('${esc(s.id)}','stop')">Stop</button></div></div>`;
 }
 function renderControl(){
   const b=DATA.services||{},list=b.services||[],op=b.active_operation;
@@ -2136,54 +2408,37 @@ function renderControl(){
   $("svc-op").textContent=op&&op.status==="running"?`⏳ ${op.type} ${op.key}: ${op.message||"running…"}`
     :op&&op.status==="failed"?`✕ ${op.type} ${op.key} failed`
     :waste?`${waste} running with no recent use`:`${up}/${list.length} up`;
+  const cnt=$("svc-cnt");
+  if(cnt)cnt.textContent=`${up}/${list.length} up`;
   const busy=!!(op&&op.status==="running");
 
-  /* one URL registry for both: links are built FROM the service catalog */
   const linkFor={};
   ((DATA.links||{}).groups||[]).filter(g=>g.kind==="local")
     .forEach(g=>(g.links||[]).forEach(l=>{linkFor[l.id]=l;}));
 
   const shown=list.filter(s=>(SVC_GROUP==="all"||s.group===SVC_GROUP)
     &&(!q||(s.label+" "+s.detail+" "+s.id).toLowerCase().includes(q)));
-  $("svc-cnt").textContent=`${shown.length} shown · ${up}/${list.length} up`;
-  $("services").innerHTML=shown.map(s=>{
-    const state=s.active?"ok":(s.state==="failed"||s.unit_missing?"bad":"stale");
-    const canStop=!s.no_stop&&s.active&&!s.unit_missing,canStart=!s.active&&!s.unit_missing;
-    let sel="";
-    if(s.id==="node2-deep"&&s.models&&s.models.length){
-      const cur=s.model_key||s.default_model||s.models[0];
-      sel=`<select id="svc-model-${esc(s.id)}" ${busy?"disabled":""}>${s.models.map(m=>
-        `<option value="${esc(m)}" ${m===cur?"selected":""}>${esc(m)}</option>`).join("")}</select>`;
-    }
-    const idle=s.idle||"unknown";
-    const used=s.active
-      ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
-      :(s.unit_missing?"no unit":"stopped");
-    const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
-    /* Prefer links catalog, then open_url / port on the service row */
-    const L=linkFor[s.id];
-    const url=(L&&(L.url||(L.port!=null?`http://${location.hostname}:${L.port}${L.path||"/"}`:null)))
-      ||s.open_url
-      ||(s.port!=null?`http://${location.hostname}:${s.port}/`:null);
-    /* Same primary slot: Start when down, Open (sky) when up + has a site */
-    let primary="";
-    if(canStart){
-      primary=`<button class="btn go" ${busy?"disabled":""}
-        onclick="svcAction('${esc(s.id)}','start')">Start</button>`;
-    }else if(s.active&&url&&!s.no_open){
-      primary=`<a class="btn open" href="${esc(url)}" target="_blank" rel="noopener"
-        title="${esc(url)}">Open ↗</a>`;
-    }
-    return `<div class="svc ${idle==="waste"?"waste":""}" title="${esc(s.hint||s.detail||"")}">
-      <div class="name">${st(state)}<span>${esc(s.label)}</span></div>
-      <div class="meta">${esc(s.detail)}${extra?" · "+extra:""}</div>
-      <div class="used ${idle==="waste"?"waste":""}">${used}</div>
-      <div class="acts">${sel}${primary}
-        <button class="btn stop" ${canStop&&!busy?"":"disabled"}
-          onclick="svcAction('${esc(s.id)}','stop')">Stop</button></div></div>`;
-  }).join("")||`<div class="empty" style="padding-left:14px">no services match</div>`;
+  const groups=[...new Set(shown.map(s=>s.group||"other"))];
+  const useBays=groups.length>1;
+  if(!shown.length){
+    $("services").innerHTML=`<div class="empty" style="padding:8px 16px 16px">no services match</div>`;
+  }else if(useBays){
+    $("services").innerHTML=GROUP_ORDER.map(g=>{
+      const rows=shown.filter(s=>(s.group||"other")===g);
+      if(!rows.length)return "";
+      const m=GROUP_META[g]||GROUP_META.other;
+      const nUp=rows.filter(s=>s.active).length;
+      return `<div class="bay ${g}">
+        <div class="bay-h"><i></i><b>${m.label}</b>
+          <span class="hint">${esc(m.hint)}</span>
+          <span class="cnt">${nUp}/${rows.length} up</span></div>
+        <div class="tiles">${rows.map(s=>svcTile(s,busy,linkFor)).join("")}</div>
+      </div>`;
+    }).join("");
+  }else{
+    $("services").innerHTML=`<div class="tiles">${shown.map(s=>svcTile(s,busy,linkFor)).join("")}</div>`;
+  }
 
-  /* remote hosts are report-only (read-only by design) — links, no controls */
   $("remote-links").innerHTML=((DATA.links||{}).groups||[])
     .filter(g=>g.kind!=="local").map(g=>{
       const ls=(g.links||[]).filter(l=>!q||(l.label+" "+(l.detail||"")).toLowerCase().includes(q));
@@ -2466,6 +2721,7 @@ async function refresh(){
     HOSTS=hosts;
     const items=attentionItems(d,hosts);
     renderHero(hosts,items,d);
+    renderServe(d);
     renderHosts(hosts);
     renderAttention(items);
     renderProjects(d.projects||[]);
@@ -2625,12 +2881,38 @@ function paintLive(){
   else{el.className="live dead";txt.textContent="no data";}
 }
 
+/* Page version baked in at serve time. /api/version is what the Spark has
+   now — if they differ, this HTML is a cached PWA copy. */
+function bakedBuild(){
+  const m=document.querySelector('meta[name="console-build"]');
+  const v=(m&&m.content)||"";
+  return (!v||v.indexOf("{{")===0)?"":v;
+}
+async function checkBuild(){
+  const bar=$("ver-bar"); if(!bar)return;
+  const mine=bakedBuild();
+  try{
+    const v=await(await fetch("/api/version",{cache:"no-store"})).json();
+    if(v&&v.build&&mine&&v.build!==mine){
+      bar.hidden=false;
+      bar.textContent=`New console ${v.build} — tap to reload (this copy is ${mine})`;
+    }else bar.hidden=true;
+  }catch(e){/* offline: leave whatever we have */}
+}
+function reloadFresh(){
+  const u=new URL(location.href);
+  u.searchParams.set("v", String(Date.now()));
+  location.replace(u.pathname+u.search+u.hash);
+}
+
 const clockTick=()=>$("clock").textContent=new Date().toLocaleTimeString();
 clockTick();setInterval(clockTick,1000);
 setInterval(paintLive,1000);
 switchTab(TAB);
 bindElecRate();
 refresh();tickLoop();pollTokenUsage();pollComfy();pollEnergy();
+checkBuild();
+const verBar=$("ver-bar"); if(verBar)verBar.onclick=reloadFresh;
 
 /* Cadences split so structural overview isn't piled with every side panel:
      overview  10s (20s phone) — structure
@@ -2648,6 +2930,7 @@ setInterval(()=>{if(!document.hidden)pollEnergy();},30000);
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden)return;
   paintLive();refresh();tickLoop();pollTokenUsage();pollComfy();pollEnergy();
+  checkBuild();
   if(TAB==="fleet")pollSparks();
 });
 

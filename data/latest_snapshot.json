@@ -1,37 +1,37 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-12 10:57:16",
-  "iso_ts": "2026-08-12T10:57:16.197594+00:00",
+  "timestamp_utc": "2026-08-13 10:55:15",
+  "iso_ts": "2026-08-13T10:55:15.188826+00:00",
   "hour": 10,
-  "dow": 2,
+  "dow": 3,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 4.5,
-    "load_1": 0.49,
-    "load_5": 0.36,
-    "load_15": 0.37,
-    "mem_used_gb": 105.71,
+    "cpu_pct": 1.9,
+    "load_1": 0.62,
+    "load_5": 0.54,
+    "load_15": 0.47,
+    "mem_used_gb": 110.1,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 15.98,
-    "mem_pct": 86.9,
-    "swap_used_gb": 5.37,
+    "mem_avail_gb": 11.59,
+    "mem_pct": 90.5,
+    "swap_used_gb": 6.8,
     "swap_total_gb": 16.0,
-    "swap_pct": 33.6,
+    "swap_pct": 42.5,
     "disk_used_pct": 30.2,
     "disk_free_tb": 2.43
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.27,
-  "avg_temp_c": 40.0,
+  "total_power_watts": 10.35,
+  "avg_temp_c": 42.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.27,
-      "power_avg_w": 10.27,
-      "power_instant_w": 10.44,
-      "temp_c": 40,
+      "power_w": 10.35,
+      "power_avg_w": 10.35,
+      "power_instant_w": 10.42,
+      "temp_c": 42,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
@@ -41,12 +41,12 @@
   ],
   "processes": [
     {
-      "name": "VLLM::Worker_TP0",
-      "mem_mb": 93813
-    },
-    {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
       "mem_mb": 242
+    },
+    {
+      "name": "VLLM::Worker_TP0",
+      "mem_mb": 97481
     }
   ],
   "ollama": [],
@@ -156,17 +156,17 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 4.5,
-        "load_1": 0.49,
-        "load_5": 0.36,
-        "load_15": 0.37,
-        "mem_used_gb": 105.71,
+        "cpu_pct": 1.9,
+        "load_1": 0.62,
+        "load_5": 0.54,
+        "load_15": 0.47,
+        "mem_used_gb": 110.1,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 15.98,
-        "mem_pct": 86.9,
-        "swap_used_gb": 5.37,
+        "mem_avail_gb": 11.59,
+        "mem_pct": 90.5,
+        "swap_used_gb": 6.8,
         "swap_total_gb": 16.0,
-        "swap_pct": 33.6,
+        "swap_pct": 42.5,
         "disk_used_pct": 30.2,
         "disk_free_tb": 2.43
       },
@@ -174,10 +174,10 @@
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.27,
-          "power_avg_w": 10.27,
-          "power_instant_w": 10.44,
-          "temp_c": 40,
+          "power_w": 10.35,
+          "power_avg_w": 10.35,
+          "power_instant_w": 10.42,
+          "temp_c": 42,
           "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
@@ -211,16 +211,17 @@
       ],
       "workloads": [
         "ollama",
+        "pokemon",
         "vllm"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-12T10:57:17.137118+00:00",
+      "iso_ts": "2026-08-13T10:55:16.106110+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 1.0,
+      "cpu_pct": 0.7,
       "mem": {
         "used_gb": 114.2,
         "total_gb": 121.7,
@@ -228,16 +229,16 @@
         "pct": 93.9
       },
       "swap": {
-        "used_gb": 4.5,
+        "used_gb": 8.2,
         "total_gb": 16.0,
-        "pct": 28.2
+        "pct": 51.1
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.37,
-          "temp_c": 40,
+          "power_w": 11.53,
+          "temp_c": 41,
           "util_gpu": 0.0
         }
       ],
@@ -264,19 +265,19 @@
       ],
       "top_procs": [
         {
-          "name": "VLLM::EngineCor",
-          "mem_gb": 3.4
-        },
-        {
-          "name": "vllm",
-          "mem_gb": 3.2
-        },
-        {
           "name": "VLLM::Worker_TP",
-          "mem_gb": 0.9
+          "mem_gb": 3.8
         },
         {
           "name": "polkitd",
+          "mem_gb": 0.3
+        },
+        {
+          "name": "VLLM::EngineCor",
+          "mem_gb": 0.2
+        },
+        {
+          "name": "vllm",
           "mem_gb": 0.2
         },
         {
@@ -332,6 +333,7 @@
   "workloads": {
     "node1": [
       "ollama",
+      "pokemon",
       "vllm"
     ],
     "node2": [
