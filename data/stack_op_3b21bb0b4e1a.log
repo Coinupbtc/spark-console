@@ -1,0 +1,13 @@
+alertbot-send: ok
+[spark-stack 2026-08-13T21:00:39-05:00] stop AIM Music3 (node1 + spark2 replica) and Gemma lyrics
+Music3 serve stopped (port 8801 free)
+Music3 serve stopped (port 8801 free)
+spark2 Music3 stop requested. node1 untouched.
+aim-gemma-lyrics
+[spark-stack 2026-08-13T21:00:42-05:00] cluster mode: DS4F TP2 :8888
+[spark-mode] → CLUSTER mode (DSpark TP=2 :8888). This loads BOTH Sparks; Hermes :8889 will go down.
+[spark-mode] Stopping llama-miaai35.service (required — free UMA for TP=2)…
+               total        used        free      shared  buff/cache   available
+Mem:             121           9          66           0          47         112
+[spark-mode] Starting DSpark (long cold start possible)…
+Port 8085 is already listening on the head node. Stop the conflicting service first.

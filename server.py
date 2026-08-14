@@ -73,6 +73,7 @@ import quick_actions  # noqa: E402
 import desktop_launch  # noqa: E402
 import comfy_api  # noqa: E402
 import energy_cost  # noqa: E402
+import stack_control  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -127,6 +128,10 @@ async def _refuse_foreign_origin(request: Request, call_next):
 class SwitchRequest(BaseModel):
     key: str
     fast: bool = False
+
+
+class StackSwitchRequest(BaseModel):
+    key: str  # prime | setup | video | music
 
 
 class TodoRequest(BaseModel):
@@ -1157,6 +1162,7 @@ def api_overview():
         "links": links,
         "actions": quick_actions.list_actions(),
         "launch": desktop_launch.list_apps(),
+        "stack": stack_control.detect_stack(),
         "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list),
     }
 
@@ -1300,6 +1306,28 @@ def api_models_unload_ollama():
 @app.post("/api/models/sync-hermes")
 def api_models_sync_hermes():
     result = sync_hermes()
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/stack")
+def api_stack():
+    """Which named setup is live (Prime / Videos / Music) plus switch progress."""
+    return stack_control.detect_stack()
+
+
+@app.get("/api/stack/operations/{op_id}")
+def api_stack_operation(op_id: str):
+    op = stack_control.get_operation(op_id)
+    if not op:
+        return JSONResponse({"ok": False, "error": "Operation not found"}, status_code=404)
+    return {"ok": True, "operation": op}
+
+
+@app.post("/api/stack/switch")
+def api_stack_switch(req: StackSwitchRequest):
+    result = stack_control.switch_stack(req.key)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
     return result

@@ -1,0 +1,862 @@
+alertbot-send: ok
+[spark-stack 2026-08-14T05:45:46-05:00] stop AIM Music3 (node1 + spark2 replica) and Gemma lyrics
+Music3 serve stopped (port 8801 free)
+Music3 serve stopped (port 8801 free)
+spark2 Music3 stop requested. node1 untouched.
+[spark-stack 2026-08-14T05:45:49-05:00] cluster mode: DS4F TP2 :8888
+[spark-mode] → CLUSTER mode (DSpark TP=2 :8888). This loads BOTH Sparks; Hermes :8889 will go down.
+[spark-mode] Stopping llama-miaai35.service (required — free UMA for TP=2)…
+               total        used        free      shared  buff/cache   available
+Mem:             121          13          70           0          38         107
+[spark-mode] Starting DSpark (long cold start possible)…
+Resolving RoCEv2 GID indexes from sysfs (head if=enp1s0f0np0 ip=192.168.100.10 hca=rocep1s0f0; worker if=enp1s0f0np0 ip=192.168.100.11 hca=rocep1s0f0)...
+RoCEv2 GID index: head=3 (match 192.168.100.10) worker=3 (match 192.168.100.11)
+Resolved DSpark profile:
+  project: deepseek-v4-flash
+  serve mode: text (ENABLE_VL_SIDECAR=0)
+  checkpoint: deepseek-ai/DeepSeek-V4-Flash-0731 (ABLITERATED=0)
+  revision: 9e165c30e2704aec5d9d593cce3eebd58bbef1cb
+  image: ghcr.io/anemll/dspark-vllm-gx10:0.1.1@sha256:a83948492cf13df455170fb42885f5ef4db54fefe0feff0f841ecbff464ac9d8
+  model: deepseek-ai/DeepSeek-V4-Flash-0731
+  served model: deepseek-v4-flash-0731
+  max model len: 524288
+  max num seqs: 6
+  max batched tokens: 8192
+  gpu memory utilization: 0.75 (text default 0.75 / vision default 0.80)
+  mtp speculative tokens: 5 (dspark_block_size min is 5)
+  default thinking: max (off/low/high/max)
+  cudagraph capture size: 36
+  API bind: 0.0.0.0:8888
+  API probe: http://127.0.0.1:8888/v1/models
+  head fabric IP: 192.168.100.10
+  worker host/ip: spark2 / 192.168.100.11
+  head NCCL HCA/if: rocep1s0f0 / enp1s0f0np0
+  worker NCCL HCA/if: rocep1s0f0 / enp1s0f0np0
+  NCCL_IB_GID_AUTO: 1
+  head NCCL_IB_GID_INDEX: 3
+  worker NCCL_IB_GID_INDEX: 3
+  worker dir: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark
+  worker cache: /home/coinupbtc/.cache/huggingface
+  GB10 vLLM patch: 0
+  VL sidecar: disabled (text-only 0731)
+  Issue #22 hotfix: will apply on start (not gated by DSPARK_SKIP_HOTFIX)
+  DSV4 perf hotfixes (#50312/#50004/#49486/#48407/#48957/#50298/#44993-grammar): will apply on start
+  Suppress stops in <think>: will apply (client stop dormant until </think>)
+Syncing DSpark deployment files to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark
+Syncing Issue #22 hotfix to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-mtp-buffer-50312.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-adaptive-topk-50004.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-skip-topk-49486.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-dense-prefill-indexer-48407.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-skip-empty-c128-48957.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-flashmla-workspace-50298.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing hotfix-dsv4-grammar-advance.sh to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing Issue #21 encoding hotfix to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing Issue #27 partial-prefill hotfix to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing Issue #43 decode-fairness hotfix to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing Issue #26 hybrid-SWA-min hotfix to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Syncing suppress-stops-in-reasoning hotfix to spark2:/home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/patches/
+Validating head compose config...
+Validating worker compose config...
+Starting DSpark worker on spark2...
+ Container deepseek-v4-flash-vllm-dspark-1 Creating 
+ Container deepseek-v4-flash-vllm-dspark-1 Created 
+ Container deepseek-v4-flash-vllm-dspark-1 Starting 
+ Container deepseek-v4-flash-vllm-dspark-1 Started 
+Starting DSpark head...
+ Container deepseek-v4-flash-vllm-dspark-1 Creating 
+ Container deepseek-v4-flash-vllm-dspark-1 Created 
+ Container deepseek-v4-flash-vllm-dspark-1 Starting 
+ Container deepseek-v4-flash-vllm-dspark-1 Started 
+Issue #22 / v0.27 .sh hotfixes run in the compose entrypoint before vllm (no mid-boot stop).
+Waiting for DSpark vLLM API...
+vllm-dspark-1  | import tl, triton                           : APPLIED
+vllm-dspark-1  | _fill_short_context_topk_indices kernel     : APPLIED
+vllm-dspark-1  | [PORT #49486] early return                  : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 dense-prefill indexer scoring skip — STAGE A DORMANT (upstream #48407 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: import CUDAGraphMode (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: sparse_attn_indexer() signature param (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: capture forward_context (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: pass param into sparse_attn_indexer_fake() (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: sparse_attn_indexer_fake() signature param (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: dormant scoring-skip gate (mainline #48407) (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: __init__ dormant binding field (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: forward_cuda passes binding (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_mla.py: DeepseekV4FlashMLAMetadata.num_decode_tokens field (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_mla.py: build() populates num_decode_tokens (replaced 1)
+vllm-dspark-1  |   [OK]   attention.py: DeepseekV4Indexer dormant binding "" (replaced 1)
+vllm-dspark-1  |   [OK]   deepseek_v32/nvidia/attention.py: keyword args + dormant binding (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 12, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied (Stage A dormant). Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; KV budget must be unchanged)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | sparse_attn_indexer() param                         : APPLIED
+vllm-dspark-1  | sparse_attn_indexer_fake() param                    : APPLIED
+vllm-dspark-1  | skip gate present                                   : APPLIED
+vllm-dspark-1  | __init__ dormant binding ""                         : APPLIED
+vllm-dspark-1  | forward_cuda passes binding                         : APPLIED
+vllm-dspark-1  | MLA num_decode_tokens field                         : APPLIED
+vllm-dspark-1  | build() populates split                             : APPLIED
+vllm-dspark-1  | DSV4 indexer binding == ""                          : APPLIED
+vllm-dspark-1  | v32 fused caller keywords                           : APPLIED
+vllm-dspark-1  | 
+vllm-dspark-1  | Dormancy gate: binding literal is "" -> _resolve_layer_name("") is falsy -> skip never fires.
+vllm-dspark-1  | === Hotfix: DSV4 skip empty C128 compressor launches (upstream #48957 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   compressor.py: import CUDAGraphMode (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: _get_c128_boundary helper (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: CompressorMetadata.c128_boundary field (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: build() populates c128_boundary (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: capture forward_context (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: skip empty C128 launch gate (upstream #48957) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 6, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; KV budget must be unchanged)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | import CUDAGraphMode                          : APPLIED
+vllm-dspark-1  | _get_c128_boundary helper                     : APPLIED
+vllm-dspark-1  | CompressorMetadata.c128_boundary field        : APPLIED
+vllm-dspark-1  | build() populates c128_boundary               : APPLIED
+vllm-dspark-1  | forward skip gate                             : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 FlashMLA combined-topk workspace reuse (upstream #50298 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   flashmla.py: import round_up (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: dummy path reserves combined-topk buffers (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: _forward_prefill workspace request (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: slice reused buffers per chunk (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: combine_topk_swa_indices out= kwarg (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   cache_utils.py: combine_topk_swa_indices out= param (upstream #50298) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 6, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; compare KV budget)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | flashmla.py: import round_up                        : APPLIED
+vllm-dspark-1  | flashmla.py: combined_topk width x2                 : APPLIED
+vllm-dspark-1  | flashmla.py: workspace 3-buffer unpack              : APPLIED
+vllm-dspark-1  | flashmla.py: out= kwarg passed                      : APPLIED
+vllm-dspark-1  | cache_utils.py: out param                           : APPLIED
+vllm-dspark-1  | cache_utils.py: reuse branch                        : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 grammar advance across reasoning boundary (upstream #44993 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   __init__.py: should_advance new_token_ids param (upstream #44993) (replaced 1)
+vllm-dspark-1  |   [OK]   __init__.py: delta window + boundary record, all constraint types (upstream #44993) (replaced 1)
+vllm-dspark-1  |   [OK]   scheduler.py: pass new_token_ids into should_advance (upstream #44993) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 3, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Restart the vLLM process (or container) to take effect.
+vllm-dspark-1  | Validate: issue #24 repro (json_schema + thinking) x5 must be clean JSON.
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | should_advance new_token_ids param           : APPLIED
+vllm-dspark-1  | delta window uses new_token_ids              : APPLIED
+vllm-dspark-1  | boundary records end_index (all types)       : APPLIED
+vllm-dspark-1  | old STRUCTURAL_TAG-only gate removed         : APPLIED
+vllm-dspark-1  | scheduler passes new_token_ids               : APPLIED
+vllm-dspark-1  | [issue27-hotfix] patched /usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py
+vllm-dspark-1  | [issue43-hotfix] patched /usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py
+vllm-dspark-1  | [issue26-hotfix-v2] annotated: /usr/local/lib/python3.12/dist-packages/vllm/v1/core/kv_cache_coordinator.py
+vllm-dspark-1  | [suppress-stops-in-reasoning] applied: /usr/local/lib/python3.12/dist-packages/vllm/v1/engine/detokenizer.py
+vllm-dspark-1  | [OK] Issue #21 patch applied: /usr/local/lib/python3.12/dist-packages/vllm/tokenizers/deepseek_v4_encoding.py
+vllm-dspark-1  | === Hotfix: nvfp4_ds_mla long-context decode (Issue #22) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm
+vllm-dspark-1  |   [OK]   Route nvfp4_ds_mla to fast FP8 kernel path
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 1, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied successfully. Restart the vLLM process to take effect.
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | [OK] nvfp4_ds_mla routed to fast FP8 kernel path
+vllm-dspark-1  | === Hotfix: DSV4 MTP hidden-state PP buffer (upstream #50312 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   model.py: conditional _mtp_hidden_buffer allocation (dspark -> None) (replaced 1)
+vllm-dspark-1  |   [OK]   model.py: skip copy_ when buffer is None (replaced 1)
+vllm-dspark-1  |   [OK]   model_runner.py: None-guard at both get_mtp_target_hidden_states sites (replaced 2)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 3, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; compare KV budget)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | model.py alloc guard  : APPLIED
+vllm-dspark-1  | model.py copy_ guard  : APPLIED
+vllm-dspark-1  | runner None-guard x2  : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 adaptive C128A topk width (upstream #50004 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   sparse_mla.py: adaptive active_topk_width from cm.max_seq_len (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_mla.py: packed views + kernel stride = active width (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 2, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; KV budget must be unchanged)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | active_topk_width (adaptive) : APPLIED
+vllm-dspark-1  | packed buffer views          : APPLIED
+vllm-dspark-1  | kernel stride = active width : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 indexer short-context topk skip (upstream #49486 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   attention.py: import tl, triton (upstream #49486) (replaced 1)
+vllm-dspark-1  |   [OK]   attention.py: _fill_short_context_topk_indices kernel (upstream #49486) (replaced 1)
+vllm-dspark-1  |   [OK]   attention.py: short-context early return (upstream #49486) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 3, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; KV budget must be unchanged)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | import tl, triton                           : APPLIED
+vllm-dspark-1  | _fill_short_context_topk_indices kernel     : APPLIED
+vllm-dspark-1  | [PORT #49486] early return                  : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 dense-prefill indexer scoring skip — STAGE A DORMANT (upstream #48407 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: import CUDAGraphMode (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: sparse_attn_indexer() signature param (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: capture forward_context (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: pass param into sparse_attn_indexer_fake() (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: sparse_attn_indexer_fake() signature param (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: dormant scoring-skip gate (mainline #48407) (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: __init__ dormant binding field (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_attn_indexer.py: forward_cuda passes binding (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_mla.py: DeepseekV4FlashMLAMetadata.num_decode_tokens field (replaced 1)
+vllm-dspark-1  |   [OK]   sparse_mla.py: build() populates num_decode_tokens (replaced 1)
+vllm-dspark-1  |   [OK]   attention.py: DeepseekV4Indexer dormant binding "" (replaced 1)
+vllm-dspark-1  |   [OK]   deepseek_v32/nvidia/attention.py: keyword args + dormant binding (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 12, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied (Stage A dormant). Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; KV budget must be unchanged)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | sparse_attn_indexer() param                         : APPLIED
+vllm-dspark-1  | sparse_attn_indexer_fake() param                    : APPLIED
+vllm-dspark-1  | skip gate present                                   : APPLIED
+vllm-dspark-1  | __init__ dormant binding ""                         : APPLIED
+vllm-dspark-1  | forward_cuda passes binding                         : APPLIED
+vllm-dspark-1  | MLA num_decode_tokens field                         : APPLIED
+vllm-dspark-1  | build() populates split                             : APPLIED
+vllm-dspark-1  | DSV4 indexer binding == ""                          : APPLIED
+vllm-dspark-1  | v32 fused caller keywords                           : APPLIED
+vllm-dspark-1  | 
+vllm-dspark-1  | Dormancy gate: binding literal is "" -> _resolve_layer_name("") is falsy -> skip never fires.
+vllm-dspark-1  | === Hotfix: DSV4 skip empty C128 compressor launches (upstream #48957 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   compressor.py: import CUDAGraphMode (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: _get_c128_boundary helper (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: CompressorMetadata.c128_boundary field (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: build() populates c128_boundary (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: capture forward_context (upstream #48957) (replaced 1)
+vllm-dspark-1  |   [OK]   compressor.py: skip empty C128 launch gate (upstream #48957) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 6, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; KV budget must be unchanged)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | import CUDAGraphMode                          : APPLIED
+vllm-dspark-1  | _get_c128_boundary helper                     : APPLIED
+vllm-dspark-1  | CompressorMetadata.c128_boundary field        : APPLIED
+vllm-dspark-1  | build() populates c128_boundary               : APPLIED
+vllm-dspark-1  | forward skip gate                             : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 FlashMLA combined-topk workspace reuse (upstream #50298 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   flashmla.py: import round_up (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: dummy path reserves combined-topk buffers (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: _forward_prefill workspace request (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: slice reused buffers per chunk (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   flashmla.py: combine_topk_swa_indices out= kwarg (upstream #50298) (replaced 1)
+vllm-dspark-1  |   [OK]   cache_utils.py: combine_topk_swa_indices out= param (upstream #50298) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 6, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Stop + start the vLLM process (or the container) to take effect.
+vllm-dspark-1  | Validate with: bash <this-script> --before  (pre-restart; run BEFORE restarting)
+vllm-dspark-1  |              bash <this-script> --after   (post-restart; compare KV budget)
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | flashmla.py: import round_up                        : APPLIED
+vllm-dspark-1  | flashmla.py: combined_topk width x2                 : APPLIED
+vllm-dspark-1  | flashmla.py: workspace 3-buffer unpack              : APPLIED
+vllm-dspark-1  | flashmla.py: out= kwarg passed                      : APPLIED
+vllm-dspark-1  | cache_utils.py: out param                           : APPLIED
+vllm-dspark-1  | cache_utils.py: reuse branch                        : APPLIED
+vllm-dspark-1  | === Hotfix: DSV4 grammar advance across reasoning boundary (upstream #44993 backport) ===
+vllm-dspark-1  | vLLM root: /usr/local/lib/python3.12/dist-packages/vllm  image: 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  |   [OK]   __init__.py: should_advance new_token_ids param (upstream #44993) (replaced 1)
+vllm-dspark-1  |   [OK]   __init__.py: delta window + boundary record, all constraint types (upstream #44993) (replaced 1)
+vllm-dspark-1  |   [OK]   scheduler.py: pass new_token_ids into should_advance (upstream #44993) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 3, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Restart the vLLM process (or container) to take effect.
+vllm-dspark-1  | Validate: issue #24 repro (json_schema + thinking) x5 must be clean JSON.
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | should_advance new_token_ids param           : APPLIED
+vllm-dspark-1  | delta window uses new_token_ids              : APPLIED
+vllm-dspark-1  | boundary records end_index (all types)       : APPLIED
+vllm-dspark-1  | old STRUCTURAL_TAG-only gate removed         : APPLIED
+vllm-dspark-1  | scheduler passes new_token_ids               : APPLIED
+vllm-dspark-1  | [issue27-hotfix] patched /usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py
+vllm-dspark-1  | [issue43-hotfix] patched /usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py
+vllm-dspark-1  | [issue26-hotfix-v2] annotated: /usr/local/lib/python3.12/dist-packages/vllm/v1/core/kv_cache_coordinator.py
+vllm-dspark-1  | [suppress-stops-in-reasoning] applied: /usr/local/lib/python3.12/dist-packages/vllm/v1/engine/detokenizer.py
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:339] 
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:339]        █     █     █▄   ▄█
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:339]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.25.2.dev0+g752a3a504.d20260714
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:339]   █▄█▀ █     █     █     █  model   deepseek-ai/DeepSeek-V4-Flash-0731
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:339]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:339] 
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [api_utils.py:273] non-default args: {'model_tag': 'deepseek-ai/DeepSeek-V4-Flash-0731', 'default_chat_template_kwargs': {'thinking': True, 'reasoning_effort': 'max'}, 'enable_auto_tool_choice': True, 'tool_call_parser': 'deepseek_v4', 'enable_prompt_tokens_details': True, 'host': '0.0.0.0', 'port': 8888, 'model': 'deepseek-ai/DeepSeek-V4-Flash-0731', 'tokenizer_mode': 'deepseek_v4', 'trust_remote_code': True, 'revision': '9e165c30e2704aec5d9d593cce3eebd58bbef1cb', 'max_model_len': 524288, 'served_model_name': ['deepseek-v4-flash-0731'], 'generation_config': 'vllm', 'reasoning_parser': 'deepseek_v4', 'distributed_executor_backend': 'mp', 'master_addr': '192.168.100.10', 'master_port': 25000, 'nnodes': 2, 'tensor_parallel_size': 2, 'block_size': 256, 'gpu_memory_utilization': 0.75, 'kv_cache_dtype': 'nvfp4_ds_mla', 'enable_prefix_caching': True, 'max_num_batched_tokens': 8192, 'max_num_seqs': 6, 'long_prefill_token_threshold': 1024, 'enable_chunked_prefill': True, 'async_scheduling': True, 'max_cudagraph_capture_size': 36, 'enable_flashinfer_autotune': True, 'moe_backend': 'flashinfer_b12x', 'speculative_config': {'method': 'dspark', 'num_speculative_tokens': 5, 'draft_sample_method': 'probabilistic'}, 'reasoning_config': ReasoningConfig(reasoning_parser='deepseek_v4', reasoning_start_str='<think>', reasoning_end_str='</think>')}
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [arg_utils.py:772] HF_HUB_OFFLINE is True, replace model_id [deepseek-ai/DeepSeek-V4-Flash-0731] to model_path [/cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb]
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:23 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:23 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:23 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:23 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [config.py:742] Detected quantization_config.scale_fmt=ue8m0; enabling UE8M0 for DeepGEMM.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [model.py:619] Resolved architecture: DeepseekV4ForCausalLM
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:23 [model.py:1776] Using max model len 524288
+vllm-dspark-1  |   [OK]   __init__.py: should_advance new_token_ids param (upstream #44993) (replaced 1)
+vllm-dspark-1  |   [OK]   __init__.py: delta window + boundary record, all constraint types (upstream #44993) (replaced 1)
+vllm-dspark-1  |   [OK]   scheduler.py: pass new_token_ids into should_advance (upstream #44993) (replaced 1)
+vllm-dspark-1  | 
+vllm-dspark-1  | Applied: 3, Skipped: 0, Errors: 0
+vllm-dspark-1  | 
+vllm-dspark-1  | Hotfix applied. Restart the vLLM process (or container) to take effect.
+vllm-dspark-1  | Validate: issue #24 repro (json_schema + thinking) x5 must be clean JSON.
+vllm-dspark-1  | 
+vllm-dspark-1  | === Verification ===
+vllm-dspark-1  | should_advance new_token_ids param           : APPLIED
+vllm-dspark-1  | delta window uses new_token_ids              : APPLIED
+vllm-dspark-1  | boundary records end_index (all types)       : APPLIED
+vllm-dspark-1  | old STRUCTURAL_TAG-only gate removed         : APPLIED
+vllm-dspark-1  | scheduler passes new_token_ids               : APPLIED
+vllm-dspark-1  | [issue27-hotfix] patched /usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py
+vllm-dspark-1  | [issue43-hotfix] patched /usr/local/lib/python3.12/dist-packages/vllm/v1/core/sched/scheduler.py
+vllm-dspark-1  | [issue26-hotfix-v2] annotated: /usr/local/lib/python3.12/dist-packages/vllm/v1/core/kv_cache_coordinator.py
+vllm-dspark-1  | [suppress-stops-in-reasoning] applied: /usr/local/lib/python3.12/dist-packages/vllm/v1/engine/detokenizer.py
+vllm-dspark-1  | INFO 08-14 10:46:22 [arg_utils.py:772] HF_HUB_OFFLINE is True, replace model_id [deepseek-ai/DeepSeek-V4-Flash-0731] to model_path [/cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb]
+vllm-dspark-1  | WARNING 08-14 10:46:22 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_BUILD_URL
+vllm-dspark-1  | WARNING 08-14 10:46:22 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_IMAGE_TAG
+vllm-dspark-1  | WARNING 08-14 10:46:22 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_BUILD_PIPELINE
+vllm-dspark-1  | WARNING 08-14 10:46:22 [envs.py:2055] Unknown vLLM environment variable detected: VLLM_BUILD_COMMIT
+vllm-dspark-1  | INFO 08-14 10:46:22 [config.py:742] Detected quantization_config.scale_fmt=ue8m0; enabling UE8M0 for DeepGEMM.
+vllm-dspark-1  | INFO 08-14 10:46:22 [model.py:619] Resolved architecture: DeepseekV4ForCausalLM
+vllm-dspark-1  | INFO 08-14 10:46:22 [model.py:1776] Using max model len 524288
+vllm-dspark-1  | INFO 08-14 10:46:24 [cache.py:287] Using nvfp4_ds_mla data type to store kv cache. It reduces the GPU memory footprint and boosts the performance. Meanwhile, it may cause accuracy drop without a proper scaling factor
+vllm-dspark-1  | INFO 08-14 10:46:24 [arg_utils.py:2026] Inferred data_parallel_rank 0 from node_rank 1
+vllm-dspark-1  | INFO 08-14 10:46:24 [model.py:619] Resolved architecture: DeepSeekV4MTPModel
+vllm-dspark-1  | INFO 08-14 10:46:24 [model.py:1776] Using max model len 1048576
+vllm-dspark-1  | INFO 08-14 10:46:24 [speculative.py:1040] Overriding draft model max model len from 1048576 to 524288
+vllm-dspark-1  | INFO 08-14 10:46:24 [scheduler.py:252] Chunked prefill is enabled with max_num_batched_tokens=8192.
+vllm-dspark-1  | INFO 08-14 10:46:24 [vllm.py:1042] Asynchronous scheduling is enabled.
+vllm-dspark-1  | INFO 08-14 10:46:24 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+vllm-dspark-1  | WARNING 08-14 10:46:24 [vllm.py:1648] max_num_scheduled_tokens is set to 8168 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+vllm-dspark-1  | WARNING 08-14 10:46:24 [vllm.py:1804] Truncating max_cudagraph_capture_size to 32
+vllm-dspark-1  | WARNING 08-14 10:46:24 [vllm.py:2149] Model Runner V2 does not yet support the thinking_token_budget request parameter. Set VLLM_USE_V2_MODEL_RUNNER=0 if this is required.
+vllm-dspark-1  | INFO 08-14 10:46:24 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+vllm-dspark-1  | INFO 08-14 10:46:24 [serve.py:212] Launching vLLM (v0.25.2.dev0+g752a3a504.d20260714) headless multiproc executor, with head node address 192.168.100.10:25000 for torch.distributed process group.
+vllm-dspark-1  | WARNING 08-14 10:46:24 [multiproc_executor.py:1067] Reducing Torch parallelism from 20 threads to 1 to avoid unnecessary CPU contention. Set OMP_NUM_THREADS in the external environment to tune this value as needed.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [cache.py:287] Using nvfp4_ds_mla data type to store kv cache. It reduces the GPU memory footprint and boosts the performance. Meanwhile, it may cause accuracy drop without a proper scaling factor
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [arg_utils.py:2026] Inferred data_parallel_rank 0 from node_rank 0
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [model.py:619] Resolved architecture: DeepSeekV4MTPModel
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [model.py:1776] Using max model len 1048576
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [speculative.py:1040] Overriding draft model max model len from 1048576 to 524288
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [scheduler.py:252] Chunked prefill is enabled with max_num_batched_tokens=8192.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [vllm.py:1042] Asynchronous scheduling is enabled.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:25 [vllm.py:1648] max_num_scheduled_tokens is set to 8168 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:25 [vllm.py:1804] Truncating max_cudagraph_capture_size to 32
+vllm-dspark-1  | (APIServer pid=1) WARNING 08-14 10:46:25 [vllm.py:2149] Model Runner V2 does not yet support the thinking_token_budget request parameter. Set VLLM_USE_V2_MODEL_RUNNER=0 if this is required.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:46:25 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:46:28 [core.py:114] Initializing a V1 LLM engine (v0.25.2.dev0+g752a3a504.d20260714) with config: model='/cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb', speculative_config=SpeculativeConfig(method='dspark', model='/cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb', num_spec_tokens=5), tokenizer='/cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb', skip_tokenizer_init=False, tokenizer_mode=deepseek_v4, revision=9e165c30e2704aec5d9d593cce3eebd58bbef1cb, tokenizer_revision=9e165c30e2704aec5d9d593cce3eebd58bbef1cb, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=524288, download_dir=None, load_format=auto, tensor_parallel_size=2, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=True, quantization=deepseek_v4_fp8, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=nvfp4_ds_mla, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='deepseek_v4', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=deepseek-v4-flash-0731, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['+quant_fp8', 'none', '+quant_fp8'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::hpc_rope_norm_forward', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [8192], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': True, 'fuse_act_quant': True, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 32, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, moe_backend='flashinfer_b12x', linear_backend='auto')
+vllm-dspark-1  | (EngineCore pid=246) WARNING 08-14 10:46:28 [multiproc_executor.py:1067] Reducing Torch parallelism from 20 threads to 1 to avoid unnecessary CPU contention. Set OMP_NUM_THREADS in the external environment to tune this value as needed.
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:46:28 [multiproc_executor.py:140] DP group leader: node_rank=0, node_rank_within_dp=0, master_addr=192.168.100.10, mq_connect_ip=192.168.100.10 (local), world_size=2, local_world_size=1
+vllm-dspark-1  | (Worker pid=303) INFO 08-14 10:46:32 [parallel_state.py:1607] world_size=2 rank=0 local_rank=0 distributed_init_method=tcp://192.168.100.10:25000 backend=nccl
+vllm-dspark-1  | (Worker pid=303) INFO 08-14 10:46:34 [pynccl.py:113] vLLM is using nccl==2.30.7
+vllm-dspark-1  | (Worker pid=303) WARNING 08-14 10:46:36 [symm_mem.py:66] SymmMemCommunicator: Device capability 12.1 not supported, communicator is not available.
+vllm-dspark-1  | (Worker pid=303) INFO 08-14 10:46:36 [cuda_communicator.py:264] Using ['PYNCCL'] all-reduce backends (in dispatch order) for group 'tp:0' out of potential backends: ['NCCL_SYMM_MEM', 'QUICK_REDUCE', 'FLASHINFER', 'AITER_CUSTOM', 'CUSTOM', 'SYMM_MEM', 'PYNCCL'].
+vllm-dspark-1  | (Worker pid=303) INFO 08-14 10:46:37 [cuda_communicator.py:264] Using ['PYNCCL'] all-reduce backends (in dispatch order) for group 'ep:0' out of potential backends: ['NCCL_SYMM_MEM', 'QUICK_REDUCE', 'FLASHINFER', 'AITER_CUSTOM', 'CUSTOM', 'SYMM_MEM', 'PYNCCL'].
+vllm-dspark-1  | (Worker pid=303) INFO 08-14 10:46:37 [parallel_state.py:1942] rank 0 in world size 2 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0, EPLB rank N/A
+vllm-dspark-1  | (Worker pid=303) INFO 08-14 10:46:37 [gpu_worker.py:360] Using V2 Model Runner
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [model_runner.py:281] Loading model from scratch...
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [quant_config.py:75] DeepSeek V4 expert_dtype resolved to 'fp4'
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [__init__.py:600] Selected DeepGemmFp8BlockScaledMMKernel for Fp8LinearMethod
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [deep_gemm.py:175] deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [deep_gemm.py:202] DeepGEMM PDL enabled on vllm.third_party.deep_gemm.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [deep_gemm.py:120] DeepGEMM E8M0 enabled on current platform.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [attention.py:107] Using DeepSeek V4 padded nvfp4_ds_mla KV cache format.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [mxfp4.py:426] Using 'B12X_MXFP4' Mxfp4 MoE backend.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:38 [attention.py:732] Using FP8 indexer cache for Lightning Indexer.
+vllm-dspark-1  | INFO 08-14 10:46:24 [cache.py:287] Using nvfp4_ds_mla data type to store kv cache. It reduces the GPU memory footprint and boosts the performance. Meanwhile, it may cause accuracy drop without a proper scaling factor
+vllm-dspark-1  | INFO 08-14 10:46:24 [arg_utils.py:2026] Inferred data_parallel_rank 0 from node_rank 1
+vllm-dspark-1  | INFO 08-14 10:46:24 [model.py:619] Resolved architecture: DeepSeekV4MTPModel
+vllm-dspark-1  | INFO 08-14 10:46:24 [model.py:1776] Using max model len 1048576
+vllm-dspark-1  | INFO 08-14 10:46:24 [speculative.py:1040] Overriding draft model max model len from 1048576 to 524288
+vllm-dspark-1  | INFO 08-14 10:46:24 [scheduler.py:252] Chunked prefill is enabled with max_num_batched_tokens=8192.
+vllm-dspark-1  | INFO 08-14 10:46:24 [vllm.py:1042] Asynchronous scheduling is enabled.
+vllm-dspark-1  | INFO 08-14 10:46:24 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+vllm-dspark-1  | WARNING 08-14 10:46:24 [vllm.py:1648] max_num_scheduled_tokens is set to 8168 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+vllm-dspark-1  | WARNING 08-14 10:46:24 [vllm.py:1804] Truncating max_cudagraph_capture_size to 32
+vllm-dspark-1  | WARNING 08-14 10:46:24 [vllm.py:2149] Model Runner V2 does not yet support the thinking_token_budget request parameter. Set VLLM_USE_V2_MODEL_RUNNER=0 if this is required.
+vllm-dspark-1  | INFO 08-14 10:46:24 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+vllm-dspark-1  | INFO 08-14 10:46:24 [serve.py:212] Launching vLLM (v0.25.2.dev0+g752a3a504.d20260714) headless multiproc executor, with head node address 192.168.100.10:25000 for torch.distributed process group.
+vllm-dspark-1  | WARNING 08-14 10:46:24 [multiproc_executor.py:1067] Reducing Torch parallelism from 20 threads to 1 to avoid unnecessary CPU contention. Set OMP_NUM_THREADS in the external environment to tune this value as needed.
+vllm-dspark-1  | (Worker pid=242) INFO 08-14 10:46:28 [parallel_state.py:1607] world_size=2 rank=1 local_rank=0 distributed_init_method=tcp://192.168.100.10:25000 backend=nccl
+vllm-dspark-1  | (Worker pid=242) WARNING 08-14 10:46:36 [symm_mem.py:66] SymmMemCommunicator: Device capability 12.1 not supported, communicator is not available.
+vllm-dspark-1  | (Worker pid=242) INFO 08-14 10:46:37 [parallel_state.py:1942] rank 1 in world size 2 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 1, EP rank 1, EPLB rank N/A
+vllm-dspark-1  | (Worker pid=242) INFO 08-14 10:46:37 [gpu_worker.py:360] Using V2 Model Runner
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [model_runner.py:281] Loading model from scratch...
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [quant_config.py:75] DeepSeek V4 expert_dtype resolved to 'fp4'
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [deep_gemm.py:175] deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [deep_gemm.py:202] DeepGEMM PDL enabled on vllm.third_party.deep_gemm.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [deep_gemm.py:120] DeepGEMM E8M0 enabled on current platform.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [attention.py:107] Using DeepSeek V4 padded nvfp4_ds_mla KV cache format.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [mxfp4.py:426] Using 'B12X_MXFP4' Mxfp4 MoE backend.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:38 [attention.py:732] Using FP8 indexer cache for Lightning Indexer.
+vllm-dspark-1  | (Worker_TP0 pid=303) WARNING 08-14 10:46:43 [vllm.py:2270] `torch.compile` is turned on, but the model /cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb does not support it. Please open an issue on GitHub if you want it to be supported.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:43 [weight_utils.py:849] Filesystem type for checkpoints: EXT4. Checkpoint size: 155.43 GiB. Available RAM: 25.80 GiB.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:46:43 [weight_utils.py:879] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre) and the checkpoint size (155.43 GiB) exceeds 90% of available RAM (25.80 GiB).
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   0% Completed | 0/48 [00:00<?, ?it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   2% Completed | 1/48 [00:03<02:35,  3.31s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   4% Completed | 2/48 [00:06<02:23,  3.11s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   6% Completed | 3/48 [00:09<02:21,  3.13s/it]
+vllm-dspark-1  | (Worker_TP1 pid=242) WARNING 08-14 10:46:55 [vllm.py:2270] `torch.compile` is turned on, but the model /cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb does not support it. Please open an issue on GitHub if you want it to be supported.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:55 [weight_utils.py:849] Filesystem type for checkpoints: EXT4. Checkpoint size: 155.43 GiB. Available RAM: 35.30 GiB.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:46:55 [weight_utils.py:879] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre) and the checkpoint size (155.43 GiB) exceeds 90% of available RAM (35.30 GiB).
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  10% Completed | 5/48 [00:15<02:13,  3.11s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  12% Completed | 6/48 [00:18<02:12,  3.15s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  15% Completed | 7/48 [00:22<02:16,  3.32s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  17% Completed | 8/48 [00:26<02:21,  3.54s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  19% Completed | 9/48 [00:30<02:25,  3.72s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  21% Completed | 10/48 [00:34<02:25,  3.83s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  23% Completed | 11/48 [00:40<02:47,  4.52s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  25% Completed | 12/48 [00:44<02:37,  4.38s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  27% Completed | 13/48 [00:48<02:27,  4.22s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  29% Completed | 14/48 [00:52<02:21,  4.15s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  31% Completed | 15/48 [00:56<02:11,  4.00s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  33% Completed | 16/48 [00:59<02:04,  3.89s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  35% Completed | 17/48 [01:03<01:56,  3.77s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  38% Completed | 18/48 [01:07<01:52,  3.74s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  40% Completed | 19/48 [01:10<01:48,  3.74s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  42% Completed | 20/48 [01:14<01:42,  3.64s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  44% Completed | 21/48 [01:18<01:42,  3.80s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  46% Completed | 22/48 [01:22<01:41,  3.89s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  48% Completed | 23/48 [01:26<01:35,  3.82s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  52% Completed | 25/48 [01:34<01:28,  3.84s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  54% Completed | 26/48 [01:38<01:25,  3.89s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  56% Completed | 27/48 [01:41<01:17,  3.71s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  58% Completed | 28/48 [01:44<01:11,  3.60s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  60% Completed | 29/48 [01:47<01:06,  3.48s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  62% Completed | 30/48 [01:51<01:02,  3.45s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  65% Completed | 31/48 [01:54<00:57,  3.40s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  67% Completed | 32/48 [01:58<00:56,  3.53s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  69% Completed | 33/48 [02:02<00:54,  3.60s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  71% Completed | 34/48 [02:06<00:53,  3.79s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  73% Completed | 35/48 [02:10<00:48,  3.76s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  75% Completed | 36/48 [02:13<00:44,  3.71s/it]
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:48:55 [default_loader.py:430] Loading weights took 120.74 seconds
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:48:56 [mxfp4.py:1733] Using MoEPrepareAndFinalizeNoDPEPModular
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:48:56 [mxfp4.py:1734] Using B12xExperts
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  79% Completed | 38/48 [02:21<00:38,  3.86s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  81% Completed | 39/48 [02:25<00:34,  3.82s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  83% Completed | 40/48 [02:29<00:31,  3.89s/it]
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:08 [b12x_mxfp4_moe.py:465] Prewarmed B12X route-pack capacities (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192) on cuda:0 (experts=256, topk=6)
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  85% Completed | 41/48 [02:33<00:26,  3.84s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  88% Completed | 42/48 [02:37<00:23,  3.90s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  90% Completed | 43/48 [02:40<00:19,  3.85s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  92% Completed | 44/48 [02:47<00:18,  4.59s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  94% Completed | 45/48 [02:47<00:10,  3.39s/it]
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:20 [eagle3_utils.py:28] Using Eagle3 auxiliary layers from config: (41, 42, 43)
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:21 [vllm.py:1042] Asynchronous scheduling is enabled.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:21 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+vllm-dspark-1  | (Worker_TP1 pid=242) WARNING 08-14 10:49:21 [vllm.py:1648] max_num_scheduled_tokens is set to 8168 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+vllm-dspark-1  | (Worker_TP1 pid=242) WARNING 08-14 10:49:21 [vllm.py:2149] Model Runner V2 does not yet support the thinking_token_budget request parameter. Set VLLM_USE_V2_MODEL_RUNNER=0 if this is required.
+vllm-dspark-1  | (Worker_TP1 pid=242) WARNING 08-14 10:49:22 [vllm.py:2270] `torch.compile` is turned on, but the model /cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb does not support it. Please open an issue on GitHub if you want it to be supported.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:22 [weight_utils.py:849] Filesystem type for checkpoints: EXT4. Checkpoint size: 155.43 GiB. Available RAM: 31.12 GiB.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:22 [weight_utils.py:879] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre) and the checkpoint size (155.43 GiB) exceeds 90% of available RAM (31.12 GiB).
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  98% Completed | 47/48 [02:49<00:02,  2.04s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards: 100% Completed | 48/48 [02:50<00:00,  1.65s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards: 100% Completed | 48/48 [02:50<00:00,  3.54s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) 
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:33 [default_loader.py:430] Loading weights took 170.07 seconds
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:34 [mxfp4.py:1733] Using MoEPrepareAndFinalizeNoDPEPModular
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:34 [mxfp4.py:1734] Using B12xExperts
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:46 [b12x_mxfp4_moe.py:465] Prewarmed B12X route-pack capacities (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192) on cuda:0 (experts=256, topk=6)
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:59 [eagle3_utils.py:28] Using Eagle3 auxiliary layers from config: (41, 42, 43)
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:59 [vllm.py:1042] Asynchronous scheduling is enabled.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:59 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+vllm-dspark-1  | (Worker_TP0 pid=303) WARNING 08-14 10:49:59 [vllm.py:1648] max_num_scheduled_tokens is set to 8168 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+vllm-dspark-1  | (Worker_TP0 pid=303) WARNING 08-14 10:49:59 [vllm.py:2149] Model Runner V2 does not yet support the thinking_token_budget request parameter. Set VLLM_USE_V2_MODEL_RUNNER=0 if this is required.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:49:59 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+vllm-dspark-1  | (Worker_TP0 pid=303) WARNING 08-14 10:50:00 [vllm.py:2270] `torch.compile` is turned on, but the model /cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb does not support it. Please open an issue on GitHub if you want it to be supported.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:50:00 [weight_utils.py:849] Filesystem type for checkpoints: EXT4. Checkpoint size: 155.43 GiB. Available RAM: 26.48 GiB.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:50:00 [weight_utils.py:879] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre) and the checkpoint size (155.43 GiB) exceeds 90% of available RAM (26.48 GiB).
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   0% Completed | 0/48 [00:00<?, ?it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   4% Completed | 2/48 [00:00<00:13,  3.38it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:   6% Completed | 3/48 [00:01<00:21,  2.07it/s]
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:56 [dspark.py:457] DSpark draft model loaded: 96 params
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:49:56 [default_loader.py:430] Loading weights took 34.29 seconds
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  10% Completed | 5/48 [00:02<00:25,  1.66it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  12% Completed | 6/48 [00:03<00:26,  1.57it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  15% Completed | 7/48 [00:03<00:25,  1.62it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  17% Completed | 8/48 [00:04<00:26,  1.53it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  19% Completed | 9/48 [00:05<00:26,  1.49it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  21% Completed | 10/48 [00:06<00:26,  1.44it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  23% Completed | 11/48 [00:06<00:25,  1.43it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  25% Completed | 12/48 [00:07<00:24,  1.45it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  27% Completed | 13/48 [00:08<00:24,  1.45it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  29% Completed | 14/48 [00:09<00:24,  1.40it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  31% Completed | 15/48 [00:09<00:23,  1.39it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  33% Completed | 16/48 [00:10<00:21,  1.48it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  35% Completed | 17/48 [00:10<00:20,  1.51it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  38% Completed | 18/48 [00:11<00:19,  1.57it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  40% Completed | 19/48 [00:12<00:17,  1.63it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  42% Completed | 20/48 [00:12<00:16,  1.67it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  44% Completed | 21/48 [00:13<00:16,  1.68it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  46% Completed | 22/48 [00:13<00:15,  1.64it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  48% Completed | 23/48 [00:14<00:15,  1.66it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  50% Completed | 24/48 [00:15<00:14,  1.66it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  52% Completed | 25/48 [00:15<00:14,  1.60it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  54% Completed | 26/48 [00:17<00:19,  1.16it/s]
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:50:06 [model_runner.py:302] Model loading took 79.17 GiB and 208.193005 seconds
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  54% Completed | 26/48 [00:17<00:19,  1.16it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  56% Completed | 27/48 [00:17<00:17,  1.21it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  58% Completed | 28/48 [00:18<00:15,  1.32it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  60% Completed | 29/48 [00:19<00:13,  1.39it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  62% Completed | 30/48 [00:19<00:12,  1.48it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  65% Completed | 31/48 [00:20<00:10,  1.56it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  67% Completed | 32/48 [00:20<00:09,  1.63it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  69% Completed | 33/48 [00:21<00:09,  1.65it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  71% Completed | 34/48 [00:22<00:08,  1.62it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  73% Completed | 35/48 [00:22<00:07,  1.65it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  75% Completed | 36/48 [00:23<00:07,  1.68it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  77% Completed | 37/48 [00:23<00:06,  1.75it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  79% Completed | 38/48 [00:24<00:05,  1.79it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  81% Completed | 39/48 [00:24<00:04,  1.83it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  83% Completed | 40/48 [00:25<00:04,  1.86it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  85% Completed | 41/48 [00:25<00:03,  1.94it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  88% Completed | 42/48 [00:25<00:02,  2.48it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  90% Completed | 43/48 [00:26<00:01,  2.94it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  96% Completed | 46/48 [00:29<00:01,  1.27it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards:  98% Completed | 47/48 [00:32<00:01,  1.31s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards: 100% Completed | 48/48 [00:36<00:00,  1.93s/it]
+vllm-dspark-1  | (Worker_TP0 pid=303) Loading safetensors checkpoint shards: 100% Completed | 48/48 [00:36<00:00,  1.31it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) 
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:50:37 [dspark.py:457] DSpark draft model loaded: 96 params
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:50:37 [default_loader.py:430] Loading weights took 36.96 seconds
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:50:48 [model_runner.py:302] Model loading took 79.17 GiB and 250.681529 seconds
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:50:48 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:50:54  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:50:58  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:50:59  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_post_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:01  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_post_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:14  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `hc_head_fuse_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:17  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `hc_head_fuse_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:17  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:21  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:51:25 [gpu_worker.py:538] Available KV cache memory: 11.66 GiB
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:51:25 [kv_cache_utils.py:2146] GPU KV cache size: 780,634 tokens
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:51:25 [kv_cache_utils.py:2147] Maximum concurrency for 524,288 tokens per request: 1.49x
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:51:25 [indexer.py:297] DSA indexer decode path: use_flattening=True (next_n=6, use_fp4_indexer_cache=False)
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:51:31 [flashinfer_sparse_mla_warmup.py:233] Warming up DeepSeek V4 sparse MLA attention for mixed tokens=16.
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:51:31 [flashinfer_sparse_mla_warmup.py:124] Autotuning FlashInfer SM120 sparse MLA DSv4 decode with cache: /cache/huggingface/vllm-cache/flashinfer_autotune_cache/0.6.15/121a/2dec267890719865a30f609da92a2bec55e591243e760ff7c9eb61a61c25b563/autotune_configs.json
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:50:54  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:50:59  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:00  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_post_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:01  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_post_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:14  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `hc_head_fuse_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:16  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `hc_head_fuse_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:17  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:21  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:51:25 [gpu_worker.py:538] Available KV cache memory: 7.48 GiB
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:51:25 [indexer.py:297] DSA indexer decode path: use_flattening=True (next_n=6, use_fp4_indexer_cache=False)
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:51:31 [flashinfer_sparse_mla_warmup.py:233] Warming up DeepSeek V4 sparse MLA attention for mixed tokens=16.
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:45,367 - INFO - autotuner.py:2177 - flashinfer.jit: [Autotuner]: Loaded 24 configs from /cache/huggingface/vllm-cache/flashinfer_autotune_cache/0.6.15/121a/2dec267890719865a30f609da92a2bec55e591243e760ff7c9eb61a61c25b563/autotune_configs.json
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:45,368 - INFO - autotuner.py:757 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:45,605 - INFO - autotuner.py:1226 - flashinfer.jit: [Autotuner]: Config cache hit for sparse_mla_sm120_decode_dsv4 (runner=SparseMlaDecodeV3Runner, source=config file)
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:52,656 - INFO - autotuner.py:780 - flashinfer.jit: [Autotuner]: Autotuning process ends
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:34  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_fused_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:35  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_fused_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:36  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:40  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:45  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_fused_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:47  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_fused_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:47  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:51  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:51:52 [flashinfer_sparse_mla_warmup.py:181] FlashInfer SM120 sparse MLA DSv4 decode autotune cache loaded on rank 0 from /cache/huggingface/vllm-cache/flashinfer_autotune_cache/0.6.15/121a/2dec267890719865a30f609da92a2bec55e591243e760ff7c9eb61a61c25b563/autotune_configs.json.
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:52,677 - INFO - autotuner.py:2177 - flashinfer.jit: [Autotuner]: Loaded 24 configs from /cache/huggingface/vllm-cache/flashinfer_autotune_cache/0.6.15/121a/2dec267890719865a30f609da92a2bec55e591243e760ff7c9eb61a61c25b563/autotune_configs.json
+vllm-dspark-1  | (Worker_TP0 pid=303) DeepGEMM warmup:   0%|          | 0/1762 [00:00<?, ?it/s]DeepGEMM warmup:  30%|███       | 535/1762 [00:00<00:00, 2000.88it/s]DeepGEMM warmup:  49%|████▉     | 861/1762 [00:00<00:00, 1879.43it/s]DeepGEMM warmup:  81%|████████▏ | 1433/1762 [00:00<00:00, 2553.62it/s]DeepGEMM warmup: 100%|██████████| 1762/1762 [00:00<00:00, 2789.34it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:53,317 - INFO - autotuner.py:757 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+vllm-dspark-1  | (Worker_TP0 pid=303) 2026-08-14 10:51:57,150 - INFO - autotuner.py:780 - flashinfer.jit: [Autotuner]: Autotuning process ends
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:51:57 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+vllm-dspark-1  | (Worker_TP0 pid=303) Capturing CUDA graphs (PIECEWISE):   0%|          | 0/7 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE):  14%|█▍        | 1/7 [00:00<00:01,  5.49it/s]Capturing CUDA graphs (PIECEWISE):  29%|██▊       | 2/7 [00:00<00:00,  6.36it/s]Capturing CUDA graphs (PIECEWISE):  43%|████▎     | 3/7 [00:00<00:00,  6.90it/s]Capturing CUDA graphs (PIECEWISE):  57%|█████▋    | 4/7 [00:00<00:00,  6.90it/s]Capturing CUDA graphs (PIECEWISE):  71%|███████▏  | 5/7 [00:00<00:00,  7.07it/s]Capturing CUDA graphs (PIECEWISE):  86%|████████▌ | 6/7 [00:00<00:00,  7.34it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 7/7 [00:02<00:00,  1.33it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 7/7 [00:02<00:00,  2.43it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) Capturing CUDA graphs (FULL):   0%|          | 0/4 [00:00<?, ?it/s]2026-08-14 10:52:00,333 - WARNING - autotuner.py:1424 - flashinfer.jit: [AutoTuner]: No tuned config covers sparse_mla_sm120_decode_dsv4 input_shapes=((24, 32, 512), (24, 128), (24, 32, 66, 512), (24, 32, 66), (24, 32, 512), (24, 32), (24,), (32,), (24, 4096), (24,)); falling back to runner=SparseMlaDecodeV3Runner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+vllm-dspark-1  | (Worker_TP0 pid=303) Capturing CUDA graphs (FULL):  25%|██▌       | 1/4 [00:00<00:00,  3.81it/s]Capturing CUDA graphs (FULL):  50%|█████     | 2/4 [00:00<00:00,  4.50it/s]2026-08-14 10:52:00,759 - WARNING - autotuner.py:1424 - flashinfer.jit: [AutoTuner]: No tuned config covers sparse_mla_sm120_decode_dsv4 input_shapes=((12, 32, 512), (12, 128), (12, 32, 66, 512), (12, 32, 66), (12, 32, 512), (12, 32), (12,), (32,), (12, 4096), (12,)); falling back to runner=SparseMlaDecodeV3Runner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+vllm-dspark-1  | (Worker_TP0 pid=303) Capturing CUDA graphs (FULL):  75%|███████▌  | 3/4 [00:00<00:00,  4.87it/s]2026-08-14 10:52:00,941 - WARNING - autotuner.py:1424 - flashinfer.jit: [AutoTuner]: No tuned config covers sparse_mla_sm120_decode_dsv4 input_shapes=((6, 32, 512), (6, 128), (6, 32, 66, 512), (6, 32, 66), (6, 32, 512), (6, 32), (6,), (32,), (6, 4096), (6,)); falling back to runner=SparseMlaDecodeV3Runner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+vllm-dspark-1  | (Worker_TP0 pid=303) Capturing CUDA graphs (FULL): 100%|██████████| 4/4 [00:00<00:00,  5.15it/s]Capturing CUDA graphs (FULL): 100%|██████████| 4/4 [00:00<00:00,  4.88it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:52:01 [speculator.py:101] Capturing model for DSpark speculator...
+vllm-dspark-1  | (Worker_TP0 pid=303) Capturing dspark CUDA graphs (FULL):   0%|          | 0/4 [00:00<?, ?it/s]Capturing dspark CUDA graphs (FULL): 100%|██████████| 4/4 [00:00<00:00, 33.89it/s]Capturing dspark CUDA graphs (FULL): 100%|██████████| 4/4 [00:00<00:00, 33.85it/s]
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:52:01 [model_runner.py:723] Graph capturing finished in 4 secs, took 0.46 GiB
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:52,693 - INFO - autotuner.py:2177 - flashinfer.jit: [Autotuner]: Loaded 24 configs from /cache/huggingface/vllm-cache/flashinfer_autotune_cache/0.6.15/121a/2dec267890719865a30f609da92a2bec55e591243e760ff7c9eb61a61c25b563/autotune_configs.json
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:34  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_fused_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:35  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_fused_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:36  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:40  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:45  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_fused_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:46  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_fused_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:47  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:133): TileLang begins to compile kernel `mhc_pre_big_fuse_with_norm_tilelang` with `out_idx=None`
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:51  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:141): TileLang completes to compile kernel `mhc_pre_big_fuse_with_norm_tilelang`
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:51:52 [flashinfer_sparse_mla_warmup.py:181] FlashInfer SM120 sparse MLA DSv4 decode autotune cache loaded on rank 1 from /cache/huggingface/vllm-cache/flashinfer_autotune_cache/0.6.15/121a/2dec267890719865a30f609da92a2bec55e591243e760ff7c9eb61a61c25b563/autotune_configs.json.
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:53,351 - INFO - autotuner.py:757 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:57,139 - INFO - autotuner.py:1226 - flashinfer.jit: [Autotuner]: Config cache hit for sparse_mla_sm120_decode_dsv4 (runner=SparseMlaDecodeV3Runner, source=config file)
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:51:57,150 - INFO - autotuner.py:780 - flashinfer.jit: [Autotuner]: Autotuning process ends
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:51:57 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:52:00,338 - WARNING - autotuner.py:1424 - flashinfer.jit: [AutoTuner]: No tuned config covers sparse_mla_sm120_decode_dsv4 input_shapes=((24, 32, 512), (24, 128), (24, 32, 66, 512), (24, 32, 66), (24, 32, 512), (24, 32), (24,), (32,), (24, 4096), (24,)); falling back to runner=SparseMlaDecodeV3Runner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:52:00,760 - WARNING - autotuner.py:1424 - flashinfer.jit: [AutoTuner]: No tuned config covers sparse_mla_sm120_decode_dsv4 input_shapes=((12, 32, 512), (12, 128), (12, 32, 66, 512), (12, 32, 66), (12, 32, 512), (12, 32), (12,), (32,), (12, 4096), (12,)); falling back to runner=SparseMlaDecodeV3Runner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+vllm-dspark-1  | (Worker_TP1 pid=242) 2026-08-14 10:52:00,944 - WARNING - autotuner.py:1424 - flashinfer.jit: [AutoTuner]: No tuned config covers sparse_mla_sm120_decode_dsv4 input_shapes=((6, 32, 512), (6, 128), (6, 32, 66, 512), (6, 32, 66), (6, 32, 512), (6, 32), (6,), (32,), (6, 4096), (6,)); falling back to runner=SparseMlaDecodeV3Runner tactic=-1.  This shape is outside the tuning bucket range -- expand tuning_buckets / max_num_tokens during the next tuning pass to avoid this perf cliff.
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:52:01 [speculator.py:101] Capturing model for DSpark speculator...
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:52:01 [model_runner.py:723] Graph capturing finished in 4 secs, took 0.36 GiB
+vllm-dspark-1  | (Worker_TP0 pid=303) INFO 08-14 10:52:08 [jit_monitor.py:73] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:52:08 [core.py:344] init engine (profile, create kv cache, warmup model) took 79.58 s
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:52:18 [vllm.py:1042] Asynchronous scheduling is enabled.
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:52:18 [kernel.py:292] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+vllm-dspark-1  | (EngineCore pid=246) WARNING 08-14 10:52:18 [vllm.py:1648] max_num_scheduled_tokens is set to 8168 based on the speculative decoding settings. This may lead to suboptimal performance. Consider increasing max_num_batched_tokens to accommodate the additional draft token slots, or decrease num_speculative_tokens or max_num_seqs.
+vllm-dspark-1  | (EngineCore pid=246) WARNING 08-14 10:52:18 [vllm.py:2149] Model Runner V2 does not yet support the thinking_token_budget request parameter. Set VLLM_USE_V2_MODEL_RUNNER=0 if this is required.
+vllm-dspark-1  | (EngineCore pid=246) INFO 08-14 10:52:18 [compilation.py:312] Enabled custom fusions: norm_quant, act_quant
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:19 [api_server.py:612] Supported tasks: ['generate']
+vllm-dspark-1  | (Worker_TP1 pid=242) INFO 08-14 10:52:08 [jit_monitor.py:73] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [parser_manager.py:37] "auto" tool choice has been enabled.
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [api_server.py:616] Starting vLLM server on http://0.0.0.0:8888
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:37] Available routes are:
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /load, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /version, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /health, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /metrics, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /tokenize, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /detokenize, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/models, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /ping, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /ping, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /invocations, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/chat/completions, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/chat/completions/batch, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/responses, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/responses/{response_id}, Methods: GET
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/responses/{response_id}/cancel, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/completions, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/messages, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /generative_scoring, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/completions/render, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/chat/completions/derender, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /v1/completions/derender, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO 08-14 10:52:23 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
+vllm-dspark-1  | (APIServer pid=1) INFO:     Started server process [1]
+vllm-dspark-1  | (APIServer pid=1) INFO:     Waiting for application startup.
+vllm-dspark-1  | (APIServer pid=1) INFO:     Application startup complete.
+DeepSeek V4 Flash DSpark is running: http://127.0.0.1:8888/v1/models
+NAME                              IMAGE                                                                                                           COMMAND                  SERVICE       CREATED         STATUS         PORTS
+deepseek-v4-flash-vllm-dspark-1   ghcr.io/anemll/dspark-vllm-gx10:0.1.1@sha256:a83948492cf13df455170fb42885f5ef4db54fefe0feff0f841ecbff464ac9d8   "bash -lc 'export PA…"   vllm-dspark   6 minutes ago   Up 6 minutes   
+NAME                              IMAGE                                                                                                           COMMAND                  SERVICE       CREATED         STATUS         PORTS
+deepseek-v4-flash-vllm-dspark-1   ghcr.io/anemll/dspark-vllm-gx10:0.1.1@sha256:a83948492cf13df455170fb42885f5ef4db54fefe0feff0f841ecbff464ac9d8   "bash -lc 'export PA…"   vllm-dspark   6 minutes ago   Up 6 minutes   
+Running minimal OpenAI-compatible chat request...
+Minimal chat request succeeded.
+[spark-mode] cluster :8888 UP after 1×5s
+=== spark-mode status 2026-08-14T05:52:44-05:00 ===
+mode_guess: cluster
+llama-miaai35: inactive
+unknown
+dspark_head_container: running
+:8889 helper: DOWN
+:8888 cluster: UP
+               total        used        free      shared  buff/cache   available
+Mem:             121         108           2           3          16          13
+-- spark2 --
+               total        used        free      shared  buff/cache   available
+Mem:             121         101           2           3          21          19
+deepseek-v4-flash-vllm-dspark-1
+
+Note: helper frees RAM; cluster fills both Sparks. Switch anytime: spark-mode.sh helper|cluster. Owner choice.
+[spark-mode] Cluster mode ready. Stay as long as you want; free RAM later with: bash ~/scripts/dgx/spark-mode.sh helper
+[spark-mode] Sync Hermes context_length to engine (auto-detect / unset pin)…
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/urllib/request.py", line 1344, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+  File "/usr/lib/python3.12/http/client.py", line 1365, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/usr/lib/python3.12/http/client.py", line 1411, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.12/http/client.py", line 1360, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.12/http/client.py", line 1120, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.12/http/client.py", line 1064, in send
+    self.connect()
+  File "/usr/lib/python3.12/http/client.py", line 1030, in connect
+    self.sock = self._create_connection(
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/socket.py", line 852, in create_connection
+    raise exceptions[0]
+  File "/usr/lib/python3.12/socket.py", line 837, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<stdin>", line 73, in <module>
+  File "<stdin>", line 42, in fix_profile
+  File "<stdin>", line 20, in probe
+  File "/usr/lib/python3.12/urllib/request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 515, in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 532, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 1373, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/urllib/request.py", line 1347, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 111] Connection refused>
+[spark-mode] WARN: context sync failed
+Switching to DeepSeek-V4-Flash DSpark TP=2 (stops H3 / 35B / other heavies)...
+[node2-deep] stopping llama-server + deep vLLM containers (puzzle/qwen27) on spark2
+node2-deep-lane.sh already running, exiting
+alertbot-send: ok
+No PID file found
+Stopped. Log preserved at /home/coinupbtc/models/dgx_bundle/qwen27-docker/.vllm.log
+No PID file found
+Stopped. Log preserved at /home/coinupbtc/models/dgx_bundle/qwen27-docker/.vllm.log
+Stopped all vLLM servers (native + qwen27 Docker).
+No vLLM server running.
+Memory: 108Gi used / 121Gi total, 13Gi available
+No PID file found — llama-server is not running.
+llama-server stopped.
+DeepSeek already serving on :8888
+  → desktop root (~/.hermes/config.yaml)
+  → orchestrator
+✓ Set model.provider = deepseek-dspark in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+⚠️  1 enabled unpinned cron job has stored provider_snapshot values that differ from the new global provider. They will fail closed on their next run instead of silently using the changed model/provider. Inspect with `hermes cron list`, then pin the intended values with `cronjob action=update job_id=<job_id> provider=<provider> model=<model>`.
+✓ Set model.default = deepseek-v4-flash-0731 in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Set model.base_url = http://127.0.0.1:8888/v1 in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Set model.api_key = *** in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Unset model.context_length from /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Set model.max_tokens = 16384 in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Set agent.reasoning_effort = none in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+⚠ 'agent.reasoning_effort' is not a recognized config key — it was saved anyway, but Hermes may not read it.
+  Did you mean: agent.reasoning_overrides
+  (Custom top-level keys are supported and bridged to the environment for skills/external tools. Use --force to skip this notice.)
+✓ Set model.request_overrides.chat_template_kwargs.enable_thinking = False in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Set model.request_overrides.extra_body.thinking_token_budget = 4096 in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+✓ Set model.request_overrides.extra_body.chat_template_kwargs.thinking = True in /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml
+  → light
+✓ Set model.provider = deepseek-dspark in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set model.default = deepseek-v4-flash-0731 in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set model.base_url = http://127.0.0.1:8888/v1 in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set model.api_key = *** in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Unset model.context_length from /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set model.max_tokens = 16384 in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set agent.reasoning_effort = none in /home/coinupbtc/.hermes/profiles/light/config.yaml
+⚠ 'agent.reasoning_effort' is not a recognized config key — it was saved anyway, but Hermes may not read it.
+  Did you mean: agent.reasoning_overrides
+  (Custom top-level keys are supported and bridged to the environment for skills/external tools. Use --force to skip this notice.)
+✓ Set model.request_overrides.chat_template_kwargs.enable_thinking = False in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set model.request_overrides.extra_body.thinking_token_budget = 4096 in /home/coinupbtc/.hermes/profiles/light/config.yaml
+✓ Set model.request_overrides.extra_body.chat_template_kwargs.thinking = True in /home/coinupbtc/.hermes/profiles/light/config.yaml
+  → dobby
+✓ Set model.provider = deepseek-dspark in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set model.default = deepseek-v4-flash-0731 in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set model.base_url = http://127.0.0.1:8888/v1 in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set model.api_key = *** in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Unset model.context_length from /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set model.max_tokens = 16384 in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set agent.reasoning_effort = none in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+⚠ 'agent.reasoning_effort' is not a recognized config key — it was saved anyway, but Hermes may not read it.
+  Did you mean: agent.reasoning_overrides
+  (Custom top-level keys are supported and bridged to the environment for skills/external tools. Use --force to skip this notice.)
+✓ Set model.request_overrides.chat_template_kwargs.enable_thinking = False in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set model.request_overrides.extra_body.thinking_token_budget = 4096 in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+✓ Set model.request_overrides.extra_body.chat_template_kwargs.thinking = True in /home/coinupbtc/.hermes/profiles/dobby/config.yaml
+  → smeagle
+✓ Set model.provider = deepseek-dspark in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set model.default = deepseek-v4-flash-0731 in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set model.base_url = http://127.0.0.1:8888/v1 in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set model.api_key = *** in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Unset model.context_length from /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set model.max_tokens = 16384 in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set agent.reasoning_effort = none in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+⚠ 'agent.reasoning_effort' is not a recognized config key — it was saved anyway, but Hermes may not read it.
+  Did you mean: agent.reasoning_overrides
+  (Custom top-level keys are supported and bridged to the environment for skills/external tools. Use --force to skip this notice.)
+✓ Set model.request_overrides.chat_template_kwargs.enable_thinking = False in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set model.request_overrides.extra_body.thinking_token_budget = 4096 in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+✓ Set model.request_overrides.extra_body.chat_template_kwargs.thinking = True in /home/coinupbtc/.hermes/profiles/smeagle/config.yaml
+orchestrator: «unset» → auto(unset→engine 524288) model=deepseek-v4-flash-0731 base=http://127.0.0.1:8888/v1
+dobby: «unset» → auto(unset→engine 524288) model=deepseek-v4-flash-0731 base=http://127.0.0.1:8888/v1
+light: «unset» → auto(unset→engine 524288) model=deepseek-v4-flash-0731 base=http://127.0.0.1:8888/v1
+smeagle: «unset» → auto(unset→engine 524288) model=deepseek-v4-flash-0731 base=http://127.0.0.1:8888/v1
+.hermes: «unset» → auto(unset→engine 524288) model=deepseek-v4-flash-0731 base=http://127.0.0.1:8888/v1
+✓ deepseek on :8888 — Hermes provider: deepseek-dspark
+  Tip: Telegram /new after switch (long history makes replies slow)
+[spark-stack 2026-08-14T05:52:58-05:00] restart Hermes gateways so they pick up the new wire
+[spark-stack 2026-08-14T05:53:02-05:00] enable house vision sidecar (4B TP1 on spark2, DS4F stays)
+[2026-08-14T05:53:02-05:00] START sidecar via /home/coinupbtc/Documents/projects/ds4f-qwen-vision-sidecar/start-qwen-vision-tp1.sh (DS4F stays up)
+[2026-08-14T05:57:03-05:00] FAIL not ready within 240s
+alertbot-send: ok
+[spark-stack 2026-08-14T05:57:03-05:00] WARN: vision ensure returned non-zero (DS4F chat still up)
+patched /home/coinupbtc/.hermes/CURRENT.md
+patched /home/coinupbtc/Documents/Obsidian/wiki/system/CURRENT.md
+alertbot-send: ok
+=== spark-stack status 2026-08-14T05:57:04-05:00 ===
+detected: prime
+desired: prime
+phase: idle
+message: DS4F :8888 LIVE · vision sidecar on
+updated: 2026-08-14T10:57:03.742089+00:00
+ds4f :8888  UP
+helper :8889 DOWN
+h3 :8800    DOWN
+music :8801 DOWN
+vision      DOWN
+vision_flag enabled
+               total        used        free      shared  buff/cache   available
+Mem:             121         108           1           3          16          13

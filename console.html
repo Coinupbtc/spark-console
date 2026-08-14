@@ -210,12 +210,49 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .serve::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor;
   box-shadow:0 0 8px currentColor;flex:none;transform:rotate(45deg)}
 
+/* Named setups — Prime / Videos / Music. One occupant of both Sparks. */
+.stack-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stack-chip{appearance:none;display:flex;flex-direction:column;align-items:flex-start;
+  gap:2px;min-height:52px;padding:10px 12px;border-radius:12px;cursor:pointer;
+  background:var(--surface-2);border:1px solid var(--line);color:inherit;text-align:left;
+  transition:border-color .15s,background .15s,transform .12s;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent}
+.stack-chip b{font:650 13px/1.2 var(--sans);letter-spacing:-.02em}
+.stack-chip span{font:11px/1.3 var(--sans);color:var(--ink-3)}
+.stack-chip.on{border-color:rgba(74,222,154,.55);background:rgba(74,222,154,.1)}
+.stack-chip.on b{color:var(--good)}
+.stack-chip:disabled{opacity:.45;cursor:not-allowed}
+.stack-chip:not(:disabled):not(.on):active{transform:scale(.98)}
+.stack-note{font:11.5px/1.4 var(--sans);color:var(--ink-3);padding:0 2px 2px;min-height:1.2em}
+.stack-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 14px 14px}
+.stack-card{display:flex;flex-direction:column;gap:6px;padding:14px 14px 12px;
+  background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;min-width:0}
+.stack-card.on{border-color:rgba(74,222,154,.5);background:rgba(74,222,154,.08)}
+.stack-card h4{margin:0;font:650 15px/1.2 var(--sans);letter-spacing:-.02em;display:flex;
+  align-items:center;gap:8px}
+.stack-card h4 em{font:600 10px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--good);border:1px solid rgba(74,222,154,.4);border-radius:999px;padding:3px 7px}
+.stack-card p{margin:0;font:12.5px/1.4 var(--sans);color:var(--ink-2)}
+.stack-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
+.stack-card .btn{margin-top:auto;min-height:40px;width:100%}
+#stack-modal{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right))
+    max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+  background:rgba(4,6,10,.72)}
+#stack-modal[hidden]{display:none!important}
+.stack-dlg{width:min(440px,100%);background:var(--surface);border:1px solid var(--line-2);
+  border-radius:18px;padding:20px 18px 16px;box-shadow:var(--shadow)}
+.stack-dlg h3{margin:0 0 8px;font:650 18px/1.2 var(--sans);letter-spacing:-.03em}
+.stack-dlg p{margin:0 0 16px;font:14px/1.45 var(--sans);color:var(--ink-2)}
+.stack-dlg-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stack-dlg-acts .btn{min-height:48px;font-size:15px}
+
 /* ══════════════════════════ views ══════════════════════════ */
 .view{display:none;min-height:0;min-width:0;overflow:auto;gap:14px}
 .view.on{display:grid}
 
 /* ─────────────── PULSE ─────────────── */
-#v-pulse{grid-template-rows:auto auto minmax(180px,1fr)}
+#v-pulse{grid-template-rows:auto auto auto minmax(180px,1fr)}
 
 /* hero verdict — first story on Pulse */
 .hero{display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:var(--r);
@@ -484,7 +521,7 @@ tr:last-child td{border-bottom:0}
 .pill.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.4)}
 .bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
 
-#v-control{grid-template-rows:auto minmax(0,1fr);align-content:start}
+#v-control{grid-template-rows:auto auto minmax(0,1fr);align-content:start}
 #v-jobs{grid-template-rows:auto auto auto;align-content:start}
 .jobs-aux{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;min-width:0}
 .board{display:flex;flex-direction:column;min-height:0}
@@ -627,13 +664,14 @@ tr:last-child td{border-bottom:0}
    Hover styling on a touchscreen sticks after a tap — fixed here rather than
    by weakening the desktop rules. ═══════════════════════════════════════════ */
 @media (hover:none){
-  .host:hover,.ltile:hover,.svc:hover{transform:none;border-color:var(--line)}
+  .host:hover,.ltile:hover,.svc:hover,.stack-chip:hover,.stack-card:hover{transform:none;border-color:var(--line)}
   .btn:hover:not(:disabled){color:var(--ink-2);border-color:var(--line-2);box-shadow:none}
   .att:hover{background:none}
   /* press feedback replaces hover feedback */
   .btn:active:not(:disabled){transform:scale(.96);border-color:var(--s1);
     box-shadow:0 0 0 3px rgba(110,182,255,.14)}
   .pill:active{transform:scale(.96)}
+  .stack-chip:active:not(:disabled){transform:scale(.97);background:rgba(255,255,255,.06)}
   .host:active,.att:active,.ltile:active,.svc:active{background:rgba(255,255,255,.05)}
 }
 
@@ -787,6 +825,16 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 .launch{padding:0 12px 12px;gap:8px}
 .lt{min-width:0;width:100%;max-width:none;padding:10px 12px}
 .lt .btn{padding:9px 14px;min-height:44px}
+.stack-bar{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.stack-chip{min-height:56px;padding:12px 10px}
+.stack-chip b{font-size:15px}
+.stack-chip span{font-size:11.5px;white-space:normal}
+.stack-cards{grid-template-columns:minmax(0,1fr);padding:0 12px 12px}
+.stack-card .btn{min-height:48px;font-size:16px}
+#stack-modal{align-items:flex-end}
+.stack-dlg{width:100%;border-radius:18px 18px 12px 12px;padding:18px 16px
+    calc(12px + env(safe-area-inset-bottom,0px))}
+.stack-dlg-acts .btn{min-height:52px;font-size:16px}
 .lt .ico{width:40px;height:40px}
 .lgroup{padding:0 12px 4px}
 .ltiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -913,6 +961,11 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     <div class="msg"><b id="hero-title">Checking the fleet…</b><span id="hero-sub">connecting</span></div>
     <div class="stats" id="hero-stats"></div>
   </div>
+  <div class="card" id="stack-pulse">
+    <h3>Setup</h3>
+    <div class="stack-note" id="stack-note-pulse"></div>
+    <div class="stack-bar" id="stack-bar"></div>
+  </div>
 
   <div class="hosts" id="hosts"></div>
 
@@ -956,6 +1009,11 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
+  <div class="card" id="stack-control">
+    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Setup · Videos · Music</span></h3>
+    <div class="stack-note" id="stack-note-control"></div>
+    <div class="stack-cards" id="stack-cards"></div>
+  </div>
   <div class="card dock-card">
     <h3>This desk <span class="cnt">opens on the physical display</span></h3>
     <div class="launch" id="launch-apps"></div></div>
@@ -1069,6 +1127,17 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
     Jobs<span class="badge" id="tb-jobs" hidden></span></button>
 </nav>
+
+<div id="stack-modal" hidden>
+  <div class="stack-dlg" role="dialog" aria-modal="true" aria-labelledby="stack-dlg-title">
+    <h3 id="stack-dlg-title">Switch setup?</h3>
+    <p id="stack-dlg-body"></p>
+    <div class="stack-dlg-acts">
+      <button type="button" class="btn" id="stack-dlg-cancel">Cancel</button>
+      <button type="button" class="btn go" id="stack-dlg-go">Switch</button>
+    </div>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -1394,8 +1463,11 @@ function renderHero(hosts,items,d){
   else if(warn){$("hero-title").textContent=`${warn} warning${warn>1?"s":""}`;
     $("hero-sub").textContent=items.find(i=>i.sev==="warn").msg;}
   else{$("hero-title").textContent="All systems nominal";
+    const st=((d.stack||{}).presets||[]).find(p=>p.active);
     const serve=servingBits(d).map(e=>shortModel(e.id)+(e.port?` :${e.port}`:"")).join(" · ");
-    $("hero-sub").textContent=serve?`Serving ${serve}`:"nothing on the fleet needs you right now";}
+    $("hero-sub").textContent=st
+      ?`${st.label} — ${st.short}`
+      :(serve?`Serving ${serve}`:"nothing on the fleet needs you right now");}
   const up=hosts.filter(h=>!h.offline).length;
   const svc=(((d.services||{}).services)||[]);
   const auto=(d.automation||{}).counts||{},bk=(d.backups||{}).counts||{};
@@ -2355,12 +2427,121 @@ function shortModel(id){
 }
 function renderServe(d){
   const el=$("serve"); if(!el)return;
+  const st=((d.stack||{}).presets||[]).find(p=>p.active);
   const ok=servingBits(d);
-  if(!ok.length){el.hidden=true;el.textContent="";return;}
+  const label=st?st.label:(ok.length?ok.map(e=>shortModel(e.id)).join(" · "):"");
+  if(!label){el.hidden=true;el.textContent="";return;}
   el.hidden=false;
-  el.textContent=ok.map(e=>shortModel(e.id)).join(" · ");
-  el.title=ok.map(e=>`${e.id} · ${e.engine||"?"} :${e.port||"?"}`).join("\n");
+  el.textContent=label;
+  el.title=st
+    ?(st.short+" · "+st.starts)
+    :ok.map(e=>`${e.id} · ${e.engine||"?"} :${e.port||"?"}`).join("\n");
 }
+
+/* ══════════════════════ named setups (Prime / Videos / Music) ══════════════════════ */
+let STACK_POLL=null, STACK_PENDING=null;
+function stackNote(s){
+  const op=s.active_operation;
+  if(op&&op.status==="running") return op.message||"Switching…";
+  if(op&&op.status==="failed") return op.message||"Last switch failed";
+  if(s.phase==="switching"&&op&&op.status==="running") return s.message||"Switching…";
+  if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
+  if(s.detected==="setup") return "Helper 35B is up. Music3 is off.";
+  if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
+  return s.message||"";
+}
+function renderStack(s){
+  const presets=s.presets||[];
+  const busy=!!(s.active_operation&&s.active_operation.status==="running");
+  const note=stackNote(s);
+  ["stack-note-pulse","stack-note-control"].forEach(id=>{
+    const el=$(id); if(el) el.textContent=note;
+  });
+  const bar=$("stack-bar");
+  if(bar){
+    bar.innerHTML=presets.map(p=>
+      `<button type="button" class="stack-chip ${p.active?"on":""}" data-stack="${esc(p.key)}"
+         ${(!p.can_switch||busy)?"disabled":""} title="${esc(p.detail)}">
+         <b>${esc(p.label)}</b><span>${esc(p.short)}</span></button>`).join("");
+    bar.querySelectorAll("[data-stack]").forEach(btn=>{
+      btn.onclick=()=>askStack(btn.dataset.stack);
+    });
+  }
+  const cards=$("stack-cards");
+  if(cards){
+    cards.innerHTML=presets.map(p=>{
+      const live=p.active?"<em>LIVE</em>":"";
+      const go=p.active?"On":(busy?"Wait":"Switch");
+      return `<div class="stack-card ${p.active?"on":""}">
+        <h4>${esc(p.label)} ${live}</h4>
+        <p>${esc(p.detail)}</p>
+        <div class="meta">Stops ${esc(p.stops)} · ${esc(p.eta)}</div>
+        <button type="button" class="btn go" data-stack="${esc(p.key)}"
+          ${(!p.can_switch||busy)?"disabled":""}>${go}</button>
+      </div>`;
+    }).join("");
+    cards.querySelectorAll("[data-stack]").forEach(btn=>{
+      btn.onclick=()=>askStack(btn.dataset.stack);
+    });
+  }
+}
+function askStack(key){
+  const s=DATA.stack||{};
+  const p=(s.presets||[]).find(x=>x.key===key);
+  if(!p||!p.can_switch)return;
+  STACK_PENDING=key;
+  $("stack-dlg-title").textContent=`Switch to ${p.label}?`;
+  $("stack-dlg-body").textContent=
+    `Stops ${p.stops}. Starts ${p.starts}. Takes about ${p.eta}. Telegram will ping you when it is ready.`;
+  $("stack-modal").hidden=false;
+}
+function closeStackModal(){
+  $("stack-modal").hidden=true;
+  STACK_PENDING=null;
+}
+$("stack-dlg-cancel").onclick=closeStackModal;
+$("stack-modal").addEventListener("click",e=>{if(e.target===$("stack-modal"))closeStackModal();});
+$("stack-dlg-go").onclick=()=>doStack(STACK_PENDING);
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&$("stack-modal")&&!$("stack-modal").hidden)closeStackModal();
+});
+async function doStack(key){
+  if(!key)return;
+  closeStackModal();
+  $("err").textContent=`switching to ${key}…`;
+  try{
+    const r=await fetch("/api/stack/switch",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key})});
+    const d=await r.json();
+    if(!d.ok){$("err").textContent=d.error||"switch failed";return;}
+    if(d.already){$("err").textContent=d.message||"already live";return;}
+    pollStackOp((d.operation||{}).id);
+  }catch(e){$("err").textContent="switch failed: "+e.message;}
+}
+async function pollStackOp(id){
+  if(!id)return;
+  if(STACK_POLL)clearInterval(STACK_POLL);
+  const tick=async()=>{
+    try{
+      const rr=await fetch("/api/stack/operations/"+id,{cache:"no-store"});
+      if(!rr.ok)return;
+      const d=await rr.json();
+      const op=d.operation||{};
+      $("err").textContent=op.message||"switching…";
+      DATA.stack=await(await fetch("/api/stack",{cache:"no-store"})).json();
+      renderStack(DATA.stack);
+      if(op.status==="completed"||op.status==="failed"){
+        clearInterval(STACK_POLL);STACK_POLL=null;
+        await refresh();
+      }
+    }catch(e){/* keep polling */}
+  };
+  await tick();
+  STACK_POLL=setInterval(tick,2000);
+}
+
+/* ══════════════════════ CONTROL tab ══════════════════════ */
 function svcGroup(el){
   document.querySelectorAll("#v-control .pill").forEach(p=>p.classList.toggle("on",p===el));
   SVC_GROUP=el.dataset.g;renderControl();
@@ -2727,6 +2908,7 @@ async function refresh(){
     renderProjects(d.projects||[]);
     renderActions(d.actions||[]);
     renderLaunch(d.launch||[]);
+    renderStack(d.stack||{});
     renderFleet(d);
     renderControl();
     renderJobs();
