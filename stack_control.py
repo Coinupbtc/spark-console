@@ -1,4 +1,4 @@
-"""Named Spark stack switcher for the console (prime / setup / video / music).
+"""Named Spark stack switcher for the console (prime / dream / qwen38 / setup / video / music).
 
 The heavy lifting lives in ~/scripts/dgx/spark-stack.sh — this module is the
 allowlisted API: detect what's up, spawn one switch, poll the log.
@@ -29,15 +29,31 @@ PRESETS: dict[str, dict] = {
         "short": "DS4F 0731 · 500k · vision",
         "detail": "DeepSeek-V4-Flash 0731 on both Sparks (TP2) with the Qwen vision sidecar. Chat stays local.",
         "eta": "10–15 min",
-        "stops": "Music3, helper 35B, MiniMax H3",
+        "stops": "Music3, helper 35B, MiniMax H3, Qwen 3.8",
         "starts": "DS4F :8888 + vision :8890",
+    },
+    "dream": {
+        "label": "Dream",
+        "short": "0731 348k · Qwen n2 · pics n1",
+        "detail": "0731 on both Sparks at 348k, 4B pictures on this box, Qwen 3.8 GGUF on node2 :8100. Orch/dobby = 0731. Smeagle = Qwen.",
+        "eta": "10–20 min",
+        "stops": "Music3, helper 35B, MiniMax H3, Qwen 3.8 NVFP4",
+        "starts": "DS4F :8888 + vision n1 + Qwen GGUF :8100",
+    },
+    "qwen38": {
+        "label": "Qwen 3.8",
+        "short": "Mia NVFP4 · both Sparks",
+        "detail": "Qwen3.8-27B Unsloth NVFP4 (Mia recipe) on each Spark. Orch/dobby/light on this box; smeagle on node2.",
+        "eta": "10–20 min",
+        "stops": "DS4F, helper 35B, MiniMax H3, Music3, vision sidecar",
+        "starts": "NVFP4 :8888 node1 + :8888 node2",
     },
     "setup": {
         "label": "Setup",
         "short": "Helper 35B only",
         "detail": "Daily chat: Qwen 35B on this Spark. Stops Music3, DS4F, and H3 so UMA is free for agents.",
         "eta": "2–15 min",
-        "stops": "DS4F, MiniMax H3, Music3, vision sidecar",
+        "stops": "DS4F, MiniMax H3, Music3, vision sidecar, Qwen 3.8",
         "starts": "helper :8889",
     },
     "video": {
@@ -45,7 +61,7 @@ PRESETS: dict[str, dict] = {
         "short": "MiniMax H3 TP2",
         "detail": "MiniMax H3 on both Sparks for video. Telegram chat moves to Nous until you leave this setup.",
         "eta": "10–15 min",
-        "stops": "DS4F, Music3, vision sidecar",
+        "stops": "DS4F, Music3, vision sidecar, Qwen 3.8",
         "starts": "H3 :8800 · chat → Nous",
     },
     "music": {
@@ -53,7 +69,7 @@ PRESETS: dict[str, dict] = {
         "short": "Helper 35B · Music3",
         "detail": "Qwen 35B chat on this Spark plus AIM Music3 (and the spark2 replica). Vision sidecar stays off.",
         "eta": "10–15 min",
-        "stops": "DS4F, MiniMax H3, vision sidecar",
+        "stops": "DS4F, MiniMax H3, vision sidecar, Qwen 3.8",
         "starts": "helper :8889 + Music3 :8801",
     },
 }
@@ -66,6 +82,18 @@ _DETECT_TTL = 4.0
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _model_ids(url: str, timeout: float = 1.5) -> list[str]:
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace")[:12000])
+        return [
+            str(m.get("id") or "").lower()
+            for m in (data.get("data") or [])
+        ]
+    except Exception:
+        return []
 
 
 def _probe(url: str, timeout: float = 1.5) -> bool:
@@ -165,13 +193,19 @@ def _read_saved_state() -> dict:
 def classify(probes: dict[str, bool]) -> str:
     """Map endpoint booleans to a preset key (or mixed/none)."""
     ds4f = probes.get("ds4f", False)
+    qwen38 = probes.get("qwen38", False)
+    dream = probes.get("dream", False)
     helper = probes.get("helper", False)
     h3 = probes.get("h3", False)
     music = probes.get("music", False)
-    if h3 and ds4f:
+    if h3 and (ds4f or qwen38 or dream):
         return "mixed"
     if h3:
         return "video"
+    if qwen38:
+        return "qwen38"
+    if dream:
+        return "dream"
     if ds4f:
         return "prime"
     if helper and music:
@@ -189,13 +223,20 @@ def _probes_now() -> dict[str, bool]:
         "music": "http://127.0.0.1:8801/v1/models",
         "vision": "http://127.0.0.1:8890/v1/models",
         "vision_n2": "http://192.168.100.11:8891/v1/models",
+        "qwen_gguf": "http://192.168.100.11:8100/v1/models",
     }
     found: dict[str, bool] = {k: False for k in targets}
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=8) as pool:
         fut = {pool.submit(_probe, url): key for key, url in targets.items()}
         for f in as_completed(fut):
             found[fut[f]] = bool(f.result())
     found["vision"] = found["vision"] or found.pop("vision_n2")
+    ids = _model_ids("http://127.0.0.1:8888/v1/models")
+    found["qwen38"] = any("qwen38-27b-unsloth-nvfp4" in i for i in ids)
+    found["ds4f"] = any("deepseek" in i for i in ids) and not found["qwen38"]
+    n2_ids = _model_ids("http://192.168.100.11:8100/v1/models")
+    found["dream"] = bool(found["ds4f"] and any("qwen3.8-27b" in i.lower() for i in n2_ids))
+    found.pop("qwen_gguf", None)
     return found
 
 

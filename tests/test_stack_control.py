@@ -14,6 +14,14 @@ class ClassifyTests(unittest.TestCase):
             "prime",
         )
 
+    def test_dream_when_ds4f_and_qwen_gguf(self) -> None:
+        self.assertEqual(
+            stack_control.classify(
+                {"ds4f": True, "dream": True, "helper": False, "h3": False, "music": False}
+            ),
+            "dream",
+        )
+
     def test_video_when_h3_up(self) -> None:
         self.assertEqual(
             stack_control.classify({"ds4f": False, "helper": False, "h3": True, "music": False}),
@@ -44,8 +52,11 @@ class ClassifyTests(unittest.TestCase):
 
 
 class PresetTests(unittest.TestCase):
-    def test_four_named_setups(self) -> None:
-        self.assertEqual(list(stack_control.PRESETS), ["prime", "setup", "video", "music"])
+    def test_named_setups(self) -> None:
+        self.assertEqual(
+            list(stack_control.PRESETS),
+            ["prime", "dream", "qwen38", "setup", "video", "music"],
+        )
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
                 self.assertTrue(meta.get(field), f"missing {field}")

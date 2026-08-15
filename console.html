@@ -210,8 +210,8 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .serve::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor;
   box-shadow:0 0 8px currentColor;flex:none;transform:rotate(45deg)}
 
-/* Named setups — Prime / Videos / Music. One occupant of both Sparks. */
-.stack-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+/* Named setups — Prime / Dream / Qwen 3.8 / Setup / Videos / Music. */
+.stack-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stack-chip{appearance:none;display:flex;flex-direction:column;align-items:flex-start;
   gap:2px;min-height:52px;padding:10px 12px;border-radius:12px;cursor:pointer;
   background:var(--surface-2);border:1px solid var(--line);color:inherit;text-align:left;
@@ -1010,7 +1010,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
   <div class="card" id="stack-control">
-    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Setup · Videos · Music</span></h3>
+    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Qwen 3.8 · Setup · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
   </div>
@@ -2438,7 +2438,7 @@ function renderServe(d){
     :ok.map(e=>`${e.id} · ${e.engine||"?"} :${e.port||"?"}`).join("\n");
 }
 
-/* ══════════════════════ named setups (Prime / Videos / Music) ══════════════════════ */
+/* ══════════════════════ named setups (Prime / Dream / Qwen 3.8 / Setup / Videos / Music) ══════════════════════ */
 let STACK_POLL=null, STACK_PENDING=null;
 function stackNote(s){
   const op=s.active_operation;
@@ -2446,6 +2446,8 @@ function stackNote(s){
   if(op&&op.status==="failed") return op.message||"Last switch failed";
   if(s.phase==="switching"&&op&&op.status==="running") return s.message||"Switching…";
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
+  if(s.detected==="qwen38") return "Qwen 3.8 NVFP4 on both Sparks. Smeagle is node2.";
+  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 3.8 on node2. Smeagle is Qwen.";
   if(s.detected==="setup") return "Helper 35B is up. Music3 is off.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
