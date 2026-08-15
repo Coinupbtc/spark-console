@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-12T21:16:43.959753+00:00",
+  "updated_at": "2026-08-15T02:01:39.433852+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -141,21 +141,22 @@
       "registered_at": "2026-08-09T01:35:45.150514+00:00"
     },
     "blackjack3d": {
-      "label": "Blackjack 3D (Three.js)",
+      "label": "Blackjack 3D",
       "detail": ":8075",
       "group": "apps",
-      "kind": "probe-only",
+      "kind": "systemd",
       "critical": false,
-      "no_stop": true,
+      "no_stop": false,
       "hint": "",
       "source": "extra",
+      "unit": "blackjack3d-host.service",
       "probe": [
         "http://127.0.0.1:8075/",
         2.0
       ],
       "port": 8075,
       "show_projects_tile": true,
-      "registered_at": "2026-08-11T18:00:05.108327+00:00"
+      "registered_at": "2026-08-15T00:15:54.140355+00:00"
     },
     "paintball-fps": {
       "label": "Paintball FPS",
@@ -191,6 +192,23 @@
       "port": 8096,
       "show_projects_tile": true,
       "registered_at": "2026-08-12T21:16:43.959683+00:00"
+    },
+    "voxel-pagoda": {
+      "label": "Voxel Pagoda Garden",
+      "detail": ":8072",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8072/",
+        2.0
+      ],
+      "port": 8072,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-15T02:01:39.433755+00:00"
     }
   }
 }

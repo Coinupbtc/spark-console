@@ -141,7 +141,7 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "unit": "hermes-gateway-smeagle.service",
         "critical": False,
         "activity_journal": False,
-        "hint": "Heavy Kanban → node2 deep lane (trial key switchable).",
+        "hint": "Heavy Kanban → node2 Qwen3.8-27B :8888 (CX7). Console :8100 is the old deep-lane probe, not this replica.",
         "deep_lane_label": True,
     },
     # Side-project UIs (BetIntel, Bakeoff, Blockfield, STL Sandbox) live as

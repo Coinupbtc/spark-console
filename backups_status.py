@@ -107,6 +107,10 @@ def query_backups(pi: dict | None = None, start9: dict | None = None) -> dict:
         # A fail after the last success wins; a fail before it is stale noise.
         failed = bool(fail_m) and (not ok_m or fail_m.start() > ok_m.start())
         skipped = "already running, exiting" in text
+        # Flock skip after a good snapshot is not a backup failure (daily-backup
+        # + timer overlap). The hardening header used to exit 1 and trip this.
+        if skipped and succeeded:
+            failed = False
         if failed:
             state, note = "fail", "last run reported an error"
         elif not succeeded:
