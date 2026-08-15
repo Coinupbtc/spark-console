@@ -34,8 +34,8 @@ PRESETS: dict[str, dict] = {
     },
     "dream": {
         "label": "Dream",
-        "short": "0731 348k · Qwen n2 · pics n1",
-        "detail": "0731 on both Sparks at 348k, 4B pictures on this box, Qwen 3.8 GGUF on node2 :8100. Orch/dobby = 0731. Smeagle = Qwen.",
+        "short": "0731 348k · Qwen 80k n2 · pics n1",
+        "detail": "0731 on both Sparks at 348k, 4B pictures on this box, Qwen 3.8 GGUF 80k on node2 :8100. Orch/dobby = 0731. Smeagle = Qwen (max_tokens 8k).",
         "eta": "10–20 min",
         "stops": "Music3, helper 35B, MiniMax H3, Qwen 3.8 NVFP4",
         "starts": "DS4F :8888 + vision n1 + Qwen GGUF :8100",
