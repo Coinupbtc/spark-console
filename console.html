@@ -2447,7 +2447,7 @@ function stackNote(s){
   if(s.phase==="switching"&&op&&op.status==="running") return s.message||"Switching…";
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
   if(s.detected==="qwen38") return "Qwen 3.8 NVFP4 on both Sparks. Smeagle is node2.";
-  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 3.8 MTP3 on node2 (~19 t/s). Smeagle is Qwen.";
+  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 88k MTP3 on node2. Smeagle is Qwen (20k out).";
   if(s.detected==="setup") return "Helper 35B is up. Music3 is off.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";

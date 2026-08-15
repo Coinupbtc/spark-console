@@ -60,6 +60,9 @@ class PresetTests(unittest.TestCase):
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
                 self.assertTrue(meta.get(field), f"missing {field}")
+        dream = stack_control.PRESETS["dream"]
+        self.assertIn("88k", dream["short"])
+        self.assertIn("20k", dream["detail"])
 
     def test_unknown_key_refused(self) -> None:
         result = stack_control.switch_stack("nemotron")
