@@ -84,7 +84,7 @@ class DetectTests(unittest.TestCase):
         self.assertEqual(out["detected"], "music")
         music = next(p for p in out["presets"] if p["key"] == "music")
         self.assertTrue(music["active"])
-        self.assertFalse(music["can_switch"])
+        self.assertTrue(music["can_switch"])  # re-apply / refresh
         prime = next(p for p in out["presets"] if p["key"] == "prime")
         self.assertTrue(prime["can_switch"])
 

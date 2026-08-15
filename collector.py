@@ -12,7 +12,9 @@ import os
 import re
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 logger = logging.getLogger("dgx-collector")
 if not logger.handlers:
@@ -427,6 +429,52 @@ def diagnose(
                     "message": f"vLLM loading {m.get('label')} on :{m.get('port')}",
                     "action": f"tail -f ~/models/dgx_bundle/vllm-{m.get('key', '').replace('-nvfp4', '').replace('-35b', '')}.log",
                 })
+
+    # Vision: Dream = node1 4B. Prime = node2 4B. Never treat the other node as "missing".
+    try:
+        desired = ""
+        state = Path.home() / ".local/state/hermes/spark-stack.json"
+        if state.is_file():
+            desired = str(json.loads(state.read_text()).get("desired") or "")
+        def _up(url: str) -> bool:
+            try:
+                with urllib.request.urlopen(url, timeout=2) as resp:
+                    return resp.status == 200
+            except Exception:
+                return False
+
+        n1 = _up("http://127.0.0.1:8891/v1/models")
+        proxy = _up("http://127.0.0.1:8890/v1/models")
+        n2 = _up("http://192.168.100.11:8891/v1/models")
+        if desired == "dream":
+            if not n1 or not proxy:
+                alerts.append({
+                    "level": "warning",
+                    "category": "vision",
+                    "message": "Dream pictures should stay on node1 (:8891 + proxy :8890) — "
+                               f"engine={'up' if n1 else 'DOWN'} proxy={'up' if proxy else 'DOWN'}",
+                    "action": "systemctl --user start qwen-vision-proxy.service && "
+                              "QWEN_VISION_FORCE=1 QWEN_VISION_BACKEND_HOST=127.0.0.1 "
+                              "bash ~/.hermes/scripts/ensure-qwen-vision.sh",
+                })
+        elif desired == "prime":
+            if not n2 and not proxy:
+                alerts.append({
+                    "level": "warning",
+                    "category": "vision",
+                    "message": "Prime pictures (node2 4B) are down",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh prime  # refresh Prime vision only",
+                })
+        elif desired == "qwen38" and not n1:
+            alerts.append({
+                "level": "info",
+                "category": "vision",
+                "message": "Qwen 3.8 mode expects 4B on this box (:8891)",
+                "action": "QWEN_VISION_FORCE=1 QWEN_VISION_BACKEND_HOST=127.0.0.1 "
+                          "bash ~/.hermes/scripts/ensure-qwen-vision.sh",
+            })
+    except Exception:
+        pass
 
     return alerts
 

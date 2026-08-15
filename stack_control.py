@@ -221,7 +221,8 @@ def _probes_now() -> dict[str, bool]:
         "helper": "http://127.0.0.1:8889/v1/models",
         "h3": f"{H3_FABRIC}/v1/models",
         "music": "http://127.0.0.1:8801/v1/models",
-        "vision": "http://127.0.0.1:8890/v1/models",
+        "vision_proxy": "http://127.0.0.1:8890/v1/models",
+        "vision_n1": "http://127.0.0.1:8891/v1/models",
         "vision_n2": "http://192.168.100.11:8891/v1/models",
         "qwen_gguf": "http://192.168.100.11:8100/v1/models",
     }
@@ -230,12 +231,13 @@ def _probes_now() -> dict[str, bool]:
         fut = {pool.submit(_probe, url): key for key, url in targets.items()}
         for f in as_completed(fut):
             found[fut[f]] = bool(f.result())
-    found["vision"] = found["vision"] or found.pop("vision_n2")
     ids = _model_ids("http://127.0.0.1:8888/v1/models")
     found["qwen38"] = any("qwen38-27b-unsloth-nvfp4" in i for i in ids)
     found["ds4f"] = any("deepseek" in i for i in ids) and not found["qwen38"]
     n2_ids = _model_ids("http://192.168.100.11:8100/v1/models")
     found["dream"] = bool(found["ds4f"] and any("qwen3.8-27b" in i.lower() for i in n2_ids))
+    # Do not OR n1/n2 into one "vision" bit — Dream is n1, Prime is n2.
+    found["vision"] = bool(found["vision_proxy"])
     found.pop("qwen_gguf", None)
     return found
 
@@ -265,7 +267,8 @@ def detect_stack(*, force: bool = False) -> dict:
                 "key": key,
                 **meta,
                 "active": detected == key,
-                "can_switch": (not busy) and detected != key and detected != "mixed",
+                # Re-click refreshes that setup's own wiring (Dream 88k / n1 4B).
+                "can_switch": (not busy) and detected != "mixed",
             }
             for key, meta in PRESETS.items()
         ],
@@ -315,18 +318,13 @@ def switch_stack(key: str) -> dict:
         }
 
     current = detect_stack(force=True)
-    if current.get("detected") == key:
-        return {
-            "ok": True,
-            "already": True,
-            "message": f"{PRESETS[key]['label']} is already live.",
-            "stack": current,
-        }
+    refreshing = current.get("detected") == key
 
     op_id = uuid4().hex[:12]
     log_file = DATA_DIR / f"stack_op_{op_id}.log"
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     meta = PRESETS[key]
+    verb = "Refreshing" if refreshing else "Switching to"
     with open(log_file, "w") as logfh:
         proc = subprocess.Popen(
             ["bash", str(STACK_SCRIPT), key],
@@ -339,7 +337,7 @@ def switch_stack(key: str) -> dict:
         "type": "stack",
         "key": key,
         "status": "running",
-        "message": f"Switching to {meta['label']}… ({meta['eta']})",
+        "message": f"{verb} {meta['label']}… ({meta['eta'] if not refreshing else 'refresh'})",
         "pid": proc.pid,
         "log_file": str(log_file),
         "started_at": _now_iso(),

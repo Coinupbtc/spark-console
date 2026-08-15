@@ -121,7 +121,7 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "unit": "hermes-gateway-light.service",
         "critical": False,
         "activity_journal": False,
-        "hint": "Telegram #2 deep chat → whatever is wired on node2 :8100 (trial; switch-deep-lane-trial.sh).",
+        "hint": "Dream: light → 0731 :8888. Prime/helper: check CURRENT. Not the old Puzzle deep-lane trial.",
         "deep_lane_label": True,
     },
     "hermes-dobby": {
@@ -141,7 +141,7 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "unit": "hermes-gateway-smeagle.service",
         "critical": False,
         "activity_journal": False,
-        "hint": "Heavy Kanban → node2 Qwen3.8-27B :8888 (CX7). Console :8100 is the old deep-lane probe, not this replica.",
+        "hint": "Dream: smeagle → Qwen GGUF :8100 (88k / 20k). Prime: smeagle → 0731 :8888. Not NVFP4 :8888.",
         "deep_lane_label": True,
     },
     # Side-project UIs (BetIntel, Bakeoff, Blockfield, STL Sandbox) live as

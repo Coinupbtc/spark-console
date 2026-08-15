@@ -2473,7 +2473,7 @@ function renderStack(s){
   if(cards){
     cards.innerHTML=presets.map(p=>{
       const live=p.active?"<em>LIVE</em>":"";
-      const go=p.active?"On":(busy?"Wait":"Switch");
+      const go=p.active?(busy?"Wait":"Refresh"):(busy?"Wait":"Switch");
       return `<div class="stack-card ${p.active?"on":""}">
         <h4>${esc(p.label)} ${live}</h4>
         <p>${esc(p.detail)}</p>
@@ -2492,9 +2492,15 @@ function askStack(key){
   const p=(s.presets||[]).find(x=>x.key===key);
   if(!p||!p.can_switch)return;
   STACK_PENDING=key;
-  $("stack-dlg-title").textContent=`Switch to ${p.label}?`;
-  $("stack-dlg-body").textContent=
-    `Stops ${p.stops}. Starts ${p.starts}. Takes about ${p.eta}. Telegram will ping you when it is ready.`;
+  if(p.active){
+    $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
+    $("stack-dlg-body").textContent=
+      `Re-apply this setup only. Dream keeps 0731, n1 4B pictures, and n2 Qwen 88k. Does not mix Prime/node2 vision into Dream.`;
+  }else{
+    $("stack-dlg-title").textContent=`Switch to ${p.label}?`;
+    $("stack-dlg-body").textContent=
+      `Stops ${p.stops}. Starts ${p.starts}. Takes about ${p.eta}. Telegram will ping you when it is ready.`;
+  }
   $("stack-modal").hidden=false;
 }
 function closeStackModal(){
