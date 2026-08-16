@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-15T02:01:39.433852+00:00",
+  "updated_at": "2026-08-16T06:57:18.918114+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -209,6 +209,59 @@
       "port": 8072,
       "show_projects_tile": true,
       "registered_at": "2026-08-15T02:01:39.433755+00:00"
+    },
+    "nerdqaxe": {
+      "label": "NerdQAxe",
+      "detail": "Local AxeOS control (ESP UI too slow)",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "http://192.168.50.123:8766",
+      "source": "extra",
+      "unit": "nerdqaxe-proxy.service",
+      "probe": [
+        "http://127.0.0.1:8766/",
+        2.0
+      ],
+      "port": 8766,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-15T17:56:48.997973+00:00"
+    },
+    "avatar-pip": {
+      "label": "Pip Avatar",
+      "detail": ":8080",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8080/",
+        2.0
+      ],
+      "port": 8080,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-16T02:03:39.527363+00:00"
+    },
+    "zombie-breach": {
+      "label": "ZOMBIE BREACH (phone FPS)",
+      "detail": ":8077",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "http://127.0.0.1:8077/ game.html",
+      "source": "extra",
+      "unit": "zombie-breach-host.service",
+      "probe": [
+        "http://127.0.0.1:8077/",
+        2.0
+      ],
+      "port": 8077,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-16T06:57:18.918033+00:00"
     }
   }
 }

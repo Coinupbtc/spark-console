@@ -465,14 +465,8 @@ def diagnose(
                     "message": "Prime pictures (node2 4B) are down",
                     "action": "bash ~/scripts/dgx/spark-stack.sh prime  # refresh Prime vision only",
                 })
-        elif desired == "qwen38" and not n1:
-            alerts.append({
-                "level": "info",
-                "category": "vision",
-                "message": "Qwen 3.8 mode expects 4B on this box (:8891)",
-                "action": "QWEN_VISION_FORCE=1 QWEN_VISION_BACKEND_HOST=127.0.0.1 "
-                          "bash ~/.hermes/scripts/ensure-qwen-vision.sh",
-            })
+        elif desired in ("qwen38", "setup"):
+            pass  # retired chips — no vision alerts
     except Exception:
         pass
 

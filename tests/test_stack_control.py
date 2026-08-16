@@ -35,7 +35,15 @@ class ClassifyTests(unittest.TestCase):
         )
         self.assertEqual(
             stack_control.classify({"ds4f": False, "helper": True, "h3": False, "music": False}),
-            "setup",
+            "none",
+        )
+
+    def test_retired_qwen38_nvfp4_is_mixed(self) -> None:
+        self.assertEqual(
+            stack_control.classify(
+                {"qwen38": True, "ds4f": False, "helper": False, "h3": False, "music": False}
+            ),
+            "mixed",
         )
 
     def test_mixed_ds4f_and_h3(self) -> None:
@@ -55,7 +63,7 @@ class PresetTests(unittest.TestCase):
     def test_named_setups(self) -> None:
         self.assertEqual(
             list(stack_control.PRESETS),
-            ["prime", "dream", "qwen38", "setup", "video", "music"],
+            ["prime", "dream", "video", "music"],
         )
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):

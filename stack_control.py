@@ -1,7 +1,9 @@
-"""Named Spark stack switcher for the console (prime / dream / qwen38 / setup / video / music).
+"""Named Spark stack switcher for the console (prime / dream / video / music).
 
 The heavy lifting lives in ~/scripts/dgx/spark-stack.sh — this module is the
 allowlisted API: detect what's up, spawn one switch, poll the log.
+
+Retired 2026-08-15: exclusive qwen38 NVFP4 chip and helper-only setup chip.
 """
 from __future__ import annotations
 
@@ -29,7 +31,7 @@ PRESETS: dict[str, dict] = {
         "short": "DS4F 0731 · 500k · vision",
         "detail": "DeepSeek-V4-Flash 0731 on both Sparks (TP2) with the Qwen vision sidecar. Chat stays local.",
         "eta": "10–15 min",
-        "stops": "Music3, helper 35B, MiniMax H3, Qwen 3.8",
+        "stops": "Music3, helper 35B, MiniMax H3",
         "starts": "DS4F :8888 + vision :8890",
     },
     "dream": {
@@ -37,31 +39,15 @@ PRESETS: dict[str, dict] = {
         "short": "0731 348k · Qwen 88k MTP3 · pics n1",
         "detail": "0731 on both Sparks at 348k, 4B pictures on this box, Qwen 3.8 GGUF 88k + MTP3 on node2 :8100. Orch/dobby = 0731. Smeagle = Qwen (max_tokens 20k).",
         "eta": "10–20 min",
-        "stops": "Music3, helper 35B, MiniMax H3, Qwen 3.8 NVFP4",
+        "stops": "Music3, helper 35B, MiniMax H3",
         "starts": "DS4F :8888 + vision n1 + Qwen GGUF :8100",
-    },
-    "qwen38": {
-        "label": "Qwen 3.8",
-        "short": "Mia NVFP4 · both Sparks",
-        "detail": "Qwen3.8-27B Unsloth NVFP4 (Mia recipe) on each Spark. Orch/dobby/light on this box; smeagle on node2.",
-        "eta": "10–20 min",
-        "stops": "DS4F, helper 35B, MiniMax H3, Music3, vision sidecar",
-        "starts": "NVFP4 :8888 node1 + :8888 node2",
-    },
-    "setup": {
-        "label": "Setup",
-        "short": "Helper 35B only",
-        "detail": "Daily chat: Qwen 35B on this Spark. Stops Music3, DS4F, and H3 so UMA is free for agents.",
-        "eta": "2–15 min",
-        "stops": "DS4F, MiniMax H3, Music3, vision sidecar, Qwen 3.8",
-        "starts": "helper :8889",
     },
     "video": {
         "label": "Videos",
         "short": "MiniMax H3 TP2",
         "detail": "MiniMax H3 on both Sparks for video. Telegram chat moves to Nous until you leave this setup.",
         "eta": "10–15 min",
-        "stops": "DS4F, Music3, vision sidecar, Qwen 3.8",
+        "stops": "DS4F, Music3, vision sidecar",
         "starts": "H3 :8800 · chat → Nous",
     },
     "music": {
@@ -69,7 +55,7 @@ PRESETS: dict[str, dict] = {
         "short": "Helper 35B · Music3",
         "detail": "Qwen 35B chat on this Spark plus AIM Music3 (and the spark2 replica). Vision sidecar stays off.",
         "eta": "10–15 min",
-        "stops": "DS4F, MiniMax H3, vision sidecar, Qwen 3.8",
+        "stops": "DS4F, MiniMax H3, vision sidecar",
         "starts": "helper :8889 + Music3 :8801",
     },
 }
@@ -203,7 +189,8 @@ def classify(probes: dict[str, bool]) -> str:
     if h3:
         return "video"
     if qwen38:
-        return "qwen38"
+        # Retired exclusive chip — leftover NVFP4 is not a preset.
+        return "mixed"
     if dream:
         return "dream"
     if ds4f:
@@ -211,7 +198,7 @@ def classify(probes: dict[str, bool]) -> str:
     if helper and music:
         return "music"
     if helper:
-        return "setup"
+        return "none"
     return "none"
 
 

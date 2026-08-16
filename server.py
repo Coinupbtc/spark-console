@@ -131,7 +131,7 @@ class SwitchRequest(BaseModel):
 
 
 class StackSwitchRequest(BaseModel):
-    key: str  # prime | setup | video | music
+    key: str  # prime | dream | video | music
 
 
 class TodoRequest(BaseModel):

@@ -1,38 +1,38 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-15 10:59:44",
-  "iso_ts": "2026-08-15T10:59:44.971103+00:00",
+  "timestamp_utc": "2026-08-16 10:57:28",
+  "iso_ts": "2026-08-16T10:57:28.366455+00:00",
   "hour": 10,
-  "dow": 5,
+  "dow": 6,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 16.3,
-    "load_1": 3.56,
-    "load_5": 2.76,
-    "load_15": 2.39,
-    "mem_used_gb": 110.03,
+    "cpu_pct": 0.6,
+    "load_1": 0.61,
+    "load_5": 0.62,
+    "load_15": 0.58,
+    "mem_used_gb": 111.77,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 11.66,
-    "mem_pct": 90.4,
-    "swap_used_gb": 11.92,
+    "mem_avail_gb": 9.92,
+    "mem_pct": 91.8,
+    "swap_used_gb": 11.64,
     "swap_total_gb": 16.0,
-    "swap_pct": 74.5,
-    "disk_used_pct": 38.1,
+    "swap_pct": 72.7,
+    "disk_used_pct": 38.2,
     "disk_free_tb": 2.15
   },
   "num_gpus": 1,
-  "avg_util_pct": 1.0,
-  "total_power_watts": 11.29,
-  "avg_temp_c": 44.0,
+  "avg_util_pct": 0.0,
+  "total_power_watts": 10.15,
+  "avg_temp_c": 41.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 11.29,
-      "power_avg_w": 11.29,
-      "power_instant_w": 11.77,
-      "temp_c": 44,
-      "util_gpu": 1.0,
+      "power_w": 10.15,
+      "power_avg_w": 10.15,
+      "power_instant_w": 10.42,
+      "temp_c": 41,
+      "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -42,15 +42,15 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 246
+      "mem_mb": 270
     },
     {
       "name": "VLLM::Worker_TP0",
-      "mem_mb": 90605
+      "mem_mb": 90685
     },
     {
       "name": "VLLM::EngineCore",
-      "mem_mb": 6024
+      "mem_mb": 6484
     }
   ],
   "ollama": [],
@@ -160,29 +160,29 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 16.3,
-        "load_1": 3.56,
-        "load_5": 2.76,
-        "load_15": 2.39,
-        "mem_used_gb": 110.03,
+        "cpu_pct": 0.6,
+        "load_1": 0.61,
+        "load_5": 0.62,
+        "load_15": 0.58,
+        "mem_used_gb": 111.77,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 11.66,
-        "mem_pct": 90.4,
-        "swap_used_gb": 11.92,
+        "mem_avail_gb": 9.92,
+        "mem_pct": 91.8,
+        "swap_used_gb": 11.64,
         "swap_total_gb": 16.0,
-        "swap_pct": 74.5,
-        "disk_used_pct": 38.1,
+        "swap_pct": 72.7,
+        "disk_used_pct": 38.2,
         "disk_free_tb": 2.15
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.29,
-          "power_avg_w": 11.29,
-          "power_instant_w": 11.77,
-          "temp_c": 44,
-          "util_gpu": 1.0,
+          "power_w": 10.15,
+          "power_avg_w": 10.15,
+          "power_instant_w": 10.42,
+          "temp_c": 41,
+          "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
           "fan_pct": 0,
@@ -222,26 +222,26 @@
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-15T10:59:45.842918+00:00",
+      "iso_ts": "2026-08-16T10:57:29.238103+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 0.6,
+      "cpu_pct": 1.4,
       "mem": {
-        "used_gb": 121.0,
+        "used_gb": 120.6,
         "total_gb": 121.7,
-        "avail_gb": 0.7,
-        "pct": 99.5
+        "avail_gb": 1.1,
+        "pct": 99.1
       },
       "swap": {
-        "used_gb": 6.7,
+        "used_gb": 8.1,
         "total_gb": 16.0,
-        "pct": 41.7
+        "pct": 50.6
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.19,
+          "power_w": 11.21,
           "temp_c": 40,
           "util_gpu": 0.0
         }
@@ -278,7 +278,7 @@
       "top_procs": [
         {
           "name": "llama-server",
-          "mem_gb": 2.4
+          "mem_gb": 1.9
         },
         {
           "name": "VLLM::Worker_TP",
@@ -358,7 +358,7 @@
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 246 MB VRAM",
+      "message": "gnome-remote-desktop using 270 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     }
   ],
