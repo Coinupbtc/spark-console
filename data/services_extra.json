@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-16T06:57:18.918114+00:00",
+  "updated_at": "2026-08-16T22:39:23.939195+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -262,6 +262,24 @@
       "port": 8077,
       "show_projects_tile": true,
       "registered_at": "2026-08-16T06:57:18.918033+00:00"
+    },
+    "dream-baton": {
+      "label": "Dream baton",
+      "detail": ":8877",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "dream-baton.service",
+      "probe": [
+        "http://127.0.0.1:8877/",
+        2.0
+      ],
+      "port": 8877,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-16T22:39:23.939103+00:00"
     }
   }
 }
