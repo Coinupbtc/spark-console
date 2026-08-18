@@ -1,36 +1,36 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-17 10:56:31",
-  "iso_ts": "2026-08-17T10:56:31.436917+00:00",
-  "hour": 10,
-  "dow": 0,
+  "timestamp_utc": "2026-08-18 12:11:04",
+  "iso_ts": "2026-08-18T12:11:04.432518+00:00",
+  "hour": 12,
+  "dow": 1,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 3.3,
-    "load_1": 0.44,
-    "load_5": 0.54,
-    "load_15": 0.56,
-    "mem_used_gb": 111.12,
+    "cpu_pct": 1.1,
+    "load_1": 1.05,
+    "load_5": 1.33,
+    "load_15": 1.09,
+    "mem_used_gb": 112.85,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 10.57,
-    "mem_pct": 91.3,
-    "swap_used_gb": 11.16,
+    "mem_avail_gb": 8.84,
+    "mem_pct": 92.7,
+    "swap_used_gb": 7.1,
     "swap_total_gb": 16.0,
-    "swap_pct": 69.7,
-    "disk_used_pct": 38.2,
+    "swap_pct": 44.4,
+    "disk_used_pct": 38.3,
     "disk_free_tb": 2.15
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.13,
+  "total_power_watts": 10.17,
   "avg_temp_c": 40.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.13,
-      "power_avg_w": 10.13,
-      "power_instant_w": 10.08,
+      "power_w": 10.17,
+      "power_avg_w": 10.17,
+      "power_instant_w": 10.21,
       "temp_c": 40,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
@@ -46,19 +46,19 @@
     },
     {
       "name": "VLLM::Worker_TP0",
-      "mem_mb": 90131
+      "mem_mb": 89743
     },
     {
       "name": "VLLM::EngineCore",
-      "mem_mb": 6144
+      "mem_mb": 5103
     }
   ],
   "ollama": [],
   "hermes": {
-    "orchestrator": "active",
-    "light": "active",
+    "orchestrator": "activating",
+    "light": "activating",
     "dobby": "active",
-    "smeagle": "active",
+    "smeagle": "activating",
     "dashboard": "active",
     "llama_miaai35": "inactive",
     "ollama": "inactive"
@@ -144,10 +144,10 @@
       "qwen35-nvfp4"
     ],
     "hermes": {
-      "orchestrator": "active",
-      "light": "active",
+      "orchestrator": "activating",
+      "light": "activating",
       "dobby": "active",
-      "smeagle": "active",
+      "smeagle": "activating",
       "dashboard": "active",
       "llama_miaai35": "inactive",
       "ollama": "inactive"
@@ -160,27 +160,27 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 3.3,
-        "load_1": 0.44,
-        "load_5": 0.54,
-        "load_15": 0.56,
-        "mem_used_gb": 111.12,
+        "cpu_pct": 1.1,
+        "load_1": 1.05,
+        "load_5": 1.33,
+        "load_15": 1.09,
+        "mem_used_gb": 112.85,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 10.57,
-        "mem_pct": 91.3,
-        "swap_used_gb": 11.16,
+        "mem_avail_gb": 8.84,
+        "mem_pct": 92.7,
+        "swap_used_gb": 7.1,
         "swap_total_gb": 16.0,
-        "swap_pct": 69.7,
-        "disk_used_pct": 38.2,
+        "swap_pct": 44.4,
+        "disk_used_pct": 38.3,
         "disk_free_tb": 2.15
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.13,
-          "power_avg_w": 10.13,
-          "power_instant_w": 10.08,
+          "power_w": 10.17,
+          "power_avg_w": 10.17,
+          "power_instant_w": 10.21,
           "temp_c": 40,
           "util_gpu": 0.0,
           "mem_used_mb": 0,
@@ -214,6 +214,7 @@
         }
       ],
       "workloads": [
+        "crypto",
         "ollama",
         "pokemon",
         "vllm"
@@ -222,27 +223,27 @@
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-17T10:56:32.373213+00:00",
+      "iso_ts": "2026-08-18T12:11:05.350570+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 0.7,
+      "cpu_pct": 1.1,
       "mem": {
-        "used_gb": 120.6,
+        "used_gb": 119.4,
         "total_gb": 121.7,
-        "avail_gb": 1.1,
-        "pct": 99.1
+        "avail_gb": 2.3,
+        "pct": 98.1
       },
       "swap": {
-        "used_gb": 11.3,
+        "used_gb": 4.6,
         "total_gb": 16.0,
-        "pct": 70.7
+        "pct": 29.0
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.2,
-          "temp_c": 39,
+          "power_w": 11.36,
+          "temp_c": 40,
           "util_gpu": 0.0
         }
       ],
@@ -278,11 +279,11 @@
       "top_procs": [
         {
           "name": "llama-server",
-          "mem_gb": 1.7
+          "mem_gb": 1.8
         },
         {
           "name": "VLLM::Worker_TP",
-          "mem_gb": 0.5
+          "mem_gb": 0.7
         },
         {
           "name": "bluetoothd",
@@ -290,7 +291,7 @@
         },
         {
           "name": "systemd-journal",
-          "mem_gb": 0.1
+          "mem_gb": 0.0
         },
         {
           "name": "tailscaled",
@@ -344,6 +345,7 @@
   },
   "workloads": {
     "node1": [
+      "crypto",
       "ollama",
       "pokemon",
       "vllm"

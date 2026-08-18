@@ -69,7 +69,7 @@ class PresetTests(unittest.TestCase):
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
                 self.assertTrue(meta.get(field), f"missing {field}")
         dream = stack_control.PRESETS["dream"]
-        self.assertIn("88k", dream["short"])
+        self.assertIn("116k", dream["short"])
         self.assertIn("20k", dream["detail"])
 
     def test_unknown_key_refused(self) -> None:
@@ -86,6 +86,7 @@ class DetectTests(unittest.TestCase):
         }
         with patch.object(stack_control, "_probes_now", return_value=probes), \
              patch.object(stack_control, "active_operation", return_value=None), \
+             patch.object(stack_control, "external_switch_busy", return_value=None), \
              patch.object(stack_control, "_read_saved_state", return_value={}):
             stack_control._detect_cache = None
             out = stack_control.detect_stack(force=True)
@@ -95,6 +96,29 @@ class DetectTests(unittest.TestCase):
         self.assertTrue(music["can_switch"])  # re-apply / refresh
         prime = next(p for p in out["presets"] if p["key"] == "prime")
         self.assertTrue(prime["can_switch"])
+
+    def test_external_lock_disables_chips(self) -> None:
+        probes = {
+            "ds4f": False, "helper": False, "h3": False,
+            "music": False, "vision": False,
+        }
+        ext = {"busy": True, "desired": "dream", "message": "switching to Dream"}
+        with patch.object(stack_control, "_probes_now", return_value=probes), \
+             patch.object(stack_control, "active_operation", return_value=None), \
+             patch.object(stack_control, "external_switch_busy", return_value=ext), \
+             patch.object(stack_control, "_read_saved_state", return_value={"desired": "dream"}):
+            stack_control._detect_cache = None
+            out = stack_control.detect_stack(force=True)
+        self.assertEqual(out["phase"], "switching")
+        self.assertFalse(any(p["can_switch"] for p in out["presets"]))
+
+    def test_switch_refuses_when_lock_held(self) -> None:
+        ext = {"busy": True, "message": "switching to Dream"}
+        with patch.object(stack_control, "active_operation", return_value=None), \
+             patch.object(stack_control, "external_switch_busy", return_value=ext):
+            result = stack_control.switch_stack("music")
+        self.assertFalse(result["ok"])
+        self.assertIn("Dream", result["error"])
 
 
 if __name__ == "__main__":

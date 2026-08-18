@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-16T22:39:23.939195+00:00",
+  "updated_at": "2026-08-18T01:29:03.213874+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -265,7 +265,7 @@
     },
     "dream-baton": {
       "label": "Dream baton",
-      "detail": ":8877",
+      "detail": "teb 94 \u00b7 Qwen default \u00b7 0731 on required/notify/script/research \u00b7 116k MTP4",
       "group": "apps",
       "kind": "systemd",
       "critical": false,
@@ -279,7 +279,7 @@
       ],
       "port": 8877,
       "show_projects_tile": true,
-      "registered_at": "2026-08-16T22:39:23.939103+00:00"
+      "registered_at": "2026-08-18T01:29:03.213779+00:00"
     }
   }
 }

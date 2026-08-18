@@ -1010,7 +1010,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
   <div class="card" id="stack-control">
-    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Qwen 3.8 · Setup · Videos · Music</span></h3>
+    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
   </div>
@@ -2443,10 +2443,11 @@ let STACK_POLL=null, STACK_PENDING=null;
 function stackNote(s){
   const op=s.active_operation;
   if(op&&op.status==="running") return op.message||"Switching…";
+  if(s.phase==="switching") return s.message||"A setup switch is already running. Wait, then tap again.";
   if(op&&op.status==="failed") return op.message||"Last switch failed";
-  if(s.phase==="switching"&&op&&op.status==="running") return s.message||"Switching…";
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
-  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 88k MTP3 on node2. Smeagle is Qwen (20k out).";
+  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 116k MTP4 on node2. Baton :8877.";
+  if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
 }

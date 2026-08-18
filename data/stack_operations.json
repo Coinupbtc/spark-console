@@ -25,6 +25,58 @@
       "finished_at": "2026-08-14T10:57:07.368866+00:00",
       "returncode": 0,
       "log_tail": "  Tip: Telegram /new after switch (long history makes replies slow)\n[spark-stack 2026-08-14T05:52:58-05:00] restart Hermes gateways so they pick up the new wire\n[spark-stack 2026-08-14T05:53:02-05:00] enable house vision sidecar (4B TP1 on spark2, DS4F stays)\n[2026-08-14T05:53:02-05:00] START sidecar via /home/coinupbtc/Documents/projects/ds4f-qwen-vision-sidecar/start-qwen-vision-tp1.sh (DS4F stays up)\n[2026-08-14T05:57:03-05:00] FAIL not ready within 240s\nalertbot-send: ok\n[spark-stack 2026-08-14T05:57:03-05:00] WARN: vision ensure returned non-zero (DS4F chat still up)\npatched /home/coinupbtc/.hermes/CURRENT.md\npatched /home/coinupbtc/Documents/Obsidian/wiki/system/CURRENT.md\nalertbot-send: ok\n=== spark-stack status 2026-08-14T05:57:04-05:00 ===\ndetected: prime\ndesired: prime\nphase: idle\nmessage: DS4F :8888 LIVE \u00b7 vision sidecar on\nupdated: 2026-08-14T10:57:03.742089+00:00\nds4f :8888  UP\nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nvision      DOWN\nvision_flag enabled\n               total        used        free      shared  buff/cache   available\nMem:             121         108           1           3          16          13"
+    },
+    "0ca4d8a31e1a": {
+      "id": "0ca4d8a31e1a",
+      "type": "stack",
+      "key": "music",
+      "status": "failed",
+      "message": "Music switch failed (exit 1).",
+      "pid": 3892756,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_0ca4d8a31e1a.log",
+      "started_at": "2026-08-18T11:46:43.279614+00:00",
+      "finished_at": "2026-08-18T11:46:43.289318+00:00",
+      "returncode": 1,
+      "log_tail": "[spark-stack 2026-08-18T06:46:43-05:00] ERROR: another spark-stack switch is already running"
+    },
+    "363b21f5ed66": {
+      "id": "363b21f5ed66",
+      "type": "stack",
+      "key": "music",
+      "status": "failed",
+      "message": "Music switch failed (exit 1).",
+      "pid": 3892860,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_363b21f5ed66.log",
+      "started_at": "2026-08-18T11:46:46.058852+00:00",
+      "finished_at": "2026-08-18T11:46:46.065006+00:00",
+      "returncode": 1,
+      "log_tail": "[spark-stack 2026-08-18T06:46:46-05:00] ERROR: another spark-stack switch is already running"
+    },
+    "ca191aa36c1f": {
+      "id": "ca191aa36c1f",
+      "type": "stack",
+      "key": "music",
+      "status": "failed",
+      "message": "Music switch failed (exit 1).",
+      "pid": 3893554,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_ca191aa36c1f.log",
+      "started_at": "2026-08-18T11:46:58.735126+00:00",
+      "finished_at": "2026-08-18T11:46:58.745267+00:00",
+      "returncode": 1,
+      "log_tail": "[spark-stack 2026-08-18T06:46:58-05:00] ERROR: another spark-stack switch is already running"
+    },
+    "3be0364b6ff3": {
+      "id": "3be0364b6ff3",
+      "type": "stack",
+      "key": "music",
+      "status": "failed",
+      "message": "Music switch failed (exit 1).",
+      "pid": 3895231,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_3be0364b6ff3.log",
+      "started_at": "2026-08-18T11:47:51.196047+00:00",
+      "finished_at": "2026-08-18T11:47:51.207597+00:00",
+      "returncode": 1,
+      "log_tail": "[spark-stack 2026-08-18T06:47:51-05:00] ERROR: another spark-stack switch is already running"
     }
   }
 }

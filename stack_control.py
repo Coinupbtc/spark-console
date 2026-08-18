@@ -22,6 +22,7 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 OPS_FILE = DATA_DIR / "stack_operations.json"
 STATE_JSON = Path.home() / ".local/state/hermes/spark-stack.json"
 STACK_SCRIPT = Path.home() / "scripts/dgx/spark-stack.sh"
+STACK_LOCK = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "spark-stack.lock"
 H3_FABRIC = os.environ.get("H3_API_BASE", "http://192.168.100.10:8800").rstrip("/")
 
 # UI copy — keep keys in lockstep with spark-stack.sh
@@ -36,11 +37,11 @@ PRESETS: dict[str, dict] = {
     },
     "dream": {
         "label": "Dream",
-        "short": "0731 348k · Qwen 88k MTP3 · pics n1",
-        "detail": "0731 on both Sparks at 348k, 4B pictures on this box, Qwen 3.8 GGUF 88k + MTP3 on node2 :8100. Orch/dobby = 0731. Smeagle = Qwen (max_tokens 20k).",
+        "short": "0731 348k · Qwen 116k MTP4 · baton 94",
+        "detail": "0731 TP2 348k + 4B pics n1 + Qwen 3.8 GGUF 116k MTP4 n2 :8100. Chat = baton :8877 (Qwen default; 0731 on required/notify/script/research). max_tokens 20k. teb 69 = 94.",
         "eta": "10–20 min",
         "stops": "Music3, helper 35B, MiniMax H3",
-        "starts": "DS4F :8888 + vision n1 + Qwen GGUF :8100",
+        "starts": "DS4F :8888 + vision n1 + Qwen GGUF :8100 + baton :8877",
     },
     "video": {
         "label": "Videos",
@@ -53,9 +54,9 @@ PRESETS: dict[str, dict] = {
     "music": {
         "label": "Music",
         "short": "Helper 35B · Music3",
-        "detail": "Qwen 35B chat on this Spark plus AIM Music3 (and the spark2 replica). Vision sidecar stays off.",
+        "detail": "Qwen 35B chat on this Spark plus AIM Music3 (and the spark2 replica). Stops Dream Qwen on n2 :8100. Vision sidecar stays off. Nous :free stays on Freegle only.",
         "eta": "10–15 min",
-        "stops": "DS4F, MiniMax H3, vision sidecar",
+        "stops": "DS4F, MiniMax H3, n2 Qwen 3.8, vision sidecar",
         "starts": "helper :8889 + Music3 :8801",
     },
 }
@@ -167,6 +168,64 @@ def get_operation(op_id: str) -> dict | None:
         return op
 
 
+def _lock_held(path: Path) -> bool:
+    """True when another process has flock on spark-stack.lock (CLI / remake / console)."""
+    import fcntl
+
+    if not path.is_file():
+        return False
+    try:
+        fd = os.open(path, os.O_RDWR)
+    except OSError:
+        return False
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return False
+    except BlockingIOError:
+        return True
+    except OSError:
+        return False
+    finally:
+        os.close(fd)
+
+
+def _pgrep_stack() -> list[int]:
+    try:
+        out = subprocess.check_output(
+            ["pgrep", "-f", r"bash .*/spark-stack\.sh"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return []
+    pids = []
+    for line in out.split():
+        try:
+            pids.append(int(line))
+        except ValueError:
+            continue
+    return pids
+
+
+def external_switch_busy() -> dict | None:
+    """spark-stack.sh running outside this console (remake, cron, CLI)."""
+    saved = _read_saved_state()
+    pids = _pgrep_stack()
+    held = _lock_held(STACK_LOCK)
+    if not held and not pids:
+        return None
+    desired = saved.get("desired") or "a setup"
+    msg = saved.get("message") or f"spark-stack is already switching ({desired})"
+    return {
+        "busy": True,
+        "desired": desired,
+        "message": msg,
+        "pids": pids,
+        "lock_held": held,
+    }
+
+
 def _read_saved_state() -> dict:
     if not STATE_JSON.is_file():
         return {}
@@ -240,15 +299,18 @@ def detect_stack(*, force: bool = False) -> dict:
     detected = classify(probes)
     saved = _read_saved_state()
     op = active_operation()
-    busy = bool(op and op.get("status") == "running")
+    ext = external_switch_busy()
+    busy = bool(op and op.get("status") == "running") or bool(ext)
+    message = (op or {}).get("message") or (ext or {}).get("message") or saved.get("message") or ""
     payload = {
         "detected": detected,
         "desired": saved.get("desired") or detected,
         "phase": "switching" if busy else "idle",
-        "message": (op or {}).get("message") or saved.get("message") or "",
+        "message": message,
         "updated_at": saved.get("updated_at"),
         "probes": probes,
         "active_operation": op,
+        "external_switch": ext,
         "presets": [
             {
                 "key": key,
@@ -302,6 +364,15 @@ def switch_stack(key: str) -> dict:
             "ok": False,
             "error": f"Already switching to {running.get('key')}.",
             "operation": running,
+        }
+
+    ext = external_switch_busy()
+    if ext:
+        return {
+            "ok": False,
+            "error": ext.get("message")
+            or "Another spark-stack switch is already running. Wait until Setup is idle.",
+            "external_switch": ext,
         }
 
     current = detect_stack(force=True)
