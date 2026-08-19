@@ -1,0 +1,25 @@
+discord-send: ok channel=ledger
+alertbot-send: telegram skipped (channel=ledger critical=0)
+[spark-stack 2026-08-18T13:24:15-05:00] stop AIM Music3 (node1 + spark2 replica) and Gemma lyrics
+Music3 serve stopped (port 8801 free)
+Music3 serve stopped (port 8801 free)
+spark2 Music3 stop requested. node1 untouched.
+[spark-stack 2026-08-18T13:24:16-05:00] disable house vision (proxy + both nodes) — leaving a non-picture setup
+[spark-stack 2026-08-18T13:24:16-05:00] stop 4B vision on node1 only (leave node2)
+Stopping qwen-vision-tp1 on this host (node1)
+TP1 vision stopped (scope=local).
+[spark-stack 2026-08-18T13:24:16-05:00] stop 4B vision on node2 only (leave node1)
+Stopping qwen-vision-tp1 on spark2 (node2)
+TP1 vision stopped (scope=remote).
+[spark-stack 2026-08-18T13:24:17-05:00] stop Mia Qwen3.8 NVFP4 vLLM on both Sparks
+BUSY: another ensure-telegram-model is running — wait for Telegram alert
+[spark-stack 2026-08-18T13:24:18-05:00] node2-deep-lane desired=off
+[spark-stack 2026-08-18T13:24:18-05:00] wire Hermes → Nous cloud (H3 video; chat stays alive)
+wired /home/coinupbtc/.hermes/config.yaml → nous https://inference-api.nousresearch.com/v1
+wired /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml → nous https://inference-api.nousresearch.com/v1
+wired /home/coinupbtc/.hermes/profiles/dobby/config.yaml → nous https://inference-api.nousresearch.com/v1
+wired /home/coinupbtc/.hermes/profiles/light/config.yaml → nous https://inference-api.nousresearch.com/v1
+wired /home/coinupbtc/.hermes/profiles/smeagle/config.yaml → nous https://inference-api.nousresearch.com/v1
+preferred minimax-h3-2x
+[spark-stack 2026-08-18T13:24:18-05:00] restart Hermes gateways so they pick up the new wire
+[spark-stack 2026-08-18T13:27:28-05:00] ERROR: Video switch finished but detect=none (wanted video)

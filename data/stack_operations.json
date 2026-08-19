@@ -77,6 +77,45 @@
       "finished_at": "2026-08-18T11:47:51.207597+00:00",
       "returncode": 1,
       "log_tail": "[spark-stack 2026-08-18T06:47:51-05:00] ERROR: another spark-stack switch is already running"
+    },
+    "2b1fb0affbaa": {
+      "id": "2b1fb0affbaa",
+      "type": "stack",
+      "key": "video",
+      "status": "completed",
+      "message": "Videos is live.",
+      "pid": 419216,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_2b1fb0affbaa.log",
+      "started_at": "2026-08-18T17:33:08.410528+00:00",
+      "finished_at": "2026-08-18T17:43:36.899801+00:00",
+      "returncode": 0,
+      "log_tail": "16. [music] (TRACK M3 badbunny-reggaeton ~2:15) Bad-Bunny-style Latin reggaeton/trap fusion, ~2.25 minutes. Confident melodic-sung voca...\n17. [music] (TRACK M4 kodak-rap ~2:15) Kodak-Black-inspired trap rap, ~2.25 minutes. Gritty laid-back-but-hard delivery, mumbl...\n18. [music] (REMAKE M1 ~2:00) Reggaeton love song, ~2 minutes, male and female trading vocal duet. Hot sensual dance-...\n19. [music] (REMAKE M2 ~2:30) System-of-a-Down-inspired alt-metal punk rock song, ~2.5 minutes. Aggressive, socially-...\n20. [music] (REMAKE M3 ~2:15) Bad-Bunny-style Latin reggaeton/trap fusion, ~2.25 minutes. Confident melodic-sung voca...\n21. [music] (REMAKE M4 ~2:15) Kodak-Black-inspired trap rap, ~2.25 minutes. Gritty laid-back-but-hard delivery, mumbl...\ndiscord-send: ok channel=page\nalertbot-send: telegram critical ok\n=== spark-stack status 2026-08-18T12:43:36-05:00 ===\ndetected: video\ndesired: video\nphase: idle\nmessage: MiniMax H3 :8800 LIVE \u00b7 chat on Nous\nupdated: 2026-08-18T17:43:34.333524+00:00\n8888 models \nn2 8888     \nhelper :8889 DOWN\nh3 :8800    UP\nmusic :8801 DOWN\nvision n1   DOWN (proxy DOWN)\nvision n2   DOWN\nvision_flag disabled\n               total        used        free      shared  buff/cache   available\nMem:             121         100           4           0          19          21"
+    },
+    "d6e69cb5f8c5": {
+      "id": "d6e69cb5f8c5",
+      "type": "stack",
+      "key": "video",
+      "status": "failed",
+      "message": "Videos switch failed (exit 1).",
+      "pid": 555012,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_d6e69cb5f8c5.log",
+      "started_at": "2026-08-18T18:24:15.262722+00:00",
+      "finished_at": "2026-08-18T18:27:28.110162+00:00",
+      "returncode": 1,
+      "log_tail": "alertbot-send: telegram skipped (channel=ledger critical=0)\n[spark-stack 2026-08-18T13:24:15-05:00] stop AIM Music3 (node1 + spark2 replica) and Gemma lyrics\nMusic3 serve stopped (port 8801 free)\nMusic3 serve stopped (port 8801 free)\nspark2 Music3 stop requested. node1 untouched.\n[spark-stack 2026-08-18T13:24:16-05:00] disable house vision (proxy + both nodes) \u2014 leaving a non-picture setup\n[spark-stack 2026-08-18T13:24:16-05:00] stop 4B vision on node1 only (leave node2)\nStopping qwen-vision-tp1 on this host (node1)\nTP1 vision stopped (scope=local).\n[spark-stack 2026-08-18T13:24:16-05:00] stop 4B vision on node2 only (leave node1)\nStopping qwen-vision-tp1 on spark2 (node2)\nTP1 vision stopped (scope=remote).\n[spark-stack 2026-08-18T13:24:17-05:00] stop Mia Qwen3.8 NVFP4 vLLM on both Sparks\nBUSY: another ensure-telegram-model is running \u2014 wait for Telegram alert\n[spark-stack 2026-08-18T13:24:18-05:00] node2-deep-lane desired=off\n[spark-stack 2026-08-18T13:24:18-05:00] wire Hermes \u2192 Nous cloud (H3 video; chat stays alive)\nwired /home/coinupbtc/.hermes/config.yaml \u2192 nous https://inference-api.nousresearch.com/v1\nwired /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml \u2192 nous https://inference-api.nousresearch.com/v1\nwired /home/coinupbtc/.hermes/profiles/dobby/config.yaml \u2192 nous https://inference-api.nousresearch.com/v1\nwired /home/coinupbtc/.hermes/profiles/light/config.yaml \u2192 nous https://inference-api.nousresearch.com/v1\nwired /home/coinupbtc/.hermes/profiles/smeagle/config.yaml \u2192 nous https://inference-api.nousresearch.com/v1\npreferred minimax-h3-2x\n[spark-stack 2026-08-18T13:24:18-05:00] restart Hermes gateways so they pick up the new wire\n[spark-stack 2026-08-18T13:27:28-05:00] ERROR: Video switch finished but detect=none (wanted video)"
+    },
+    "abd72fb36449": {
+      "id": "abd72fb36449",
+      "type": "stack",
+      "key": "dream",
+      "status": "completed",
+      "message": "Dream is live.",
+      "pid": 103744,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_abd72fb36449.log",
+      "started_at": "2026-08-19T01:25:33.103137+00:00",
+      "finished_at": "2026-08-19T01:35:30.019046+00:00",
+      "returncode": 0,
+      "log_tail": "qwen-warm hit1 1.037s model=Qwen3.8-27B\nqwen-warm hit2 0.588s model=Qwen3.8-27B\nqwen-warm hit3 0.571s model=Qwen3.8-27B\npatched /home/coinupbtc/.hermes/CURRENT.md\npatched /home/coinupbtc/Documents/Obsidian/wiki/system/CURRENT.md\n[spark-stack 2026-08-18T20:35:29-05:00] resume setup-keyed watchdogs for dream: 0731-keep-warm.timer dream-qwen-watchdog.timer mem-pressure-heal.timer comfyui-idle.timer\ndiscord-send: ok channel=ledger\nalertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-18T20:35:29-05:00 ===\ndetected: dream\ndesired: dream\nphase: idle\nmessage: 0731 :8888 348k \u00b7 vision n1 \u00b7 Qwen 116k MTP4 n2 :8100 \u00b7 baton 94\nupdated: 2026-08-19T01:35:29.273595+00:00\n8888 models deepseek-v4-flash-0731\nn2 8888     \nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nvision n1   UP (proxy UP)\nvision n2   DOWN\nvision_flag enabled\n               total        used        free      shared  buff/cache   available\nMem:             121         111           2           3          11           9"
     }
   }
 }
