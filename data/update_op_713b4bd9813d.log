@@ -1,0 +1,20 @@
+🔄 Recipe auto-update 2026-08-19 08:51 CDT
+
+  • ⏭ DS4F-Mia-live: [dspark-ff-pull] DIVERGED ahead=2 behind=2 @ 92487b1
+DIVERGED ahead=2 behind=2 @ 92487b1
+  • ⏭ DS4F-Mia-live/spark2: [dspark-ff-pull] DIRTY behind=13 @ 83aa4f6 (not CCCL-only)
+ M docker-compose.dspark.yml
+ M patches/hotfix-dsv4-issue26-hybrid-swa-min.py
+ M patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py
+ M patches/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py
+ M patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py
+ M patches/hotfix-dsv4-issue55-tool-truncation.py
+ M patches/hotfix-dsv4-suppress-stops-in-reasoning.py
+ M patches/hotfix-encoding-dsv4-issue21.py
+ M patches/hotfix-nvfp4-ds-mla-issue22.sh
+DIRTY behind=13 @ 83aa4f6 — pull by hand / re-apply local patch
+  • ⏭ DS4F-Mia-home: diverged (ahead 90, behind 155) @ 0817b11 — manual merge
+
+Not auto-updated: hermes-agent, llama.cpp engines, HF weights.
+Live engines are never auto-restarted — Telegram PAGE if :8888 needs a bounce.
+Detect-only: upstream-update-check @ 02:15 · engines: engine-autoupdate.timer

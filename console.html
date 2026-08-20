@@ -235,6 +235,17 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .stack-card p{margin:0;font:12.5px/1.4 var(--sans);color:var(--ink-2)}
 .stack-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
 .stack-card .btn{margin-top:auto;min-height:40px;width:100%}
+#lora-card{margin:0 14px 14px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:6px;
+  background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px}
+#lora-card h4{margin:0;font:650 15px/1.2 var(--sans);letter-spacing:-.02em;display:flex;
+  align-items:center;gap:8px}
+#lora-card h4 em{font:600 10px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--warn);border:1px solid rgba(232,176,74,.45);border-radius:999px;padding:3px 7px}
+#lora-card p{margin:0;font:12.5px/1.4 var(--sans);color:var(--ink-2)}
+#lora-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
+#lora-card .btn{margin-top:8px;min-height:44px;width:100%;max-width:280px}
+#lora-log{margin:8px 0 0;max-height:160px;overflow:auto;font:11px/1.35 var(--mono);
+  color:var(--ink-2);white-space:pre-wrap}
 #stack-modal{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;
   padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right))
     max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
@@ -246,6 +257,25 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .stack-dlg p{margin:0 0 16px;font:14px/1.45 var(--sans);color:var(--ink-2)}
 .stack-dlg-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stack-dlg-acts .btn{min-height:48px;font-size:15px}
+
+/* Updates bay — Hermes + recipe commits */
+#updates-card>h3 .cnt{margin-left:0}
+#updates-card .upd-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.upd-rows{display:flex;flex-direction:column;gap:8px;padding:0 14px 12px}
+.upd-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;
+  align-items:center;padding:11px 12px;background:rgba(255,255,255,.02);
+  border:1px solid var(--line);border-radius:12px;min-width:0}
+.upd-row.behind{border-color:rgba(245,193,90,.38)}
+.upd-row.blocked{border-color:rgba(255,122,138,.32)}
+.upd-row.current{opacity:.82}
+.upd-row .who{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.upd-row .who b{font-size:13px;font-weight:650}
+.upd-row .who span{display:block;font-size:11px;color:var(--ink-3);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upd-row .btn{min-height:40px;min-width:88px}
+.upd-log{margin:0 14px 12px;padding:10px 12px;max-height:180px;overflow:auto;
+  font:11.5px/1.45 var(--mono);color:var(--ink-2);background:#0b0f16;
+  border:1px solid var(--line);border-radius:10px;white-space:pre-wrap;word-break:break-word}
 
 /* ══════════════════════════ views ══════════════════════════ */
 .view{display:none;min-height:0;min-width:0;overflow:auto;gap:14px}
@@ -371,6 +401,16 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .tok-stat .lbl{font:9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
 .tok-stat .row{display:flex;justify-content:space-between;gap:6px;font:11px/1.45 var(--mono);color:var(--ink-2)}
 .tok-stat .row span:first-child{color:var(--ink-3)}
+.tok-models-h{font:9.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);margin:10px 0 4px}
+.tok-models{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm)}
+.tok-mod{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.9fr) minmax(0,.9fr);
+  gap:2px 8px;padding:5px 8px;border-bottom:1px solid var(--line);align-items:baseline}
+.tok-mod:last-child{border-bottom:0}
+.tok-mod .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);font-weight:550}
+.tok-mod .sub{font-size:10px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tok-mod .io{text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tok-mod .h24{text-align:right;color:var(--ink-3);font-size:10.5px}
 .mrow .v{font:11px var(--mono);color:var(--ink-2);white-space:nowrap}
 .spark{width:100%;height:40px;display:block;margin-top:9px;border-radius:8px;
   background:
@@ -521,7 +561,7 @@ tr:last-child td{border-bottom:0}
 .pill.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.4)}
 .bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
 
-#v-control{grid-template-rows:auto auto minmax(0,1fr);align-content:start}
+#v-control{grid-template-rows:auto auto auto minmax(0,1fr);align-content:start}
 #v-jobs{grid-template-rows:auto auto auto;align-content:start}
 .jobs-aux{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;min-width:0}
 .board{display:flex;flex-direction:column;min-height:0}
@@ -831,6 +871,11 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 .stack-chip span{font-size:11.5px;white-space:normal}
 .stack-cards{grid-template-columns:minmax(0,1fr);padding:0 12px 12px}
 .stack-card .btn{min-height:48px;font-size:16px}
+#lora-card{margin:0 12px 12px}
+#lora-card .btn{min-height:48px;font-size:16px;max-width:none}
+.upd-row{grid-template-columns:minmax(0,1fr);gap:8px}
+.upd-row .btn{min-height:44px;width:100%}
+.upd-row .who span{white-space:normal}
 #stack-modal{align-items:flex-end}
 .stack-dlg{width:100%;border-radius:18px 18px 12px 12px;padding:18px 16px
     calc(12px + env(safe-area-inset-bottom,0px))}
@@ -1009,10 +1054,27 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
+  <div class="card" id="updates-card">
+    <h3>Updates <span class="cnt" id="upd-cnt"></span>
+      <span class="upd-tools">
+        <button type="button" class="btn" id="upd-refresh">Check</button>
+      </span>
+    </h3>
+    <div class="stack-note" id="upd-note">Behind counts are last Check. Tap Check to fetch origin.</div>
+    <div class="upd-rows" id="upd-rows"></div>
+    <pre class="upd-log" id="upd-log" hidden></pre>
+  </div>
   <div class="card" id="stack-control">
     <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
+    <div id="lora-card">
+      <h4>LoRA Train <em id="lora-badge" hidden>READY</em></h4>
+      <p id="lora-blurb">Qwen 3.8 extract adapter. Harvest is automatic. This button is the train.</p>
+      <div class="meta" id="lora-meta"></div>
+      <button type="button" class="btn go" id="lora-go" disabled>LoRA Train</button>
+      <pre class="upd-log" id="lora-log" hidden></pre>
+    </div>
   </div>
   <div class="card dock-card">
     <h3>This desk <span class="cnt">opens on the physical display</span></h3>
@@ -1064,7 +1126,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
       <div id="tokenusage" class="tok-card">
         <div class="tok-chart-wrap">
           <div class="tok-chart-h">
-            <span>14-day tokens</span>
+            <span>14-day tokens (by last activity)</span>
             <span class="leg"><i style="background:var(--s1)"></i>in <i style="background:var(--s3)"></i>out</span>
             <b id="tok-chart-sum">…</b>
           </div>
@@ -1091,6 +1153,8 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
         <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
         <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
         <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
+        <div class="tok-models-h">Per model · Hermes names (0731 / Qwen 3.8 folded)</div>
+        <div id="tok-models" class="tok-models"></div>
       </div></div>
     <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
       <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
@@ -1134,7 +1198,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     <p id="stack-dlg-body"></p>
     <div class="stack-dlg-acts">
       <button type="button" class="btn" id="stack-dlg-cancel">Cancel</button>
-      <button type="button" class="btn go" id="stack-dlg-go">Switch</button>
+      <button type="button" class="btn go" id="stack-dlg-go">Go</button>
     </div>
   </div>
 </div>
@@ -1192,6 +1256,7 @@ function switchTab(name,dir){
   if(name==="fleet")requestAnimationFrame(drawAll);
   // Token chart lives on Jobs — canvas has no width while the tab is display:none.
   if(name==="jobs")requestAnimationFrame(()=>drawTokChart(_tokSeries));
+  if(name==="control")loadUpdates(false);
 }
 document.querySelectorAll(".tab,.tb").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
 
@@ -1511,6 +1576,21 @@ function attentionItems(d,hosts){
   if(waste.length)out.push({sev:"info",src:"idle",
     msg:`${waste.length} services running with no recent use`,
     sub:waste.slice(0,6).join(", "),tab:"control"});
+  const upd=(d.updates||{}).needs||[];
+  upd.forEach(u=>{
+    const needle=String(u.label||u.key||"").toLowerCase();
+    if(seen.includes(needle))return;
+    const behind=u.behind||0;
+    const blocked=u.state==="dirty"||u.state==="diverged";
+    out.push({
+      sev:blocked?"warn":behind?"info":"info",
+      src:"updates",
+      msg:blocked
+        ?`${u.label} is ${u.state}${behind?` · ${behind} behind`:""}`
+        :`${u.label} is ${behind} commit${behind===1?"":"s"} behind`,
+      sub:u.reason||"Control → Updates",
+      tab:"control"});
+  });
   const rank={bad:0,warn:1,info:2};
   return out.sort((a,b)=>rank[a.sev]-rank[b.sev]);
 }
@@ -1814,6 +1894,23 @@ function renderTokenUsage(tu){
   setTok("tok-chart-sum",series.length?`${tokFmt(sumIn)} / ${tokFmt(sumOut)}`:"—");
   renderTokStats(st.per_session,"tok-s");
   renderTokStats(st.per_call,"tok-c");
+  const box=document.getElementById("tok-models");
+  if(box){
+    const mods=tu.models||[];
+    if(!mods.length){
+      box.innerHTML='<div class="tok-mod"><span class="n">no Hermes sessions yet</span></div>';
+    }else{
+      box.innerHTML=mods.slice(0,18).map(m=>{
+        const t=m.total||{}, h=m.last_24h||{};
+        const names=(m.names||[]).filter(n=>n && n!==m.label).slice(0,3).join(" · ");
+        return `<div class="tok-mod" title="${(m.names||[]).join("\\n")}">
+          <div><div class="n">${m.label||"—"}</div>${names?`<div class="sub">${names}</div>`:""}</div>
+          <div class="io">${tokFmt(t.input_tokens)} / ${tokFmt(t.output_tokens)}</div>
+          <div class="h24">24h ${tokFmt(h.input_tokens)} / ${tokFmt(h.output_tokens)}</div>
+        </div>`;
+      }).join("");
+    }
+  }
   // Defer draw until layout has a width (Jobs tab may be hidden on first poll).
   requestAnimationFrame(()=>drawTokChart(series));
 }
@@ -2439,14 +2536,14 @@ function renderServe(d){
 }
 
 /* ══════════════════════ named setups (Prime / Dream / Videos / Music) ══════════════════════ */
-let STACK_POLL=null, STACK_PENDING=null;
+let STACK_POLL=null, CONFIRM=null;
 function stackNote(s){
   const op=s.active_operation;
   if(op&&op.status==="running") return op.message||"Switching…";
   if(s.phase==="switching") return s.message||"A setup switch is already running. Wait, then tap again.";
   if(op&&op.status==="failed") return op.message||"Last switch failed";
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
-  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 116k MTP4 on node2. Baton :8877.";
+  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 116k MTP4 on node2 192.168.100.11:8100 (not localhost). Baton :8877.";
   if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
@@ -2490,7 +2587,7 @@ function askStack(key){
   const s=DATA.stack||{};
   const p=(s.presets||[]).find(x=>x.key===key);
   if(!p||!p.can_switch)return;
-  STACK_PENDING=key;
+  CONFIRM={kind:"stack",key};
   if(p.active){
     $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
     $("stack-dlg-body").textContent=
@@ -2500,15 +2597,21 @@ function askStack(key){
     $("stack-dlg-body").textContent=
       `Stops ${p.stops}. Starts ${p.starts}. Takes about ${p.eta}. Telegram will ping you when it is ready.`;
   }
+  $("stack-dlg-go").textContent=p.active?"Refresh":"Switch";
   $("stack-modal").hidden=false;
 }
 function closeStackModal(){
   $("stack-modal").hidden=true;
-  STACK_PENDING=null;
+  CONFIRM=null;
 }
 $("stack-dlg-cancel").onclick=closeStackModal;
 $("stack-modal").addEventListener("click",e=>{if(e.target===$("stack-modal"))closeStackModal();});
-$("stack-dlg-go").onclick=()=>doStack(STACK_PENDING);
+$("stack-dlg-go").onclick=()=>{
+  const c=CONFIRM; if(!c)return;
+  if(c.kind==="update") doUpdate(c.key);
+  else if(c.kind==="lora") doLora(!!c.stop);
+  else doStack(c.key);
+};
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&$("stack-modal")&&!$("stack-modal").hidden)closeStackModal();
 });
@@ -2547,6 +2650,233 @@ async function pollStackOp(id){
   await tick();
   STACK_POLL=setInterval(tick,2000);
 }
+
+/* ══════════════════════ LoRA Train (under Setup) ══════════════════════ */
+let LORA_POLL=null;
+function loraAcc(v){
+  return (v==null||v==="")?"—":(Number(v).toFixed(1)+"%");
+}
+function renderLora(s){
+  if(!s)s=DATA.lora||{};
+  DATA.lora=s;
+  const op=s.active_operation||s.last_operation;
+  const running=op&&op.status==="running";
+  const badge=$("lora-badge");
+  if(badge){
+    const show=s.can_train||s.can_stop_and_train;
+    badge.hidden=!show||running;
+    badge.textContent=s.ds4f_up?"0731 UP":"READY";
+  }
+  const blurb=$("lora-blurb");
+  if(blurb){
+    blurb.textContent=running
+      ? (op.message||"Training…")
+      : (s.reason||"Qwen 3.8 extract adapter. Harvest is automatic. This button is the train.");
+  }
+  const meta=$("lora-meta");
+  if(meta){
+    const bits=[
+      `gold ${s.train_n||0}/${s.holdout_n||0}`,
+      `stock ${loraAcc(s.stock_acc)}`,
+      `lora ${loraAcc(s.lora_acc)}`,
+      s.adapter?"adapter on disk":"no adapter",
+      s.ds4f_up?"0731 LIVE":"0731 down",
+      `avail ${s.avail_g??"?"}G`,
+    ];
+    meta.textContent=bits.join(" · ");
+  }
+  const btn=$("lora-go");
+  if(btn){
+    const can=running?false:(s.can_train||s.can_stop_and_train);
+    btn.disabled=!can;
+    btn.textContent=running?"Training…":(s.ds4f_up&&s.can_stop_and_train?"Stop 0731 + Train":"LoRA Train");
+    btn.onclick=()=>askLora();
+  }
+  const log=$("lora-log");
+  if(log){
+    if(op&&op.log_tail){log.hidden=false;log.textContent=op.log_tail;}
+    else if(!running) log.hidden=true;
+  }
+  if(running&&op.id) pollLoraOp(op.id);
+}
+function askLora(){
+  const s=DATA.lora||{};
+  if(!(s.can_train||s.can_stop_and_train))return;
+  const stop=!!s.ds4f_up;
+  CONFIRM={kind:"lora",stop};
+  $("stack-dlg-title").textContent=stop?"Stop 0731 and train LoRA?":"Train extract LoRA?";
+  $("stack-dlg-body").textContent=stop
+    ? `Stops Dream/0731, then QLoRA Qwen 3.8 on ${s.train_n||"?"} gold rows (~${s.eta||"1–3 hours"}). Does not bring Dream back. Does not load the adapter on :8100. Discord #training pings when done.`
+    : `QLoRA Qwen 3.8 on ${s.train_n||"?"} gold rows (~${s.eta||"1–3 hours"}). 0731 stays down. Does not wire :8100. Discord #training pings when done.`;
+  $("stack-dlg-go").textContent=stop?"Stop + Train":"Train";
+  $("stack-modal").hidden=false;
+}
+async function doLora(stop){
+  closeStackModal();
+  $("err").textContent="starting LoRA train…";
+  const log=$("lora-log"); if(log){log.hidden=false;log.textContent="starting…";}
+  try{
+    const r=await fetch("/api/lora/start",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({stop_0731:!!stop})});
+    const d=await r.json();
+    if(!d.ok){$("err").textContent=d.error||"LoRA start failed";return;}
+    pollLoraOp((d.operation||{}).id);
+  }catch(e){$("err").textContent="LoRA start failed: "+e.message;}
+}
+async function pollLoraOp(id){
+  if(!id)return;
+  if(LORA_POLL)clearInterval(LORA_POLL);
+  const tick=async()=>{
+    try{
+      const rr=await fetch("/api/lora/operations/"+id,{cache:"no-store"});
+      if(!rr.ok)return;
+      const d=await rr.json();
+      const op=d.operation||{};
+      $("err").textContent=op.message||"training…";
+      if(DATA.lora)DATA.lora.active_operation=op;
+      renderLora(DATA.lora);
+      if(op.status==="completed"||op.status==="failed"){
+        clearInterval(LORA_POLL);LORA_POLL=null;
+        try{DATA.lora=await(await fetch("/api/lora",{cache:"no-store"})).json();}catch(e){}
+        renderLora(DATA.lora);
+        await refresh();
+      }
+    }catch(e){/* keep polling */}
+  };
+  await tick();
+  LORA_POLL=setInterval(tick,3000);
+}
+
+/* ══════════════════════ Updates bay ══════════════════════ */
+let UPD_POLL=null, UPD_FETCHED=false;
+function updGlyph(t){
+  if(t.can_apply) return "warn";
+  if(t.state==="current")return "ok";
+  if(t.state==="behind")return "warn";
+  if(t.state==="dirty"||t.state==="diverged"||t.state==="error")return "bad";
+  return "stale";
+}
+function updLine(t){
+  if(t.kind==="bundle")return t.short||"safe ff-only of every recipe";
+  if(!t.can_apply && t.reason) return (t.head?t.head+" · ":"")+t.reason;
+  const bits=[];
+  if(t.head)bits.push(t.head);
+  if(t.behind)bits.push(t.behind+" behind");
+  if(t.ahead)bits.push(t.ahead+" local");
+  if(t.dirty)bits.push("dirty");
+  if(!bits.length)bits.push(t.state||"unknown");
+  return bits.join(" · ");
+}
+function renderUpdates(data){
+  if(!data)data=DATA.updates||{};
+  const targets=data.targets||[];
+  const op=data.active_operation||data.last_operation;
+  const behind=data.behind_total??((data.needs||[]).reduce((n,u)=>n+(u.behind||0),0));
+  const blocked=data.blocked??0;
+  const cnt=$("upd-cnt");
+  if(cnt)cnt.textContent=op&&op.status==="running"
+    ? (op.message||"updating…")
+    : (behind?`${behind} behind${blocked?` · ${blocked} blocked`:""}`:"current");
+  const note=$("upd-note");
+  if(note){
+    note.textContent=op&&op.status==="running"
+      ? (op.message||"Updating…")
+      : op&&op.status==="failed"
+        ? (op.message||"Last update failed")
+        : (data.cached_at?`Last check ${String(data.cached_at).replace("T"," ").slice(0,19)} UTC`:"Tap Check to fetch origin.");
+  }
+  const rows=$("upd-rows");
+  if(rows&&targets.length){
+    rows.innerHTML=targets.map(t=>{
+      const cls=t.state==="behind"?"behind":(t.state==="dirty"||t.state==="diverged")?"blocked":t.state==="current"?"current":"";
+      const label=t.can_apply?(t.kind==="bundle"?"Pull safe":"Update"):(t.state==="current"?"Current":"Blocked");
+      return `<div class="upd-row ${cls}">
+        <div class="who">${st(updGlyph(t))}<b>${esc(t.label)}</b>
+          <span title="${esc(t.reason||t.warn||"")}">${esc(updLine(t))}</span></div>
+        <button type="button" class="btn ${t.can_apply?"go":""}" data-upd="${esc(t.key)}"
+          ${t.can_apply&&!(op&&op.status==="running")?"":"disabled"}>${label}</button>
+      </div>`;
+    }).join("");
+    rows.querySelectorAll("[data-upd]").forEach(btn=>{
+      btn.onclick=()=>askUpdate(btn.dataset.upd);
+    });
+  }else if(rows&&(data.needs||[]).length){
+    rows.innerHTML=(data.needs||[]).map(u=>
+      `<div class="upd-row ${u.state==="dirty"||u.state==="diverged"?"blocked":"behind"}">
+        <div class="who">${st(u.state==="dirty"||u.state==="diverged"?"bad":"warn")}
+          <b>${esc(u.label)}</b><span>${esc(u.reason||"")}</span></div>
+        <button type="button" class="btn" onclick="loadUpdates(true)">Check</button></div>`).join("");
+  }
+  const log=$("upd-log");
+  if(log&&op&&op.log_tail){
+    log.hidden=false;
+    log.textContent=op.log_tail;
+  }
+}
+function askUpdate(key){
+  const st=DATA.updates||{};
+  const t=(st.targets||[]).find(x=>x.key===key);
+  if(!t||!t.can_apply)return;
+  CONFIRM={kind:"update",key};
+  $("stack-dlg-title").textContent=`Update ${t.label}?`;
+  $("stack-dlg-body").textContent=
+    `${t.warn} ${t.reason?t.reason+". ":""}Takes about ${t.eta}.`;
+  $("stack-dlg-go").textContent="Update";
+  $("stack-modal").hidden=false;
+}
+async function loadUpdates(fetchOrigin){
+  try{
+    const url=fetchOrigin?"/api/updates?refresh=1":"/api/updates";
+    const st=await(await fetch(url,{cache:"no-store"})).json();
+    DATA.updates=st;
+    UPD_FETCHED=UPD_FETCHED||!!fetchOrigin;
+    renderUpdates(st);
+    const op=st.active_operation;
+    if(op&&op.status==="running")pollUpdateOp(op.id);
+  }catch(e){
+    const n=$("upd-note"); if(n)n.textContent="Could not load updates: "+e.message;
+  }
+}
+async function doUpdate(key){
+  if(!key)return;
+  closeStackModal();
+  $("err").textContent=`updating ${key}…`;
+  const log=$("upd-log"); if(log){log.hidden=false;log.textContent="starting…";}
+  try{
+    const r=await fetch("/api/updates/apply",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key})});
+    const d=await r.json();
+    if(!d.ok){$("err").textContent=d.error||"update failed";return;}
+    pollUpdateOp((d.operation||{}).id);
+  }catch(e){$("err").textContent="update failed: "+e.message;}
+}
+async function pollUpdateOp(id){
+  if(!id)return;
+  if(UPD_POLL)clearInterval(UPD_POLL);
+  const tick=async()=>{
+    try{
+      const rr=await fetch("/api/updates/operations/"+id,{cache:"no-store"});
+      if(!rr.ok)return;
+      const d=await rr.json();
+      const op=d.operation||{};
+      $("err").textContent=op.message||"updating…";
+      const log=$("upd-log");
+      if(log){log.hidden=false;log.textContent=op.log_tail||op.message||"";}
+      if(DATA.updates)DATA.updates.active_operation=op;
+      renderUpdates(DATA.updates);
+      if(op.status==="completed"||op.status==="failed"){
+        clearInterval(UPD_POLL);UPD_POLL=null;
+        await loadUpdates(false);
+        await refresh();
+      }
+    }catch(e){/* keep polling */}
+  };
+  await tick();
+  UPD_POLL=setInterval(tick,2000);
+}
+$("upd-refresh").onclick=()=>loadUpdates(true);
 
 /* ══════════════════════ CONTROL tab ══════════════════════ */
 function svcGroup(el){
@@ -2916,6 +3246,8 @@ async function refresh(){
     renderActions(d.actions||[]);
     renderLaunch(d.launch||[]);
     renderStack(d.stack||{});
+    renderUpdates(d.updates||{});
+    renderLora(d.lora||{});
     renderFleet(d);
     renderControl();
     renderJobs();

@@ -1,0 +1,111 @@
+hermes HEAD 34f6b9b62
+origin/main behind=1 ahead=5
+diverged (local reapply commits). Resetting to origin/main; reapply scripts run after.
+warning: unable to rmdir '.claude/worktrees/wobbly-splashing-lighthouse': Directory not empty
+HEAD is now at 13ce0c5c6 fmt(js): `npm run fix` on merge (#89914)
+⚕ Updating Hermes Agent...
+
+◆ Pre-update snapshot: 20260819-140812-pre-update
+
+→ Fetching updates...
+→ Local changes detected — stashing before update...
+Saved working directory and index state On main: hermes-update-autostash-20260819-140814
+→ Restoring local changes...
+⚠ Local changes were restored on top of the updated codebase.
+  Review `git diff` / `git status` if Hermes behaves unexpectedly.
+→ Warming npx cache for agent-browser...
+→ Updating Node.js dependencies...
+
+> hermes-agent@1.0.0 postinstall
+> echo '✅ Node dependencies installed. Run: python run_agent.py --help'
+
+✅ Node dependencies installed. Run: python run_agent.py --help
+
+added 524 packages in 4s
+  ✓ ui-tui, web workspaces installed (desktop skipped)
+→ Building web UI...
+    
+    > web@0.0.0 build
+    > tsc -b && vite build
+    
+    [33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+      - `__dirname` (vite.config.ts:64:25). Use `import.meta.dirname` instead
+    Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+    [36mvite v8.2.0 [32mbuilding client environment for production...[36m[39m
+    [2K
+    transforming...✓ 2219 modules transformed.
+    rendering chunks...
+    computing gzip size...
+    ../hermes_cli/web_dist/index.html                                       1.50 kB │ gzip:   0.54 kB
+    ../hermes_cli/web_dist/assets/Mondwest-Regular-CWscgue7.woff2          23.82 kB
+    ../hermes_cli/web_dist/assets/RulesExpanded-Regular-l8uVympt.woff2     33.82 kB
+    ../hermes_cli/web_dist/assets/RulesExpanded-Bold-DZA7s8Pa.woff2        35.01 kB
+    ../hermes_cli/web_dist/assets/RulesCompressed-Regular-BSXFyF4x.woff2   37.76 kB
+    ../hermes_cli/web_dist/assets/RulesCompressed-Medium-CA76_CrB.woff2    38.84 kB
+    ../hermes_cli/web_dist/assets/Collapse-Bold-mgICk9-_.woff2             59.14 kB
+    ../hermes_cli/web_dist/assets/Collapse-Regular-DysayoTY.woff2          62.81 kB
+    ../hermes_cli/web_dist/assets/xterm-BrP-ENHg.css                        3.93 kB │ gzip:   1.01 kB
+    ../hermes_cli/web_dist/assets/index-mXYHKWVT.css                      112.59 kB │ gzip:  17.61 kB
+    ../hermes_cli/web_dist/assets/chat-activation-BiaqYo9D.js               0.04 kB │ gzip:   0.06 kB
+    ../hermes_cli/web_dist/assets/page-header-context-BX4nlssA.js           0.15 kB │ gzip:   0.14 kB
+    ../hermes_cli/web_dist/assets/useProfileScope-D4PhX9DW.js               0.26 kB │ gzip:   0.20 kB
+    ../hermes_cli/web_dist/assets/usePageHeader-Ct7hu-9P.js                 0.30 kB │ gzip:   0.23 kB
+    ../hermes_cli/web_dist/assets/DeleteConfirmDialog-CsLNZYN8.js           0.42 kB │ gzip:   0.26 kB
+    ../hermes_cli/web_dist/assets/useModalBehavior-BzfiHIf6.js              0.52 kB │ gzip:   0.33 kB
+    ../hermes_cli/web_dist/assets/utils-CwZgPRDJ.js                         0.53 kB │ gzip:   0.29 kB
+    ../hermes_cli/web_dist/assets/rolldown-runtime-CbXtAM7H.js              0.58 kB │ gzip:   0.36 kB
+    ../hermes_cli/web_dist/assets/clipboard-owkvc3zk.js                     0.73 kB │ gzip:   0.44 kB
+    ../hermes_cli/web_dist/assets/mcp-server-create-B0VgoYzF.js             0.92 kB │ gzip:   0.46 kB
+    ../hermes_cli/web_dist/assets/DocsPage-6AuSIQ8w.js                      1.40 kB │ gzip:   0.83 kB
+    ../hermes_cli/web_dist/assets/plugins-Bhfqz2DM.js                       4.45 kB │ gzip:   2.09 kB
+    ../hermes_cli/web_dist/assets/LogsPage-B-K9EZla.js                      4.75 kB │ gzip:   2.00 kB
+    ../hermes_cli/web_dist/assets/PairingPage-CgKs7_Hh.js                   4.79 kB │ gzip:   1.64 kB
+    ../hermes_cli/web_dist/assets/FilesPage-MfyaX1PW.js                     9.80 kB │ gzip:   3.25 kB
+    ../hermes_cli/web_dist/assets/ModelReloadConfirm-COUTk7QY.js           12.06 kB │ gzip:   4.35 kB
+    ../hermes_cli/web_dist/assets/WebhooksPage-BMTor8Fh.js                 12.42 kB │ gzip:   3.72 kB
+    ../hermes_cli/web_dist/assets/themes-BXlzFeo6.js                       12.79 kB │ gzip:   4.19 kB
+    ../hermes_cli/web_dist/assets/AnalyticsPage-zQ-l7u1o.js                13.59 kB │ gzip:   3.54 kB
+    ../hermes_cli/web_dist/assets/ConfigPage-C-z7kjKT.js                   14.68 kB │ gzip:   4.57 kB
+    ../hermes_cli/web_dist/assets/ProfileBuilderPage-DsdwS39T.js           14.69 kB │ gzip:   4.38 kB
+    ../hermes_cli/web_dist/assets/McpPage-DhgLzzBB.js                      17.15 kB │ gzip:   4.99 kB
+    ../hermes_cli/web_dist/assets/PluginsPage-HMKOdBmV.js                  20.44 kB │ gzip:   5.66 kB
+    ../hermes_cli/web_dist/assets/api-CUjvYA_E.js                          21.73 kB │ gzip:   4.79 kB
+    ../hermes_cli/web_dist/assets/ProfilesPage-B5rwhwyA.js                 23.14 kB │ gzip:   6.47 kB
+    ../hermes_cli/web_dist/assets/ModelsPage-BK7RmKPj.js                   27.48 kB │ gzip:   7.40 kB
+    ../hermes_cli/web_dist/assets/ChannelsPage-BGZijnAM.js                 28.72 kB │ gzip:   7.94 kB
+    ../hermes_cli/web_dist/assets/EnvPage-DNRtEPk-.js                      29.29 kB │ gzip:   7.81 kB
+    ../hermes_cli/web_dist/assets/CronPage-B78MNOr-.js                     33.18 kB │ gzip:   9.40 kB
+    ../hermes_cli/web_dist/assets/SkillsPage-B5DCnGsm.js                   39.61 kB │ gzip:  10.57 kB
+    ../hermes_cli/web_dist/assets/SystemPage-B3Yi3Khj.js                   40.67 kB │ gzip:  10.93 kB
+    ../hermes_cli/web_dist/assets/SessionsPage-jbWziBZ4.js                 40.79 kB │ gzip:  11.92 kB
+    ../hermes_cli/web_dist/assets/ChatPage-C73Tjtx6.js                     43.83 kB │ gzip:  14.76 kB
+    ../hermes_cli/web_dist/assets/index-BhrD68CT.js                        44.98 kB │ gzip:  13.57 kB
+    ../hermes_cli/web_dist/assets/vendor-BLReI8FQ.js                       50.06 kB │ gzip:  17.82 kB
+    ../hermes_cli/web_dist/assets/react-vendor-B6GYCG81.js                226.82 kB │ gzip:  72.67 kB
+    ../hermes_cli/web_dist/assets/ui-Cc7bRenc.js                          290.01 kB │ gzip:  94.82 kB
+    ../hermes_cli/web_dist/assets/xterm-CXxU4Y2B.js                       474.38 kB │ gzip: 122.64 kB
+    ../hermes_cli/web_dist/assets/i18n-XsAPqR2h.js                        477.54 kB │ gzip: 140.64 kB
+    
+    [32m✓ built in 380ms[39m
+  ✓ Web UI built
+✓ Already up to date! [main @ 13ce0c5c6]
+hermes now 13ce0c5c6
+restored tools/media_gen_gateway.py
+restored gateway/slash_commands.py
+patched hermes_cli/commands.py image/video CommandDefs
+patched _TELEGRAM_MENU_PRIORITY for image/video
+injected gateway/run.py
+injected adapter picker state
+injected adapter media methods
+injected adapter callback gate
+media wizard inject OK
+MISSING — deterministic-exit sentinel was wiped
+sentinel missing — reapplying from /home/coinupbtc/.hermes/backups/deterministic-exit-2026-07-29/0001-deterministic-exit-sentinel.patch
+git apply failed — falling back to whole-file restore
+WARNING: whole-file restore used — this reverts any upstream changes to these two files
+discord-send: ok channel=ledger
+alertbot-send: telegram skipped (channel=ledger critical=0)
+deterministic-exit sentinel reapplied; restart gateways with gateway-restart-safe.sh
+discord-send: ok channel=ledger
+alertbot-send: telegram skipped (channel=ledger critical=0)
+hermes update done 34f6b9b62 -> 973abe810

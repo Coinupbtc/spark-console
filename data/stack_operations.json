@@ -116,6 +116,19 @@
       "finished_at": "2026-08-19T01:35:30.019046+00:00",
       "returncode": 0,
       "log_tail": "qwen-warm hit1 1.037s model=Qwen3.8-27B\nqwen-warm hit2 0.588s model=Qwen3.8-27B\nqwen-warm hit3 0.571s model=Qwen3.8-27B\npatched /home/coinupbtc/.hermes/CURRENT.md\npatched /home/coinupbtc/Documents/Obsidian/wiki/system/CURRENT.md\n[spark-stack 2026-08-18T20:35:29-05:00] resume setup-keyed watchdogs for dream: 0731-keep-warm.timer dream-qwen-watchdog.timer mem-pressure-heal.timer comfyui-idle.timer\ndiscord-send: ok channel=ledger\nalertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-18T20:35:29-05:00 ===\ndetected: dream\ndesired: dream\nphase: idle\nmessage: 0731 :8888 348k \u00b7 vision n1 \u00b7 Qwen 116k MTP4 n2 :8100 \u00b7 baton 94\nupdated: 2026-08-19T01:35:29.273595+00:00\n8888 models deepseek-v4-flash-0731\nn2 8888     \nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nvision n1   UP (proxy UP)\nvision n2   DOWN\nvision_flag enabled\n               total        used        free      shared  buff/cache   available\nMem:             121         111           2           3          11           9"
+    },
+    "6dee89f3a057": {
+      "id": "6dee89f3a057",
+      "type": "stack",
+      "key": "dream",
+      "status": "failed",
+      "message": "Dream switch failed (exit 1).",
+      "pid": 1679428,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_6dee89f3a057.log",
+      "started_at": "2026-08-19T14:08:52.067535+00:00",
+      "finished_at": "2026-08-19T14:19:34.811619+00:00",
+      "returncode": 1,
+      "log_tail": "[qwen38 09:17:19] node2 llama-server launched :8100\n[qwen38 09:18:51] qwen38 node2 UP\n[spark-stack 2026-08-19T09:18:51-05:00] node2-deep-lane desired=up\n[spark-stack 2026-08-19T09:18:51-05:00] wire Hermes \u2192 baton :8877 (auto Qwen/0731)\nwired /home/coinupbtc/.hermes/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/dobby/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/light/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/smeagle/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\npreferred deepseek-dspark\nwired profiles: dobby, light, orchestrator, smeagle\nfreegle stays nous tencent/hy3:free\nkanban_db._NOTIFY_DELIVERY_MODES missing \u2014 refuse gateway start\n[spark-stack 2026-08-19T09:18:52-05:00] ERROR: hermes-gateway-import-smoke FAILED \u2014 not restarting gateways\n[spark-stack 2026-08-19T09:18:52-05:00] WARN: dream engines/wire written but Telegram gateways did not come up\nhit1 30.476s\nhit2 5.451s\nhit3 0.462s\nqwen-warm hit1 2.043s model=Qwen3.8-27B\nqwen-warm hit2 1.149s model=Qwen3.8-27B\nqwen-warm hit3 1.192s model=Qwen3.8-27B\n[spark-stack 2026-08-19T09:19:34-05:00] resume setup-keyed watchdogs for dream: 0731-keep-warm.timer dream-qwen-watchdog.timer mem-pressure-heal.timer comfyui-idle.timer\ndiscord-send: ok channel=ledger\nalertbot-send: telegram skipped (channel=ledger critical=0)"
     }
   }
 }

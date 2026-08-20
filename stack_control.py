@@ -41,7 +41,7 @@ PRESETS: dict[str, dict] = {
         "detail": "0731 TP2 348k + 4B pics n1 + Qwen 3.8 GGUF 116k MTP4 n2 :8100. Chat = baton :8877 (Qwen default; 0731 on required/notify/script/research). max_tokens 20k. teb 69 = 94.",
         "eta": "10–20 min",
         "stops": "Music3, helper 35B, MiniMax H3",
-        "starts": "DS4F :8888 + vision n1 + Qwen GGUF :8100 + baton :8877",
+        "starts": "DS4F :8888 + vision n1 + Qwen GGUF 192.168.100.11:8100 (never node1 :8100) + baton :8877",
     },
     "video": {
         "label": "Videos",
@@ -84,11 +84,19 @@ def _model_ids(url: str, timeout: float = 1.5) -> list[str]:
 
 
 def _probe(url: str, timeout: float = 1.5) -> bool:
-    """True when /v1/models answers with JSON. Never raises."""
+    """True when /v1/models or /health answers with JSON. Never raises."""
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8", errors="replace")[:8000])
-        return bool(data.get("data") or data.get("id") or data.get("object"))
+        if not isinstance(data, dict):
+            return False
+        return bool(
+            data.get("data")
+            or data.get("id")
+            or data.get("object")
+            or data.get("ok") is True
+            or data.get("qwen")
+        )
     except Exception:
         return False
 
@@ -270,7 +278,8 @@ def _probes_now() -> dict[str, bool]:
         "vision_proxy": "http://127.0.0.1:8890/v1/models",
         "vision_n1": "http://127.0.0.1:8891/v1/models",
         "vision_n2": "http://192.168.100.11:8891/v1/models",
-        "qwen_gguf": "http://192.168.100.11:8100/v1/models",
+        "qwen_n2": "http://192.168.100.11:8100/v1/models",
+        "baton": "http://127.0.0.1:8877/health",
     }
     found: dict[str, bool] = {k: False for k in targets}
     with ThreadPoolExecutor(max_workers=8) as pool:
@@ -284,7 +293,8 @@ def _probes_now() -> dict[str, bool]:
     found["dream"] = bool(found["ds4f"] and any("qwen3.8-27b" in i.lower() for i in n2_ids))
     # Do not OR n1/n2 into one "vision" bit — Dream is n1, Prime is n2.
     found["vision"] = bool(found["vision_proxy"])
-    found.pop("qwen_gguf", None)
+    # Keep qwen_n2 + baton in probes so the console never confuses
+    # node1 127.0.0.1:8100 (usually empty) with Dream Qwen on node2.
     return found
 
 

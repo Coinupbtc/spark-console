@@ -1,0 +1,30 @@
+{
+  "operations": {
+    "713b4bd9813d": {
+      "id": "713b4bd9813d",
+      "type": "update",
+      "key": "recipes",
+      "status": "completed",
+      "message": "All recipes (safe) updated.",
+      "pid": 1644168,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_713b4bd9813d.log",
+      "started_at": "2026-08-19T13:51:14.165875+00:00",
+      "finished_at": "2026-08-19T13:51:19.348522+00:00",
+      "returncode": 0,
+      "log_tail": "\ud83d\udd04 Recipe auto-update 2026-08-19 08:51 CDT\n\n  \u2022 \u23ed DS4F-Mia-live: [dspark-ff-pull] DIVERGED ahead=2 behind=2 @ 92487b1\nDIVERGED ahead=2 behind=2 @ 92487b1\n  \u2022 \u23ed DS4F-Mia-live/spark2: [dspark-ff-pull] DIRTY behind=13 @ 83aa4f6 (not CCCL-only)\n M docker-compose.dspark.yml\n M patches/hotfix-dsv4-issue26-hybrid-swa-min.py\n M patches/hotfix-dsv4-issue27-partial-prefill-concurrency.py\n M patches/hotfix-dsv4-issue31-v2-thinking-budget-gpu.py\n M patches/hotfix-dsv4-issue43-decode-fairness-and-diag.py\n M patches/hotfix-dsv4-issue55-tool-truncation.py\n M patches/hotfix-dsv4-suppress-stops-in-reasoning.py\n M patches/hotfix-encoding-dsv4-issue21.py\n M patches/hotfix-nvfp4-ds-mla-issue22.sh\nDIRTY behind=13 @ 83aa4f6 \u2014 pull by hand / re-apply local patch\n  \u2022 \u23ed DS4F-Mia-home: diverged (ahead 90, behind 155) @ 0817b11 \u2014 manual merge\n\nNot auto-updated: hermes-agent, llama.cpp engines, HF weights.\nLive engines are never auto-restarted \u2014 Telegram PAGE if :8888 needs a bounce.\nDetect-only: upstream-update-check @ 02:15 \u00b7 engines: engine-autoupdate.timer"
+    },
+    "87a0ff7db5b2": {
+      "id": "87a0ff7db5b2",
+      "type": "update",
+      "key": "hermes",
+      "status": "completed",
+      "message": "Hermes Agent updated.",
+      "pid": 1677245,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_87a0ff7db5b2.log",
+      "started_at": "2026-08-19T14:08:10.676603+00:00",
+      "finished_at": "2026-08-19T14:08:31.371073+00:00",
+      "returncode": 0,
+      "log_tail": "    ../hermes_cli/web_dist/assets/SessionsPage-jbWziBZ4.js                 40.79 kB \u2502 gzip:  11.92 kB\n    ../hermes_cli/web_dist/assets/ChatPage-C73Tjtx6.js                     43.83 kB \u2502 gzip:  14.76 kB\n    ../hermes_cli/web_dist/assets/index-BhrD68CT.js                        44.98 kB \u2502 gzip:  13.57 kB\n    ../hermes_cli/web_dist/assets/vendor-BLReI8FQ.js                       50.06 kB \u2502 gzip:  17.82 kB\n    ../hermes_cli/web_dist/assets/react-vendor-B6GYCG81.js                226.82 kB \u2502 gzip:  72.67 kB\n    ../hermes_cli/web_dist/assets/ui-Cc7bRenc.js                          290.01 kB \u2502 gzip:  94.82 kB\n    ../hermes_cli/web_dist/assets/xterm-CXxU4Y2B.js                       474.38 kB \u2502 gzip: 122.64 kB\n    ../hermes_cli/web_dist/assets/i18n-XsAPqR2h.js                        477.54 kB \u2502 gzip: 140.64 kB\n    \n    \u001b[32m\u2713 built in 380ms\u001b[39m\n  \u2713 Web UI built\n\u2713 Already up to date! [main @ 13ce0c5c6]\nhermes now 13ce0c5c6\nrestored tools/media_gen_gateway.py\nrestored gateway/slash_commands.py\npatched hermes_cli/commands.py image/video CommandDefs\npatched _TELEGRAM_MENU_PRIORITY for image/video\ninjected gateway/run.py\ninjected adapter picker state\ninjected adapter media methods\ninjected adapter callback gate\nmedia wizard inject OK\nMISSING \u2014 deterministic-exit sentinel was wiped\nsentinel missing \u2014 reapplying from /home/coinupbtc/.hermes/backups/deterministic-exit-2026-07-29/0001-deterministic-exit-sentinel.patch\ngit apply failed \u2014 falling back to whole-file restore\nWARNING: whole-file restore used \u2014 this reverts any upstream changes to these two files\ndiscord-send: ok channel=ledger\nalertbot-send: telegram skipped (channel=ledger critical=0)\ndeterministic-exit sentinel reapplied; restart gateways with gateway-restart-safe.sh\ndiscord-send: ok channel=ledger\nalertbot-send: telegram skipped (channel=ledger critical=0)\nhermes update done 34f6b9b62 -> 973abe810"
+    }
+  }
+}

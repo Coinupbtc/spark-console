@@ -15,7 +15,9 @@ Data source:
 Returns:
   * grand totals + last-24h (existing)
   * per-profile breakdown (existing)
+  * models — per served-name (and alias family) in/out/calls + last 24h
   * series_14d — daily input/output/calls across all profiles (for the graph)
+    bucketed by last_seen (when the session last billed), not first_seen
   * stats — mean / median / mode of tokens-per-session and tokens-per-call
     (mode uses rounded buckets so continuous token counts still have a mode)
 """
@@ -41,6 +43,51 @@ _SERIES_DAYS = 14
 # Mode on raw token counts is almost always unique; bucket so "mode" is useful.
 _SESSION_MODE_BUCKET = 10_000   # tokens (in+out) per session
 _CALL_MODE_BUCKET = 1_000       # tokens (in+out) per API call
+
+# Hermes records whatever model *string the gateway sent*, not the Spark
+# Console setup name. Fold aliases so 0731 / Qwen 3.8 don't splinter.
+_FAMILY: list[tuple[str, tuple[str, ...]]] = [
+    ("0731 (DeepSeek-V4-Flash)", (
+        "deepseek-v4-flash-0731",
+        "deepseek/deepseek-v4-flash-0731",
+        "deepseek-v4-flash-dspark",
+        "deepseek/deepseek-v4-flash",
+        "~deepseek/deepseek-v4-flash-latest",
+        "deepseek/deepseek-v4-flash-latest",
+    )),
+    ("Qwen 3.8 27B", (
+        "Qwen3.8-27B",
+        "qwen38-27b-unsloth-nvfp4",
+        "Qwen3.8-27B-GGUF",
+    )),
+    ("dream-baton (router, not a GPU)", ("dream-baton",)),
+    ("Qwen3-VL 4B (vision)", ("qwen3-vl-4b", "qwen3.5-9b-vision")),
+    ("Qwen 3.6 35B helper", (
+        "qwen3.6:35b",
+        "qwen3.6:35b-64k",
+        "/home/coinupbtc/models/dgx_bundle/qwen-nvfp4",
+        "/home/coinupbtc/models/dgx_bundle/qwen-nvfp4-gguf/q36-35b-a3b-nvfp4.gguf",
+        "/home/coinupbtc/models/dgx_bundle/qwen3.6-35b-a3b-ud/Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf",
+        "nvidia/Qwen3.6-27B-NVFP4",
+        "qwen3.6:27b",
+        "local-nvfp4",
+    )),
+]
+
+
+def _family_label(model: str) -> str:
+    raw = (model or "").strip() or "(empty)"
+    low = raw.lower()
+    for label, aliases in _FAMILY:
+        for a in aliases:
+            if raw == a or low == a.lower():
+                return label
+    # short path tails
+    if "/" in raw and not raw.startswith(("http:", "https:", "deepseek/", "google/",
+                                          "stepfun/", "tencent/", "openai/", "nvidia/",
+                                          "xiaomi/", "poolside/", "hf.co/")):
+        return raw.rsplit("/", 1)[-1]
+    return raw
 
 
 def _db_list() -> list[tuple[str, Path]]:
@@ -71,7 +118,7 @@ def _total(db: Path, since: float | None = None) -> dict:
                 "COALESCE(SUM(api_call_count),0), COALESCE(SUM(input_tokens),0), "
                 "COALESCE(SUM(output_tokens),0), COALESCE(SUM(cache_read_tokens),0), "
                 "COALESCE(SUM(cache_write_tokens),0), COALESCE(SUM(reasoning_tokens),0) "
-                "FROM session_model_usage WHERE first_seen >= ?",
+                "FROM session_model_usage WHERE COALESCE(last_seen, first_seen) >= ?",
                 (since,),
             )
         else:
@@ -128,13 +175,15 @@ def _daily_rows(db: Path, since: float) -> list[tuple[str, int, int, int, int]]:
     try:
         con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
         cur = con.cursor()
-        # Group by UTC calendar day of first_seen (Hermes stores unix floats).
+        # last_seen = when the row last billed. first_seen dumps a whole
+        # multi-day session onto the open day and makes the 14d chart lie.
         cur.execute(
-            "SELECT date(first_seen, 'unixepoch') AS d, "
+            "SELECT date(COALESCE(last_seen, first_seen), 'unixepoch') AS d, "
             "COALESCE(SUM(input_tokens),0), COALESCE(SUM(output_tokens),0), "
             "COALESCE(SUM(api_call_count),0), COUNT(DISTINCT session_id) "
             "FROM session_model_usage "
-            "WHERE first_seen >= ? AND first_seen IS NOT NULL "
+            "WHERE COALESCE(last_seen, first_seen) >= ? "
+            "AND COALESCE(last_seen, first_seen) IS NOT NULL "
             "GROUP BY d ORDER BY d",
             (since,),
         )
@@ -221,6 +270,92 @@ def _round_or_none(v) -> float | None:
         return None
 
 
+def _empty_tok() -> dict:
+    return {
+        "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0,
+        "reasoning_tokens": 0, "api_calls": 0, "sessions": 0,
+    }
+
+
+def _add_tok(dst: dict, inn: int, out: int, cache: int, reason: int,
+             calls: int, sess: int) -> None:
+    dst["input_tokens"] += inn
+    dst["output_tokens"] += out
+    dst["cache_read_tokens"] += cache
+    dst["reasoning_tokens"] += reason
+    dst["api_calls"] += calls
+    dst["sessions"] += sess
+
+
+def _model_rows(db: Path, since: float | None = None) -> list[tuple]:
+    """(model, sessions, calls, in, out, cache, reasoning) from one db."""
+    out: list[tuple] = []
+    try:
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        cur = con.cursor()
+        if since:
+            cur.execute(
+                "SELECT model, COUNT(DISTINCT session_id), "
+                "COALESCE(SUM(api_call_count),0), "
+                "COALESCE(SUM(input_tokens),0), COALESCE(SUM(output_tokens),0), "
+                "COALESCE(SUM(cache_read_tokens),0), "
+                "COALESCE(SUM(reasoning_tokens),0) "
+                "FROM session_model_usage "
+                "WHERE COALESCE(last_seen, first_seen) >= ? "
+                "GROUP BY model",
+                (since,),
+            )
+        else:
+            cur.execute(
+                "SELECT model, COUNT(DISTINCT session_id), "
+                "COALESCE(SUM(api_call_count),0), "
+                "COALESCE(SUM(input_tokens),0), COALESCE(SUM(output_tokens),0), "
+                "COALESCE(SUM(cache_read_tokens),0), "
+                "COALESCE(SUM(reasoning_tokens),0) "
+                "FROM session_model_usage GROUP BY model"
+            )
+        out = list(cur.fetchall())
+        con.close()
+    except Exception:
+        pass
+    return out
+
+
+def _build_models(since_24h: float) -> list[dict]:
+    """Alias-folded per-model totals + last 24h, largest first."""
+    fam: dict[str, dict] = {}
+
+    def slot(label: str, raw: str) -> dict:
+        s = fam.get(label)
+        if s is None:
+            s = {
+                "label": label,
+                "names": [],
+                "total": _empty_tok(),
+                "last_24h": _empty_tok(),
+            }
+            fam[label] = s
+        if raw and raw not in s["names"]:
+            s["names"].append(raw)
+        return s
+
+    for _label, db in _db_list():
+        for model, sess, calls, inn, out, cache, reason in _model_rows(db):
+            raw = model or "(empty)"
+            s = slot(_family_label(raw), raw)
+            _add_tok(s["total"], inn, out, cache, reason, calls, sess)
+        for model, sess, calls, inn, out, cache, reason in _model_rows(db, since=since_24h):
+            raw = model or "(empty)"
+            s = slot(_family_label(raw), raw)
+            _add_tok(s["last_24h"], inn, out, cache, reason, calls, sess)
+
+    ranked = sorted(
+        fam.values(),
+        key=lambda m: -(m["total"]["input_tokens"] + m["total"]["output_tokens"]),
+    )
+    return ranked[:40]
+
+
 def _build_series(days: int = _SERIES_DAYS) -> list[dict]:
     """Daily totals across all profile DBs for the last `days` calendar days."""
     now = time.time()
@@ -287,11 +422,13 @@ def token_summary() -> dict:
 
     series = _build_series(_SERIES_DAYS)
     stats = _build_stats(session_rows)
+    models = _build_models(since_24h)
 
     payload = {
         "updated_unix": now,
         "cached": False,
         "profiles": profiles,
+        "models": models,
         "counts": {
             "input_tokens": _sum("input_tokens"),
             "output_tokens": _sum("output_tokens"),

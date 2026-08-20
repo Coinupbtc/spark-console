@@ -6,7 +6,9 @@ import unittest
 from unittest.mock import patch
 
 import token_usage
-from token_usage import _build_stats, _build_series, _mode_bucketed, _median, _mean
+from token_usage import (
+    _build_stats, _build_series, _mode_bucketed, _median, _mean, _family_label,
+)
 
 
 class TokenUsageStatsTests(unittest.TestCase):
@@ -47,6 +49,25 @@ class TokenUsageStatsTests(unittest.TestCase):
         # continuous ascending days
         days = [d["day"] for d in series]
         self.assertEqual(days, sorted(days))
+
+    def test_family_folds_0731_and_qwen38(self) -> None:
+        self.assertEqual(
+            _family_label("deepseek-v4-flash-0731"),
+            "0731 (DeepSeek-V4-Flash)",
+        )
+        self.assertEqual(
+            _family_label("deepseek/deepseek-v4-flash-0731"),
+            "0731 (DeepSeek-V4-Flash)",
+        )
+        self.assertEqual(_family_label("Qwen3.8-27B"), "Qwen 3.8 27B")
+        self.assertEqual(
+            _family_label("qwen38-27b-unsloth-nvfp4"),
+            "Qwen 3.8 27B",
+        )
+        self.assertEqual(
+            _family_label("dream-baton"),
+            "dream-baton (router, not a GPU)",
+        )
 
 
 if __name__ == "__main__":

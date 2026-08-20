@@ -447,6 +447,15 @@ def diagnose(
         proxy = _up("http://127.0.0.1:8890/v1/models")
         n2 = _up("http://192.168.100.11:8891/v1/models")
         if desired == "dream":
+            qwen_n2 = _up("http://192.168.100.11:8100/v1/models")
+            if not qwen_n2:
+                alerts.append({
+                    "level": "warning",
+                    "category": "qwen",
+                    "message": "Dream Qwen roommate is down on node2 192.168.100.11:8100 "
+                               "(127.0.0.1:8100 on node1 is the wrong probe)",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh status   # then heal if n2 :8100 DOWN",
+                })
             if not n1 or not proxy:
                 alerts.append({
                     "level": "warning",

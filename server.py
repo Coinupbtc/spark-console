@@ -74,6 +74,8 @@ import desktop_launch  # noqa: E402
 import comfy_api  # noqa: E402
 import energy_cost  # noqa: E402
 import stack_control  # noqa: E402
+import updates_control  # noqa: E402
+import lora_control  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -132,6 +134,14 @@ class SwitchRequest(BaseModel):
 
 class StackSwitchRequest(BaseModel):
     key: str  # prime | dream | video | music
+
+
+class UpdateApplyRequest(BaseModel):
+    key: str  # hermes | ds4f | recipes | h3-2x | …
+
+
+class LoraStartRequest(BaseModel):
+    stop_0731: bool = False
 
 
 class TodoRequest(BaseModel):
@@ -1163,6 +1173,8 @@ def api_overview():
         "actions": quick_actions.list_actions(),
         "launch": desktop_launch.list_apps(),
         "stack": stack_control.detect_stack(),
+        "updates": updates_control.status(refresh=False),
+        "lora": lora_control.status(),
         "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list),
     }
 
@@ -1328,6 +1340,50 @@ def api_stack_operation(op_id: str):
 @app.post("/api/stack/switch")
 def api_stack_switch(req: StackSwitchRequest):
     result = stack_control.switch_stack(req.key)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/updates")
+def api_updates(refresh: int = 0):
+    """Tracked git / Hermes update status. refresh=1 fetches origin."""
+    return updates_control.status(refresh=bool(refresh))
+
+
+@app.get("/api/updates/operations/{op_id}")
+def api_updates_operation(op_id: str):
+    op = updates_control.get_operation(op_id)
+    if not op:
+        return JSONResponse({"ok": False, "error": "Operation not found"}, status_code=404)
+    return {"ok": True, "operation": op}
+
+
+@app.post("/api/updates/apply")
+def api_updates_apply(req: UpdateApplyRequest):
+    result = updates_control.apply(req.key)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.get("/api/lora")
+def api_lora():
+    """Extract LoRA occupancy + gold counts. Does not start a train."""
+    return lora_control.status()
+
+
+@app.get("/api/lora/operations/{op_id}")
+def api_lora_operation(op_id: str):
+    op = lora_control.get_operation(op_id)
+    if not op:
+        return JSONResponse({"ok": False, "error": "Operation not found"}, status_code=404)
+    return {"ok": True, "operation": op}
+
+
+@app.post("/api/lora/start")
+def api_lora_start(req: LoraStartRequest):
+    result = lora_control.start(stop_0731=bool(req.stop_0731))
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
     return result
