@@ -1,38 +1,38 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-20 10:57:55",
-  "iso_ts": "2026-08-20T10:57:55.215894+00:00",
-  "hour": 10,
-  "dow": 3,
+  "timestamp_utc": "2026-08-21 11:00:19",
+  "iso_ts": "2026-08-21T11:00:19.680042+00:00",
+  "hour": 11,
+  "dow": 4,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 8.1,
-    "load_1": 1.04,
-    "load_5": 0.87,
-    "load_15": 0.92,
-    "mem_used_gb": 110.13,
+    "cpu_pct": 13.4,
+    "load_1": 1.88,
+    "load_5": 1.86,
+    "load_15": 1.95,
+    "mem_used_gb": 38.19,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 11.56,
-    "mem_pct": 90.5,
-    "swap_used_gb": 12.49,
+    "mem_avail_gb": 83.5,
+    "mem_pct": 31.4,
+    "swap_used_gb": 7.95,
     "swap_total_gb": 16.0,
-    "swap_pct": 78.1,
+    "swap_pct": 49.7,
     "disk_used_pct": 38.4,
     "disk_free_tb": 2.14
   },
   "num_gpus": 1,
-  "avg_util_pct": 0.0,
-  "total_power_watts": 10.28,
-  "avg_temp_c": 41.0,
+  "avg_util_pct": 90.0,
+  "total_power_watts": 50.68,
+  "avg_temp_c": 63.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.28,
-      "power_avg_w": 10.28,
-      "power_instant_w": 10.52,
-      "temp_c": 41,
-      "util_gpu": 0.0,
+      "power_w": 50.68,
+      "power_avg_w": 50.68,
+      "power_instant_w": 54.38,
+      "temp_c": 63,
+      "util_gpu": 90.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -46,30 +46,18 @@
     },
     {
       "name": "VLLM::EngineCore",
-      "mem_mb": 5423
-    },
-    {
-      "name": "VLLM::Worker_TP0",
-      "mem_mb": 90387
+      "mem_mb": 5503
     },
     {
       "name": "/home/coinupbtc/Documents/projects/pokemon-arb/.venv/bin/python",
-      "mem_mb": 1328
+      "mem_mb": 3153
     },
     {
-      "name": "/home/coinupbtc/.local/lib/ollama/llama-server",
-      "mem_mb": 760
+      "name": ".venv/bin/python",
+      "mem_mb": 17809
     }
   ],
-  "ollama": [
-    {
-      "name": "nomic-embed-text-v2-moe:latest",
-      "size": "586",
-      "processor": "MB",
-      "until": "GPU 512 7 minutes from now",
-      "stuck": false
-    }
-  ],
+  "ollama": [],
   "hermes": {
     "orchestrator": "active",
     "light": "active",
@@ -176,17 +164,17 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 8.1,
-        "load_1": 1.04,
-        "load_5": 0.87,
-        "load_15": 0.92,
-        "mem_used_gb": 110.13,
+        "cpu_pct": 13.4,
+        "load_1": 1.88,
+        "load_5": 1.86,
+        "load_15": 1.95,
+        "mem_used_gb": 38.19,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 11.56,
-        "mem_pct": 90.5,
-        "swap_used_gb": 12.49,
+        "mem_avail_gb": 83.5,
+        "mem_pct": 31.4,
+        "swap_used_gb": 7.95,
         "swap_total_gb": 16.0,
-        "swap_pct": 78.1,
+        "swap_pct": 49.7,
         "disk_used_pct": 38.4,
         "disk_free_tb": 2.14
       },
@@ -194,11 +182,11 @@
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.28,
-          "power_avg_w": 10.28,
-          "power_instant_w": 10.52,
-          "temp_c": 41,
-          "util_gpu": 0.0,
+          "power_w": 50.68,
+          "power_avg_w": 50.68,
+          "power_instant_w": 54.38,
+          "temp_c": 63,
+          "util_gpu": 90.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
           "fan_pct": 0,
@@ -216,10 +204,9 @@
         {
           "port": 8888,
           "engine": "vLLM",
-          "status": "ok",
-          "models": [
-            "deepseek-v4-flash-0731"
-          ]
+          "status": "down",
+          "models": [],
+          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
         },
         {
           "port": 11434,
@@ -233,37 +220,37 @@
         }
       ],
       "workloads": [
-        "agent-cron",
         "crypto",
         "llama",
         "ollama",
         "pokemon",
-        "vllm"
+        "vllm",
+        "inference-busy"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-20T10:57:56.123612+00:00",
+      "iso_ts": "2026-08-21T11:00:20.701756+00:00",
       "reachable": true,
       "error": null,
       "cpu_pct": 0.7,
       "mem": {
-        "used_gb": 119.7,
+        "used_gb": 31.6,
         "total_gb": 121.7,
-        "avail_gb": 2.0,
-        "pct": 98.4
+        "avail_gb": 90.1,
+        "pct": 26.0
       },
       "swap": {
-        "used_gb": 4.9,
+        "used_gb": 1.4,
         "total_gb": 16.0,
-        "pct": 30.4
+        "pct": 8.9
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.22,
+          "power_w": 11.17,
           "temp_c": 39,
           "util_gpu": 0.0
         }
@@ -294,29 +281,28 @@
         }
       ],
       "workloads": [
-        "llama",
-        "vllm"
+        "llama"
       ],
       "top_procs": [
         {
           "name": "llama-server",
-          "mem_gb": 1.5
-        },
-        {
-          "name": "VLLM::Worker_TP",
-          "mem_gb": 0.8
+          "mem_gb": 7.3
         },
         {
           "name": "polkitd",
-          "mem_gb": 0.1
-        },
-        {
-          "name": "systemd-journal",
-          "mem_gb": 0.1
+          "mem_gb": 0.2
         },
         {
           "name": "bluetoothd",
           "mem_gb": 0.1
+        },
+        {
+          "name": "gnome-shell",
+          "mem_gb": 0.1
+        },
+        {
+          "name": "dockerd",
+          "mem_gb": 0.0
         }
       ]
     }
@@ -333,10 +319,9 @@
       {
         "port": 8888,
         "engine": "vLLM",
-        "status": "ok",
-        "models": [
-          "deepseek-v4-flash-0731"
-        ]
+        "status": "down",
+        "models": [],
+        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
       },
       {
         "port": 11434,
@@ -369,16 +354,15 @@
   },
   "workloads": {
     "node1": [
-      "agent-cron",
       "crypto",
       "llama",
       "ollama",
       "pokemon",
-      "vllm"
+      "vllm",
+      "inference-busy"
     ],
     "node2": [
-      "llama",
-      "vllm"
+      "llama"
     ]
   },
   "node2_alert_state": "healthy",

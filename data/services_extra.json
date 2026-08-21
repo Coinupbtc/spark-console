@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-19T19:58:11.740479+00:00",
+  "updated_at": "2026-08-20T20:08:39.722173+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -316,6 +316,40 @@
       "port": 8770,
       "show_projects_tile": true,
       "registered_at": "2026-08-19T19:58:11.740386+00:00"
+    },
+    "sketchpad": {
+      "label": "Sketchpad AI",
+      "detail": ":8081",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8081/",
+        2.0
+      ],
+      "port": 8081,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-20T12:31:51.749623+00:00"
+    },
+    "nft-pawn": {
+      "label": "NFT Pawn",
+      "detail": "NFT pawn shop / P2P lending desk",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8766/",
+        2.0
+      ],
+      "port": 8766,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-20T20:08:39.722087+00:00"
     }
   }
 }

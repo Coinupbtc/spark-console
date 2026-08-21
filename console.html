@@ -244,6 +244,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 #lora-card p{margin:0;font:12.5px/1.4 var(--sans);color:var(--ink-2)}
 #lora-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
 #lora-card .btn{margin-top:8px;min-height:44px;width:100%;max-width:280px}
+#lora-go-single{max-width:280px;background:transparent;border:1px solid var(--line, #3a3a3a);color:var(--ink-2)}
 #lora-log{margin:8px 0 0;max-height:160px;overflow:auto;font:11px/1.35 var(--mono);
   color:var(--ink-2);white-space:pre-wrap}
 #stack-modal{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;
@@ -873,6 +874,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 .stack-card .btn{min-height:48px;font-size:16px}
 #lora-card{margin:0 12px 12px}
 #lora-card .btn{min-height:48px;font-size:16px;max-width:none}
+#lora-go-single{min-height:44px;font-size:15px}
 .upd-row{grid-template-columns:minmax(0,1fr);gap:8px}
 .upd-row .btn{min-height:44px;width:100%}
 .upd-row .who span{white-space:normal}
@@ -1070,9 +1072,10 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     <div class="stack-cards" id="stack-cards"></div>
     <div id="lora-card">
       <h4>LoRA Train <em id="lora-badge" hidden>READY</em></h4>
-      <p id="lora-blurb">Qwen 3.8 extract adapter. Harvest is automatic. This button is the train.</p>
+      <p id="lora-blurb">Qwen 3.8 extract adapter. Default train uses both Sparks.</p>
       <div class="meta" id="lora-meta"></div>
-      <button type="button" class="btn go" id="lora-go" disabled>LoRA Train</button>
+      <button type="button" class="btn go" id="lora-go" disabled>Train both Sparks</button>
+      <button type="button" class="btn" id="lora-go-single" disabled>This Spark only</button>
       <pre class="upd-log" id="lora-log" hidden></pre>
     </div>
   </div>
@@ -2609,7 +2612,7 @@ $("stack-modal").addEventListener("click",e=>{if(e.target===$("stack-modal"))clo
 $("stack-dlg-go").onclick=()=>{
   const c=CONFIRM; if(!c)return;
   if(c.kind==="update") doUpdate(c.key);
-  else if(c.kind==="lora") doLora(!!c.stop);
+  else if(c.kind==="lora") doLora(!!c.stop, c.dual!==false);
   else doStack(c.key);
 };
 document.addEventListener("keydown",e=>{
@@ -2671,7 +2674,7 @@ function renderLora(s){
   if(blurb){
     blurb.textContent=running
       ? (op.message||"Training…")
-      : (s.reason||"Qwen 3.8 extract adapter. Harvest is automatic. This button is the train.");
+      : (s.reason||"Qwen 3.8 extract adapter. Default train uses both Sparks.");
   }
   const meta=$("lora-meta");
   if(meta){
@@ -2680,7 +2683,9 @@ function renderLora(s){
       `stock ${loraAcc(s.stock_acc)}`,
       `lora ${loraAcc(s.lora_acc)}`,
       s.adapter?"adapter on disk":"no adapter",
+      s.wired_8100?":8100+LoRA":":8100 stock",
       s.ds4f_up?"0731 LIVE":"0731 down",
+      s.qwen_up?":8100 up":":8100 down",
       `avail ${s.avail_g??"?"}G`,
     ];
     meta.textContent=bits.join(" · ");
@@ -2689,8 +2694,15 @@ function renderLora(s){
   if(btn){
     const can=running?false:(s.can_train||s.can_stop_and_train);
     btn.disabled=!can;
-    btn.textContent=running?"Training…":(s.ds4f_up&&s.can_stop_and_train?"Stop 0731 + Train":"LoRA Train");
-    btn.onclick=()=>askLora();
+    btn.textContent=running?"Training…":(s.ds4f_up&&s.can_stop_and_train?"Stop 0731 + both Sparks":"Train both Sparks");
+    btn.onclick=()=>askLora(true);
+  }
+  const btn1=$("lora-go-single");
+  if(btn1){
+    const can=running?false:(s.can_train||s.can_stop_and_train);
+    btn1.disabled=!can;
+    btn1.textContent=running?"Training…":"This Spark only";
+    btn1.onclick=()=>askLora(false);
   }
   const log=$("lora-log");
   if(log){
@@ -2699,26 +2711,29 @@ function renderLora(s){
   }
   if(running&&op.id) pollLoraOp(op.id);
 }
-function askLora(){
+function askLora(dual){
   const s=DATA.lora||{};
   if(!(s.can_train||s.can_stop_and_train))return;
   const stop=!!s.ds4f_up;
-  CONFIRM={kind:"lora",stop};
-  $("stack-dlg-title").textContent=stop?"Stop 0731 and train LoRA?":"Train extract LoRA?";
-  $("stack-dlg-body").textContent=stop
-    ? `Stops Dream/0731, then QLoRA Qwen 3.8 on ${s.train_n||"?"} gold rows (~${s.eta||"1–3 hours"}). Does not bring Dream back. Does not load the adapter on :8100. Discord #training pings when done.`
-    : `QLoRA Qwen 3.8 on ${s.train_n||"?"} gold rows (~${s.eta||"1–3 hours"}). 0731 stays down. Does not wire :8100. Discord #training pings when done.`;
-  $("stack-dlg-go").textContent=stop?"Stop + Train":"Train";
+  CONFIRM={kind:"lora",stop,dual:!!dual};
+  const eta=dual?(s.eta||"2–4 hours both Sparks"):(s.eta_single||"4–8 hours n1");
+  $("stack-dlg-title").textContent=dual
+    ?(stop?"Stop 0731 and train both Sparks?":"Train LoRA on both Sparks?")
+    :(stop?"Stop 0731 and train this Spark?":"Train LoRA on this Spark only?");
+  $("stack-dlg-body").textContent=dual
+    ? `Stops Dream/0731 if up and stops Qwen :8100, then torchrun DDP QLoRA on ${s.train_n||"?"} rows (~${eta}). Does not bring Dream back. Does not load the adapter on :8100.`
+    : `QLoRA on this Spark only (${s.train_n||"?"} rows, ~${eta}). :8100 can stay. Does not wire the adapter.`;
+  $("stack-dlg-go").textContent=dual?(stop?"Stop + both Sparks":"Train both Sparks"):"This Spark only";
   $("stack-modal").hidden=false;
 }
-async function doLora(stop){
+async function doLora(stop, dual){
   closeStackModal();
   $("err").textContent="starting LoRA train…";
   const log=$("lora-log"); if(log){log.hidden=false;log.textContent="starting…";}
   try{
     const r=await fetch("/api/lora/start",{method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({stop_0731:!!stop})});
+      body:JSON.stringify({stop_0731:!!stop,dual:dual!==false})});
     const d=await r.json();
     if(!d.ok){$("err").textContent=d.error||"LoRA start failed";return;}
     pollLoraOp((d.operation||{}).id);

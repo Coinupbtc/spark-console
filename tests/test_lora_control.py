@@ -63,6 +63,22 @@ class CanStartTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("admit", reason.lower())
 
+    def test_dual_copy_mentions_both_sparks(self) -> None:
+        ok, reason = lc.can_start(
+            stop_0731=False, ds4f=False, train_n=931, admit=True,
+            busy=False, lock=False, dual=True,
+        )
+        self.assertTrue(ok)
+        self.assertIn("dual", reason.lower())
+
+    def test_single_copy_mentions_n1(self) -> None:
+        ok, reason = lc.can_start(
+            stop_0731=False, ds4f=False, train_n=931, admit=True,
+            busy=False, lock=False, dual=False,
+        )
+        self.assertTrue(ok)
+        self.assertIn("n1", reason.lower())
+
 
 class StartGuardTests(unittest.TestCase):
     def test_unknown_busy_does_not_spawn(self) -> None:

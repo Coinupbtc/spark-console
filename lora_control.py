@@ -194,7 +194,7 @@ def get_operation(op_id: str) -> dict | None:
 
 
 def can_start(*, stop_0731: bool, ds4f: bool, train_n: int, admit: bool,
-              busy: bool, lock: bool) -> tuple[bool, str]:
+              busy: bool, lock: bool, dual: bool = True) -> tuple[bool, str]:
     if busy:
         return False, "a LoRA train is already running"
     if lock:
@@ -205,9 +205,13 @@ def can_start(*, stop_0731: bool, ds4f: bool, train_n: int, admit: bool,
         return False, "0731 is LIVE — confirm Stop 0731 + Train"
     if not admit:
         return False, "RAM admit refused (≥40G free, swap ≤8G)"
+    if dual:
+        if ds4f and stop_0731:
+            return True, "will stop 0731 + :8100 then dual QLoRA ~2–4h; Dream does not auto-return"
+        return True, "dual QLoRA both Sparks ~2–4h; stops :8100; does not wire adapter"
     if ds4f and stop_0731:
-        return True, "will stop 0731 then train ~1–3h; Dream does not auto-return"
-    return True, "0731 down — train ~1–3h; does not wire :8100"
+        return True, "will stop 0731 then train n1 ~4–8h; Dream does not auto-return"
+    return True, "n1-only QLoRA; :8100 stays; does not wire adapter"
 
 
 def status() -> dict:
@@ -256,9 +260,12 @@ def status() -> dict:
         "can_train": ok,
         "can_stop_and_train": ok_stop,
         "reason": reason if not ok else reason_stop if ds4f else reason,
-        "eta": "1–3 hours",
+        "eta": "2–4 hours both Sparks",
+        "eta_single": "4–8 hours n1 only",
+        "dual_default": True,
+        "wired_8100": False,
         "warn": (
-            "Stops 0731/Dream if it is up. Train fills node1 for 1–3 hours. "
+            "Default is both Sparks (torchrun DDP). Stops 0731 if up and stops :8100. "
             "Does not bring Dream back. Does not load the adapter on :8100. "
             "Discord #training pings when done."
         ),
@@ -271,7 +278,7 @@ def status() -> dict:
     return dict(payload)
 
 
-def start(*, stop_0731: bool = False) -> dict:
+def start(*, stop_0731: bool = False, dual: bool = True) -> dict:
     st = status()
     ok, reason = can_start(
         stop_0731=stop_0731,
@@ -280,12 +287,17 @@ def start(*, stop_0731: bool = False) -> dict:
         admit=bool(st["admit_ok"]) or (stop_0731 and st["ds4f_up"]),
         busy=bool(st.get("active_operation")),
         lock=_lock_busy(),
+        dual=dual,
     )
     # After stopping 0731, admit may currently fail because 0731 still holds RAM.
     # Allow stop_0731 when gold is ready and not otherwise busy; admit re-checked
     # inside improve-train.sh after :8888 is down.
     if st["ds4f_up"] and stop_0731 and st["ready_gold"] and not st.get("active_operation") and not _lock_busy():
-        ok, reason = True, "will stop 0731 then train ~1–3h; Dream does not auto-return"
+        ok, reason = True, (
+            "will stop 0731 + :8100 then dual QLoRA ~2–4h; Dream does not auto-return"
+            if dual else
+            "will stop 0731 then train n1 ~4–8h; Dream does not auto-return"
+        )
     if not ok:
         return {"ok": False, "error": reason, "status": st}
     if not TRAIN_SH.is_file():
@@ -295,22 +307,29 @@ def start(*, stop_0731: bool = False) -> dict:
     log_file = DATA_DIR / f"lora_op_{op_id}.log"
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, "HOME": str(HOME), "PYTHONUNBUFFERED": "1",
-           "LORA_STOP_0731": "1" if stop_0731 else "0"}
+           "LORA_STOP_0731": "1" if stop_0731 else "0",
+           "LORA_DUAL": "1" if dual else "0"}
     env.pop("PORT", None)
     with open(log_file, "w") as logfh:
         proc = subprocess.Popen(
             ["bash", str(TRAIN_SH)],
             stdout=logfh, stderr=subprocess.STDOUT, env=env,
         )
-    label = "Stop 0731 + LoRA train" if stop_0731 else "LoRA train"
+    if dual:
+        label = "Stop 0731 + dual LoRA" if stop_0731 else "Dual LoRA (both Sparks)"
+        eta = st.get("eta") or "2–4 hours both Sparks"
+    else:
+        label = "Stop 0731 + n1 LoRA" if stop_0731 else "n1 LoRA"
+        eta = st.get("eta_single") or "4–8 hours n1 only"
     op = {
         "id": op_id,
         "type": "lora",
         "status": "running",
-        "message": f"{label} started ({st['eta']})",
+        "message": f"{label} started ({eta})",
         "pid": proc.pid,
         "log_file": str(log_file),
         "stop_0731": bool(stop_0731),
+        "dual": bool(dual),
         "started_at": _now_iso(),
         "finished_at": None,
         "returncode": None,

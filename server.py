@@ -142,6 +142,7 @@ class UpdateApplyRequest(BaseModel):
 
 class LoraStartRequest(BaseModel):
     stop_0731: bool = False
+    dual: bool = True
 
 
 class TodoRequest(BaseModel):
@@ -1383,7 +1384,7 @@ def api_lora_operation(op_id: str):
 
 @app.post("/api/lora/start")
 def api_lora_start(req: LoraStartRequest):
-    result = lora_control.start(stop_0731=bool(req.stop_0731))
+    result = lora_control.start(stop_0731=bool(req.stop_0731), dual=bool(req.dual))
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
     return result
