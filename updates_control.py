@@ -43,7 +43,7 @@ TARGETS: dict[str, dict] = {
         "ref": "main",
         "kind": "ds4f",
         "eta": "under 1 min",
-        "warn": "Checkout only — does not restart :8888. Skips dirty hotfix trees and diverged history.",
+        "warn": "Checkout only — does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
     },
     "h3-2x": {
         "label": "MiniMax H3 2x",
@@ -233,6 +233,8 @@ def can_apply(kind: str, info: dict, busy: bool) -> tuple[bool, str]:
     if info.get("dirty"):
         return False, "dirty tracked files — skipped so local patches stay"
     if ahead and behind:
+        if kind == "ds4f":
+            return True, f"diverged — merge GitHub ({behind} behind, keep {ahead} local)"
         return False, f"diverged (ahead {ahead}, behind {behind}) — not a force merge"
     if ahead:
         return False, f"already current ({ahead} local commit{'s' if ahead!=1 else ''})"

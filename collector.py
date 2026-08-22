@@ -430,7 +430,7 @@ def diagnose(
                     "action": f"tail -f ~/models/dgx_bundle/vllm-{m.get('key', '').replace('-nvfp4', '').replace('-35b', '')}.log",
                 })
 
-    # Vision: Dream = node1 4B. Prime = node2 4B. Never treat the other node as "missing".
+    # Vision: Dream = Qwen 27B mmproj on n2 :8100. Prime = node2 4B. 4B n1 is not Dream.
     try:
         desired = ""
         state = Path.home() / ".local/state/hermes/spark-stack.json"
@@ -456,15 +456,23 @@ def diagnose(
                                "(127.0.0.1:8100 on node1 is the wrong probe)",
                     "action": "bash ~/scripts/dgx/spark-stack.sh status   # then heal if n2 :8100 DOWN",
                 })
-            if not n1 or not proxy:
+            # 4B sidecar is Prime-only. Dream eyes = Qwen :8100 (already probed).
+            if n1 or proxy:
+                alerts.append({
+                    "level": "info",
+                    "category": "vision",
+                    "message": "Dream still has the old 4B sidecar up — pictures should be Qwen 27B on :8100",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh heal  # drops 4B; keeps Qwen mmproj",
+                })
+        elif desired == "twins":
+            n1q = _up("http://127.0.0.1:8888/v1/models")
+            n2q = _up("http://192.168.100.11:8888/v1/models")
+            if not n1q or not n2q:
                 alerts.append({
                     "level": "warning",
-                    "category": "vision",
-                    "message": "Dream pictures should stay on node1 (:8891 + proxy :8890) — "
-                               f"engine={'up' if n1 else 'DOWN'} proxy={'up' if proxy else 'DOWN'}",
-                    "action": "systemctl --user start qwen-vision-proxy.service && "
-                              "QWEN_VISION_FORCE=1 QWEN_VISION_BACKEND_HOST=127.0.0.1 "
-                              "bash ~/.hermes/scripts/ensure-qwen-vision.sh",
+                    "category": "qwen",
+                    "message": f"Qwen Twins incomplete (n1:8888={'up' if n1q else 'DOWN'} n2:8888={'up' if n2q else 'DOWN'})",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh twins",
                 })
         elif desired == "prime":
             if not n2 and not proxy:

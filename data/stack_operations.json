@@ -129,6 +129,19 @@
       "finished_at": "2026-08-19T14:19:34.811619+00:00",
       "returncode": 1,
       "log_tail": "[qwen38 09:17:19] node2 llama-server launched :8100\n[qwen38 09:18:51] qwen38 node2 UP\n[spark-stack 2026-08-19T09:18:51-05:00] node2-deep-lane desired=up\n[spark-stack 2026-08-19T09:18:51-05:00] wire Hermes \u2192 baton :8877 (auto Qwen/0731)\nwired /home/coinupbtc/.hermes/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/dobby/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/light/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/smeagle/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\npreferred deepseek-dspark\nwired profiles: dobby, light, orchestrator, smeagle\nfreegle stays nous tencent/hy3:free\nkanban_db._NOTIFY_DELIVERY_MODES missing \u2014 refuse gateway start\n[spark-stack 2026-08-19T09:18:52-05:00] ERROR: hermes-gateway-import-smoke FAILED \u2014 not restarting gateways\n[spark-stack 2026-08-19T09:18:52-05:00] WARN: dream engines/wire written but Telegram gateways did not come up\nhit1 30.476s\nhit2 5.451s\nhit3 0.462s\nqwen-warm hit1 2.043s model=Qwen3.8-27B\nqwen-warm hit2 1.149s model=Qwen3.8-27B\nqwen-warm hit3 1.192s model=Qwen3.8-27B\n[spark-stack 2026-08-19T09:19:34-05:00] resume setup-keyed watchdogs for dream: 0731-keep-warm.timer dream-qwen-watchdog.timer mem-pressure-heal.timer comfyui-idle.timer\ndiscord-send: ok channel=ledger\nalertbot-send: telegram skipped (channel=ledger critical=0)"
+    },
+    "4c16b227b3b7": {
+      "id": "4c16b227b3b7",
+      "type": "stack",
+      "key": "dream",
+      "status": "completed",
+      "message": "Dream is live.",
+      "pid": 2234669,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_4c16b227b3b7.log",
+      "started_at": "2026-08-22T04:01:26.993675+00:00",
+      "finished_at": "2026-08-22T04:09:50.542760+00:00",
+      "returncode": 0,
+      "log_tail": "discord-send: ok channel=ledger chunks=1\nalertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-21T23:09:50-05:00 ===\ndetected: dream\ndesired: dream\nphase: idle\nmessage: 0731 :8888 348k \u00b7 Qwen 27B VL 116k n2 :8100 \u00b7 baton\nupdated: 2026-08-22T04:09:49.937497+00:00\n8888 models deepseek-v4-flash-0731\nn2 8888     \nn2 :8100    UP qwen3.8-27b  # 192.168.100.11:8100 \u2014 NEVER curl 127.0.0.1:8100 from node1\nbaton :8877 UP {\"ok\": true, \"qwen\": \"http://192.168.100.11:8100/v1\", \"ds4f\": \"http://127.0.0.1:8888/v1\", \"n2_0731\": 1, \"n2_qwen_fat\": 0, \"n2_fat\": 24000}\nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nqwen eyes   yes  # n2 :8100 modalities.vision (Dream)\ntwins n1    UP  # SGLang DSpark :8888\ntwins n2    DOWN\n4B n1       DOWN (proxy DOWN)  # Prime sidecar\n4B n2       DOWN\n4B flag     disabled\ngateways    orch=active smeagle=active (smeagle Telegram platform is off; chat is orch \u2192 baton)\n               total        used        free      shared  buff/cache   available\nMem:             121         103           3           3          19          18"
     }
   }
 }

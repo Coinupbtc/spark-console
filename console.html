@@ -210,7 +210,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .serve::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor;
   box-shadow:0 0 8px currentColor;flex:none;transform:rotate(45deg)}
 
-/* Named setups — Prime / Dream / Videos / Music. */
+/* Named setups — Prime / Dream / Qwen Twins / Videos / Music. */
 .stack-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stack-chip{appearance:none;display:flex;flex-direction:column;align-items:flex-start;
   gap:2px;min-height:52px;padding:10px 12px;border-radius:12px;cursor:pointer;
@@ -224,7 +224,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .stack-chip:disabled{opacity:.45;cursor:not-allowed}
 .stack-chip:not(:disabled):not(.on):active{transform:scale(.98)}
 .stack-note{font:11.5px/1.4 var(--sans);color:var(--ink-3);padding:0 2px 2px;min-height:1.2em}
-.stack-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 14px 14px}
+.stack-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:0 14px 14px}
 .stack-card{display:flex;flex-direction:column;gap:6px;padding:14px 14px 12px;
   background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;min-width:0}
 .stack-card.on{border-color:rgba(74,222,154,.5);background:rgba(74,222,154,.08)}
@@ -261,7 +261,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 
 /* Updates bay — Hermes + recipe commits */
 #updates-card>h3 .cnt{margin-left:0}
-#updates-card .upd-tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+#updates-card .upd-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-left:auto;justify-content:flex-end}
 .upd-rows{display:flex;flex-direction:column;gap:8px;padding:0 14px 12px}
 .upd-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;
   align-items:center;padding:11px 12px;background:rgba(255,255,255,.02);
@@ -273,7 +273,8 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .upd-row .who b{font-size:13px;font-weight:650}
 .upd-row .who span{display:block;font-size:11px;color:var(--ink-3);margin-top:2px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.upd-row .btn{min-height:40px;min-width:88px}
+.upd-row .btn{min-height:44px;min-width:88px}
+#updates-card .upd-tools .btn{min-height:44px}
 .upd-log{margin:0 14px 12px;padding:10px 12px;max-height:180px;overflow:auto;
   font:11.5px/1.45 var(--mono);color:var(--ink-2);background:#0b0f16;
   border:1px solid var(--line);border-radius:10px;white-space:pre-wrap;word-break:break-word}
@@ -1059,10 +1060,11 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
   <div class="card" id="updates-card">
     <h3>Updates <span class="cnt" id="upd-cnt"></span>
       <span class="upd-tools">
-        <button type="button" class="btn" id="upd-refresh">Check</button>
+        <button type="button" class="btn go" id="upd-refresh">Fetch GitHub</button>
+        <button type="button" class="btn go" id="upd-sync">Sync GitHub</button>
       </span>
     </h3>
-    <div class="stack-note" id="upd-note">Behind counts are last Check. Tap Check to fetch origin.</div>
+    <div class="stack-note" id="upd-note">Fetch GitHub, then Sync GitHub (DS4F merge) or Update / Pull safe. Checkout only — does not restart 0731 or Qwen.</div>
     <div class="upd-rows" id="upd-rows"></div>
     <pre class="upd-log" id="upd-log" hidden></pre>
   </div>
@@ -1259,7 +1261,7 @@ function switchTab(name,dir){
   if(name==="fleet")requestAnimationFrame(drawAll);
   // Token chart lives on Jobs — canvas has no width while the tab is display:none.
   if(name==="jobs")requestAnimationFrame(()=>drawTokChart(_tokSeries));
-  if(name==="control")loadUpdates(false);
+  if(name==="control")loadUpdates(!UPD_FETCHED);
 }
 document.querySelectorAll(".tab,.tb").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
 
@@ -2546,7 +2548,8 @@ function stackNote(s){
   if(s.phase==="switching") return s.message||"A setup switch is already running. Wait, then tap again.";
   if(op&&op.status==="failed") return op.message||"Last switch failed";
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
-  if(s.detected==="dream") return "0731 348k + pictures here + Qwen 116k MTP4 on node2 192.168.100.11:8100 (not localhost). Baton :8877.";
+  if(s.detected==="dream") return "0731 348k + Qwen 27B VL 116k on node2 192.168.100.11:8100 (mmproj, no 4B sidecar). Baton :8877.";
+  if(s.detected==="twins") return "Qwen Twins: Mia SGLang DSpark NVFP4 on both Sparks :8888. DS4F parked. Orch=n1, smeagle=n2.";
   if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
@@ -2594,7 +2597,9 @@ function askStack(key){
   if(p.active){
     $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
     $("stack-dlg-body").textContent=
-      `Re-apply this setup only. Dream keeps 0731, n1 4B pictures, and n2 Qwen 88k. Does not mix Prime/node2 vision into Dream.`;
+      p.key==="twins"
+        ? `Re-apply Qwen Twins only. One 27B GGUF per Spark on :8888. DS4F stays parked.`
+        : `Re-apply this setup only. Dream keeps 0731 TP2 and n2 Qwen 27B VL (mmproj). Does not start the 4B sidecar.`;
   }else{
     $("stack-dlg-title").textContent=`Switch to ${p.label}?`;
     $("stack-dlg-body").textContent=
@@ -2805,7 +2810,7 @@ function renderUpdates(data){
   if(rows&&targets.length){
     rows.innerHTML=targets.map(t=>{
       const cls=t.state==="behind"?"behind":(t.state==="dirty"||t.state==="diverged")?"blocked":t.state==="current"?"current":"";
-      const label=t.can_apply?(t.kind==="bundle"?"Pull safe":"Update"):(t.state==="current"?"Current":"Blocked");
+      const label=t.can_apply?(t.key==="ds4f"&&(t.behind||t.state==="diverged")?"Sync GitHub":t.kind==="bundle"?"Pull safe":"Update"):(t.state==="current"?"Current":"Blocked");
       return `<div class="upd-row ${cls}">
         <div class="who">${st(updGlyph(t))}<b>${esc(t.label)}</b>
           <span title="${esc(t.reason||t.warn||"")}">${esc(updLine(t))}</span></div>
@@ -2834,10 +2839,10 @@ function askUpdate(key){
   const t=(st.targets||[]).find(x=>x.key===key);
   if(!t||!t.can_apply)return;
   CONFIRM={kind:"update",key};
-  $("stack-dlg-title").textContent=`Update ${t.label}?`;
+  $("stack-dlg-title").textContent=`${t.key==="ds4f"?"Sync GitHub":"Update"} ${t.label}?`;
   $("stack-dlg-body").textContent=
     `${t.warn} ${t.reason?t.reason+". ":""}Takes about ${t.eta}.`;
-  $("stack-dlg-go").textContent="Update";
+  $("stack-dlg-go").textContent=t.key==="ds4f"?"Sync GitHub":"Update";
   $("stack-modal").hidden=false;
 }
 async function loadUpdates(fetchOrigin){
@@ -2892,6 +2897,16 @@ async function pollUpdateOp(id){
   UPD_POLL=setInterval(tick,2000);
 }
 $("upd-refresh").onclick=()=>loadUpdates(true);
+$("upd-sync").onclick=async()=>{
+  $("err").textContent="fetching GitHub…";
+  await loadUpdates(true);
+  const st=DATA.updates||{};
+  const t=(st.targets||[]).find(x=>x.key==="ds4f");
+  if(t&&t.can_apply){askUpdate("ds4f");return;}
+  const bundle=(st.targets||[]).find(x=>x.key==="recipes");
+  if(bundle&&bundle.can_apply){askUpdate("recipes");return;}
+  $("err").textContent=(t&&t.reason)||"nothing to sync — Fetch GitHub first if SHAs look stale";
+};
 
 /* ══════════════════════ CONTROL tab ══════════════════════ */
 function svcGroup(el){

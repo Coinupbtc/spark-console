@@ -52,6 +52,21 @@ class ClassifyTests(unittest.TestCase):
             "mixed",
         )
 
+    def test_twins_when_gguf_both_8888(self) -> None:
+        self.assertEqual(
+            stack_control.classify(
+                {
+                    "ds4f": False,
+                    "twins": True,
+                    "dream": False,
+                    "helper": False,
+                    "h3": False,
+                    "music": False,
+                }
+            ),
+            "twins",
+        )
+
     def test_none(self) -> None:
         self.assertEqual(
             stack_control.classify({"ds4f": False, "helper": False, "h3": False, "music": False}),
@@ -63,14 +78,15 @@ class PresetTests(unittest.TestCase):
     def test_named_setups(self) -> None:
         self.assertEqual(
             list(stack_control.PRESETS),
-            ["prime", "dream", "video", "music"],
+            ["prime", "dream", "twins", "video", "music"],
         )
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
                 self.assertTrue(meta.get(field), f"missing {field}")
         dream = stack_control.PRESETS["dream"]
         self.assertIn("116k", dream["short"])
-        self.assertIn("20k", dream["detail"])
+        self.assertIn("baton", dream["detail"])
+        self.assertIn("sglang", stack_control.PRESETS["twins"]["starts"])
 
     def test_unknown_key_refused(self) -> None:
         result = stack_control.switch_stack("nemotron")

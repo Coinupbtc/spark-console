@@ -37,11 +37,19 @@ PRESETS: dict[str, dict] = {
     },
     "dream": {
         "label": "Dream",
-        "short": "0731 348k · Qwen 116k MTP4 · baton 94",
-        "detail": "0731 TP2 348k + 4B pics n1 + Qwen 3.8 GGUF 116k MTP4 n2 :8100. Chat = baton :8877 (Qwen default; 0731 on required/notify/script/research). max_tokens 20k. teb 69 = 94.",
+        "short": "0731 348k · Qwen 27B VL 116k · baton",
+        "detail": "0731 TP2 348k + Qwen 3.8 GGUF+mmproj 116k MTP4 n2 :8100 (native vision). No 4B sidecar. Chat = baton :8877 (Qwen default; images stay on Qwen; 0731 on required/notify/script/research).",
         "eta": "10–20 min",
-        "stops": "Music3, helper 35B, MiniMax H3",
-        "starts": "DS4F :8888 + vision n1 + Qwen GGUF 192.168.100.11:8100 (never node1 :8100) + baton :8877",
+        "stops": "Music3, helper 35B, MiniMax H3, 4B vision sidecar",
+        "starts": "DS4F :8888 + Qwen VL 192.168.100.11:8100 (never node1 :8100) + baton :8877",
+    },
+    "twins": {
+        "label": "Qwen Twins",
+        "short": "Mia SGLang DSpark NVFP4 ×2",
+        "detail": "Park Dream/DS4F. MiaAI Qwen3.8-27B-SGLang-DGX-Spark (DSpark NVFP4, 262k) — one replica per Spark on :8888. Orch=n1, smeagle=n2. First boot may pull ~25GB.",
+        "eta": "10–20 min",
+        "stops": "DS4F 0731, GGUF Qwen, baton, Music3, H3, 4B sidecar",
+        "starts": "SGLang qwen3.8-27b-sglang n1+n2 :8888",
     },
     "video": {
         "label": "Videos",
@@ -248,16 +256,19 @@ def classify(probes: dict[str, bool]) -> str:
     ds4f = probes.get("ds4f", False)
     qwen38 = probes.get("qwen38", False)
     dream = probes.get("dream", False)
+    twins = probes.get("twins", False)
     helper = probes.get("helper", False)
     h3 = probes.get("h3", False)
     music = probes.get("music", False)
-    if h3 and (ds4f or qwen38 or dream):
+    if h3 and (ds4f or qwen38 or dream or twins):
         return "mixed"
     if h3:
         return "video"
     if qwen38:
         # Retired exclusive chip — leftover NVFP4 is not a preset.
         return "mixed"
+    if twins:
+        return "twins"
     if dream:
         return "dream"
     if ds4f:
@@ -279,6 +290,7 @@ def _probes_now() -> dict[str, bool]:
         "vision_n1": "http://127.0.0.1:8891/v1/models",
         "vision_n2": "http://192.168.100.11:8891/v1/models",
         "qwen_n2": "http://192.168.100.11:8100/v1/models",
+        "qwen_twin_n2": "http://192.168.100.11:8888/v1/models",
         "baton": "http://127.0.0.1:8877/health",
     }
     found: dict[str, bool] = {k: False for k in targets}
@@ -290,7 +302,11 @@ def _probes_now() -> dict[str, bool]:
     found["qwen38"] = any("qwen38-27b-unsloth-nvfp4" in i for i in ids)
     found["ds4f"] = any("deepseek" in i for i in ids) and not found["qwen38"]
     n2_ids = _model_ids("http://192.168.100.11:8100/v1/models")
+    n2_8888 = _model_ids("http://192.168.100.11:8888/v1/models")
     found["dream"] = bool(found["ds4f"] and any("qwen3.8-27b" in i.lower() for i in n2_ids))
+    gguf_n1 = any("qwen3.8-27b" in i.lower() or i == "qwen3.8-27b" for i in ids) and not found["qwen38"]
+    gguf_n2 = any("qwen3.8-27b" in i.lower() for i in n2_8888)
+    found["twins"] = bool(gguf_n1 and gguf_n2 and not found["ds4f"])
     # Do not OR n1/n2 into one "vision" bit — Dream is n1, Prime is n2.
     found["vision"] = bool(found["vision_proxy"])
     # Keep qwen_n2 + baton in probes so the console never confuses

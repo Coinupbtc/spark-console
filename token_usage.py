@@ -62,6 +62,7 @@ _FAMILY: list[tuple[str, tuple[str, ...]]] = [
     )),
     ("dream-baton (router, not a GPU)", ("dream-baton",)),
     ("Qwen3-VL 4B (vision)", ("qwen3-vl-4b", "qwen3.5-9b-vision")),
+    ("Qwen3.8-27B (text+vision)", ("qwen3.8-27b", "qwen3.8-27b")),
     ("Qwen 3.6 35B helper", (
         "qwen3.6:35b",
         "qwen3.6:35b-64k",

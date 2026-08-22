@@ -40,9 +40,18 @@ class CanApplyTests(unittest.TestCase):
             "exists": True, "behind": 30, "ahead": 1, "dirty": False,
             "state": "diverged", "error": None,
         }
-        ok, reason = uc.can_apply("ds4f", info, False)
+        ok, reason = uc.can_apply("git", info, False)
         self.assertFalse(ok)
         self.assertIn("diverged", reason.lower())
+
+    def test_ds4f_diverged_merge_allowed(self) -> None:
+        info = {
+            "exists": True, "behind": 5, "ahead": 3, "dirty": False,
+            "state": "diverged", "error": None,
+        }
+        ok, reason = uc.can_apply("ds4f", info, False)
+        self.assertTrue(ok)
+        self.assertIn("merge", reason.lower())
 
     def test_recipe_ahead_only_is_current(self) -> None:
         info = {

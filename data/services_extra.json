@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-20T20:08:39.722173+00:00",
+  "updated_at": "2026-08-22T04:06:19.492045+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -336,20 +336,21 @@
     },
     "nft-pawn": {
       "label": "NFT Pawn",
-      "detail": "NFT pawn shop / P2P lending desk",
+      "detail": "Collection pawn desk",
       "group": "apps",
-      "kind": "probe-only",
+      "kind": "systemd",
       "critical": false,
-      "no_stop": true,
-      "hint": "",
+      "no_stop": false,
+      "hint": "https://sparkmax-10ef.tail6cfceb.ts.net/pawn",
       "source": "extra",
+      "unit": "nft-pawn.service",
       "probe": [
-        "http://127.0.0.1:8766/",
+        "http://127.0.0.1:8768/",
         2.0
       ],
-      "port": 8766,
+      "port": 8768,
       "show_projects_tile": true,
-      "registered_at": "2026-08-20T20:08:39.722087+00:00"
+      "registered_at": "2026-08-22T04:06:19.491840+00:00"
     }
   }
 }

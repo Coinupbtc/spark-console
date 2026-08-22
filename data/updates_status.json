@@ -1,8 +1,8 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-08-21T11:00:02.231307+00:00",
-  "behind_total": 35,
-  "blocked": 3,
+  "cached_at": "2026-08-22T10:35:02.432776+00:00",
+  "behind_total": 5,
+  "blocked": 2,
   "active_operation": null,
   "last_operation": {
     "id": "87a0ff7db5b2",
@@ -26,15 +26,18 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "1 upstream, 7 local reapply \u2014 will reset then re-apply patches",
+      "reason": "1 upstream, 44 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "d90cd778a",
-      "remote": "8e77d0318",
+      "head": "7f4a3548d",
+      "remote": "a08b90919",
       "behind": 1,
-      "ahead": 7,
-      "dirty": false,
-      "dirty_files": [],
-      "state": "diverged",
+      "ahead": 44,
+      "dirty": true,
+      "dirty_files": [
+        "cli.py",
+        "hermes_cli/kanban_db.py"
+      ],
+      "state": "dirty",
       "error": null
     },
     {
@@ -43,17 +46,17 @@
       "short": "Mia live checkout",
       "kind": "ds4f",
       "eta": "under 1 min",
-      "warn": "Checkout only \u2014 does not restart :8888. Skips dirty hotfix trees and diverged history.",
+      "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
       "can_apply": false,
-      "reason": "diverged (ahead 2, behind 30) \u2014 not a force merge",
+      "reason": "already current (5 local commits)",
       "exists": true,
-      "head": "92487b1",
-      "remote": "2438fc9",
-      "behind": 30,
-      "ahead": 2,
+      "head": "dcb9756",
+      "remote": "489af95",
+      "behind": 0,
+      "ahead": 5,
       "dirty": false,
       "dirty_files": [],
-      "state": "diverged",
+      "state": "current",
       "error": null
     },
     {
@@ -204,16 +207,9 @@
     {
       "key": "hermes",
       "label": "Hermes Agent",
-      "state": "diverged",
+      "state": "dirty",
       "behind": 1,
-      "reason": "1 upstream, 7 local reapply \u2014 will reset then re-apply patches"
-    },
-    {
-      "key": "ds4f",
-      "label": "DS4F recipe (both Sparks)",
-      "state": "diverged",
-      "behind": 30,
-      "reason": "diverged (ahead 2, behind 30) \u2014 not a force merge"
+      "reason": "1 upstream, 44 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",
