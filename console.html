@@ -2617,7 +2617,7 @@ function stackNote(s){
   if(s.phase==="switching") return s.message||"A setup switch is already running. Wait, then tap again.";
   if(op&&op.status==="failed") return op.message||"Last switch failed";
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
-  if(s.detected==="dream") return "0731 348k + Qwen 27B VL 116k on node2 192.168.100.11:8100 (mmproj, no 4B sidecar). Baton :8877.";
+  if(s.detected==="dream") return "Both Sparks: 0731 TP2 348k. Node2: Qwen 27B VL 116k engine (prompt ~95k + 20k out; baton clamps). No 4B. Baton :8877.";
   if(s.detected==="twins") return "Qwen Twins: Mia SGLang DSpark NVFP4 on both Sparks :8888. DS4F parked. Orch=n1, smeagle=n2.";
   if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
@@ -2668,7 +2668,7 @@ function askStack(key){
     $("stack-dlg-body").textContent=
       p.key==="twins"
         ? `Re-apply Qwen Twins only. One 27B GGUF per Spark on :8888. DS4F stays parked.`
-        : `Re-apply this setup only. Dream keeps 0731 TP2 and n2 Qwen 27B VL (mmproj). Does not start the 4B sidecar.`;
+        : `Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.`;
   }else{
     $("stack-dlg-title").textContent=`Switch to ${p.label}?`;
     $("stack-dlg-body").textContent=

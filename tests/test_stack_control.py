@@ -85,6 +85,8 @@ class PresetTests(unittest.TestCase):
                 self.assertTrue(meta.get(field), f"missing {field}")
         dream = stack_control.PRESETS["dream"]
         self.assertIn("116k", dream["short"])
+        self.assertIn("95k", dream["short"])
+        self.assertIn("20k", dream["detail"])
         self.assertIn("baton", dream["detail"])
         self.assertIn("sglang", stack_control.PRESETS["twins"]["starts"])
 

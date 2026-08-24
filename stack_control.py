@@ -37,8 +37,8 @@ PRESETS: dict[str, dict] = {
     },
     "dream": {
         "label": "Dream",
-        "short": "0731 348k · Qwen 27B VL 116k · baton",
-        "detail": "0731 TP2 348k + Qwen 3.8 GGUF+mmproj 116k MTP4 n2 :8100 (native vision). No 4B sidecar. Chat = baton :8877 (Qwen default; images stay on Qwen; 0731 on required/notify/script/research).",
+        "short": "0731 348k · Qwen VL 116k (95k+20k) · baton",
+        "detail": "Both Sparks: 0731 TP2 348k. Node2: Qwen 27B GGUF+mmproj 116k engine (Hermes prompt ~95k + 20k out share that slot; baton clamps max_tokens). No 4B sidecar. Chat = baton :8877.",
         "eta": "10–20 min",
         "stops": "Music3, helper 35B, MiniMax H3, 4B vision sidecar",
         "starts": "DS4F :8888 + Qwen VL 192.168.100.11:8100 (never node1 :8100) + baton :8877",
