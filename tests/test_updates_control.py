@@ -83,6 +83,11 @@ class CanApplyTests(unittest.TestCase):
         ok, _ = uc.can_apply("bundle", {"exists": False}, False)
         self.assertTrue(ok)
 
+    def test_apt_allowed_when_idle(self) -> None:
+        ok, reason = uc.can_apply("apt", {"exists": True}, False)
+        self.assertTrue(ok)
+        self.assertIn("apt", reason.lower())
+
 
 class ApplyGuardTests(unittest.TestCase):
     def test_unknown_key_refused(self) -> None:
@@ -94,6 +99,10 @@ class ApplyGuardTests(unittest.TestCase):
         self.assertIn("hermes", uc.TARGETS)
         self.assertIn("ds4f", uc.TARGETS)
         self.assertIn("recipes", uc.TARGETS)
+        self.assertIn("apt-node1", uc.TARGETS)
+        self.assertIn("apt-node2", uc.TARGETS)
+        self.assertEqual(uc.TARGETS["apt-node1"]["label"], "Update System Package Node1")
+        self.assertEqual(uc.TARGETS["apt-node2"]["label"], "Update System Package Node2")
         for spec in uc.TARGETS.values():
             for field in ("label", "kind", "eta", "warn"):
                 self.assertTrue(spec.get(field), f"missing {field}")
@@ -139,7 +148,8 @@ class StatusUsesInspect(unittest.TestCase):
         self.assertEqual(keys, list(uc.TARGETS))
         hermes = next(t for t in out["targets"] if t["key"] == "hermes")
         self.assertTrue(hermes["can_apply"])
-        self.assertEqual(out["behind_total"], 2 * (len(uc.TARGETS) - 1))
+        git_n = sum(1 for s in uc.TARGETS.values() if s["kind"] not in ("bundle", "apt"))
+        self.assertEqual(out["behind_total"], 2 * git_n)
 
 
 if __name__ == "__main__":

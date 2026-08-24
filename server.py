@@ -197,6 +197,7 @@ _n2_hist: collections.deque = collections.deque(maxlen=90)
 # SSH hop or a stalled script can never block a page load.
 _pi_cache: dict = {"reachable": False, "error": "not polled yet", "id": "pi"}
 _start9_cache: dict = {"reachable": False, "error": "not polled yet", "id": "start9"}
+_miners_cache: dict = {"reachable": False, "error": "not polled yet", "miners": []}
 _automation_cache: dict = {"jobs": [], "counts": {}, "upcoming": [], "failing": []}
 _backups_cache: dict = {"entries": [], "counts": {}, "issues": []}
 _links_cache: dict = {"groups": [], "counts": {}}
@@ -447,6 +448,7 @@ def _panels_refresher():
             pass
         with _cache_lock:
             pi, s9 = dict(_pi_cache), dict(_start9_cache)
+            miners = dict(_miners_cache)
         try:
             back = backups_status.query_backups(pi, s9)
             with _cache_lock:
@@ -455,7 +457,7 @@ def _panels_refresher():
         except Exception:
             pass
         try:
-            links = fleet_links.query_links(_services_snapshot(), s9, pi)
+            links = fleet_links.query_links(_services_snapshot(), s9, pi, miners)
             with _cache_lock:
                 _links_cache.clear()
                 _links_cache.update(links)
@@ -488,7 +490,8 @@ def _inference_up_now() -> bool:
 
 
 def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
-                  automation: dict, backups: dict, projects: list) -> list[dict]:
+                  automation: dict, backups: dict, projects: list,
+                  miners: dict | None = None) -> list[dict]:
     """One ranked alert list for the whole fleet — the console's headline claim
     is 'nothing needs you right now', so every source has to feed this."""
     out: list[dict] = []
@@ -523,6 +526,9 @@ def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
             continue
         for issue in (data.get("issues") or []):
             add(issue.get("level", "warning"), host, issue.get("message", ""))
+    for m in ((miners or {}).get("miners") or []):
+        for issue in (m.get("issues") or []):
+            add(issue.get("level", "warning"), m.get("id") or "miner", issue.get("message", ""))
     for job in (automation.get("failing") or []):
         if optional_noise(str(job.get("name") or "")):
             continue
@@ -562,7 +568,23 @@ try:
 except Exception:
     pass
 
+def _miners_refresher():
+    """AxeOS HTTP — keep off the Pi/Start9 SSH loop so Fleet cards appear in <15s."""
+    while True:
+        try:
+            data = fleet_nodes.query_miners()
+            with _cache_lock:
+                _miners_cache.clear()
+                _miners_cache.update(data)
+        except Exception as e:
+            with _cache_lock:
+                _miners_cache.update({"reachable": False, "error": str(e)[:200],
+                                      "miners": _miners_cache.get("miners") or []})
+        _time.sleep(12)
+
+
 threading.Thread(target=_fleet_refresher, daemon=True).start()
+threading.Thread(target=_miners_refresher, daemon=True).start()
 threading.Thread(target=_panels_refresher, daemon=True).start()
 threading.Thread(target=_services_refresher, daemon=True).start()
 threading.Thread(target=_comfy_refresher, daemon=True).start()
@@ -1014,6 +1036,12 @@ def api_start9():
         return dict(_start9_cache)
 
 
+@app.get("/api/miners")
+def api_miners():
+    with _cache_lock:
+        return dict(_miners_cache)
+
+
 @app.get("/api/automation")
 def api_automation():
     with _cache_lock:
@@ -1150,6 +1178,7 @@ def api_overview():
         projects = dict(_projects_cache)
         pi = dict(_pi_cache)
         start9 = dict(_start9_cache)
+        miners = dict(_miners_cache)
         automation = dict(_automation_cache)
         backups = dict(_backups_cache)
         links = dict(_links_cache)
@@ -1164,6 +1193,7 @@ def api_overview():
         "node2": node2,
         "pi": pi,
         "start9": start9,
+        "miners": miners,
         "projects": project_list,
         "projects_ts": projects.get("iso_ts"),
         "todos": projects_status.get_todos(),
@@ -1176,7 +1206,7 @@ def api_overview():
         "stack": stack_control.detect_stack(),
         "updates": updates_control.status(refresh=False),
         "lora": lora_control.status(),
-        "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list),
+        "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list, miners),
     }
 
 

@@ -213,7 +213,7 @@
     "nerdqaxe": {
       "label": "NerdQAxe",
       "detail": "Local AxeOS control (ESP UI too slow)",
-      "group": "miners",
+      "group": "apps",
       "kind": "systemd",
       "critical": false,
       "no_stop": false,

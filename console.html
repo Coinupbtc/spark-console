@@ -275,6 +275,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .upd-row .btn{min-height:44px;min-width:88px}
 #updates-card .upd-tools .btn{min-height:44px}
+#updates-card #upd-note{cursor:pointer}
 .upd-log{margin:0 14px 12px;padding:10px 12px;max-height:180px;overflow:auto;
   font:11.5px/1.45 var(--mono);color:var(--ink-2);background:#0b0f16;
   border:1px solid var(--line);border-radius:10px;white-space:pre-wrap;word-break:break-word}
@@ -313,7 +314,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .hero .stat span{font-size:9.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);font-weight:500}
 
 /* host cards */
-.hosts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hosts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .host{padding:14px 15px 12px;cursor:pointer;overflow:visible;
   transition:border-color .18s,transform .18s var(--ease),box-shadow .18s}
 .host:hover{border-color:rgba(110,182,255,.32);transform:translateY(-2px);
@@ -473,6 +474,9 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 /* ─────────────── FLEET ─────────────── */
 #v-fleet{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
 #elec-panel{grid-column:1/-1}
+#miners-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+#miners-panel h2.sec{grid-column:1/-1;font:650 12px/1.2 var(--sans);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);margin:4px 0 0}
 .elec-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px}
 .elec-rate{display:inline-flex;align-items:center;gap:6px;font:11px var(--mono);color:var(--ink-2)}
 .elec-rate[hidden]{display:none!important}
@@ -1060,11 +1064,12 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
   <div class="card" id="updates-card">
     <h3>Updates <span class="cnt" id="upd-cnt"></span>
       <span class="upd-tools">
-        <button type="button" class="btn go" id="upd-refresh">Fetch GitHub</button>
+        <button type="button" class="btn go" id="upd-apt-n1">Update System Package Node1</button>
+        <button type="button" class="btn go" id="upd-apt-n2">Update System Package Node2</button>
         <button type="button" class="btn go" id="upd-sync">Sync GitHub</button>
       </span>
     </h3>
-    <div class="stack-note" id="upd-note">Fetch GitHub, then Sync GitHub (DS4F merge) or Update / Pull safe. Checkout only — does not restart 0731 or Qwen.</div>
+    <div class="stack-note" id="upd-note" title="Tap to check GitHub again (no checkout change)">Opening Control checks GitHub. Sync GitHub merges DS4F if you are behind (keeps local commits). Row Update is other recipes. Checkout only — does not restart 0731 or Qwen.</div>
     <div class="upd-rows" id="upd-rows"></div>
     <pre class="upd-log" id="upd-log" hidden></pre>
   </div>
@@ -1074,7 +1079,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     <div class="stack-cards" id="stack-cards"></div>
     <div id="lora-card">
       <h4>LoRA Train <em id="lora-badge" hidden>READY</em></h4>
-      <p id="lora-blurb">Qwen 3.8 extract adapter. Default train uses both Sparks.</p>
+      <p id="lora-blurb">Qwen 3.8 house+extract LoRA. Both Sparks. Ships only if extract, parse-fail, and quality-lab all pass. Never auto-wires :8100. 0731 is a separate night.</p>
       <div class="meta" id="lora-meta"></div>
       <button type="button" class="btn go" id="lora-go" disabled>Train both Sparks</button>
       <button type="button" class="btn" id="lora-go-single" disabled>This Spark only</button>
@@ -1227,7 +1232,7 @@ const pctOf=(u,t)=>t?Math.round(u/t*100):0;
    actual °C number, so the label is the secondary channel for the colour. */
 function tempBand(c,kind="gpu"){
   if(c==null||c===""||Number.isNaN(+c))return "";
-  const t=+c,cuts=({pi:[45,60,75],pkg:[55,75,90],gpu:[50,70,80]})[kind]||[50,70,85];
+  const t=+c,cuts=({pi:[45,60,75],pkg:[55,75,90],gpu:[50,70,80],asic:[48,56,62]})[kind]||[50,70,85];
   return t<cuts[0]?"cool":t<cuts[1]?"ok":t<cuts[2]?"warm":"hot";
 }
 const tempSpan=(c,kind)=>{const b=tempBand(c,kind);
@@ -1344,6 +1349,19 @@ function fleetHosts(d){
       tempC:s9.temp_c,tempKind:"pkg",powerW:s9.power_w,
       foot:[["apps",`${c.running??"?"}/${c.total??"?"}`]]});
   }else out.push(offlineHost("start9","cosmic-charcoal","Start9 · self-hosted stack",s9));
+  for(const m of (d.miners&&d.miners.miners)||[]){
+    const ghs=m.hashrate_ghs||0;
+    const cap=/NerdQAxe|BM1370/i.test(m.role||"")?5500:700;
+    out.push({id:m.id||m.name,name:m.hostname||m.name||"miner",
+      role:m.role||"AxeOS miner",
+      state:m.reachable?(worst(m.issues)):"bad",
+      up:m.reachable?(m.hashrate||"hashing"):"unreachable",
+      dial:cap?Math.min(100,ghs/cap*100):0,dialLabel:"HASH",
+      cpu:0,mem:0,disk:0,memTxt:m.power_w!=null?`${m.power_w} W`:"—",
+      diskTxt:m.wifi_rssi!=null?`${m.wifi_rssi} dBm`:"—",
+      tempC:m.temp_c,tempKind:"asic",powerW:m.power_w,
+      foot:[["pool",(m.pool||"—").slice(0,18)]]});
+  }
   return out;
 }
 function offlineHost(id,name,role,h){
@@ -1358,7 +1376,7 @@ function offlineHost(id,name,role,h){
    gauges would snap instead of sweep. Build the DOM when the host SET changes;
    after that only write values. ────────────────────────────────────────── */
 const ARC=216.8, CIRC=289.0;           /* 270° of r=46 · full circumference */
-const CARD_MARK="g3";                  /* bump to force in-place card rebuild */
+const CARD_MARK="g6";                  /* bump to force in-place card rebuild */
 let cardKeys="";
 const HIST={};                          /* per-host dial trend, fed at 1 Hz */
 const HIST_N=120;                       /* 120 × 1 s tick = 2 min of trace */
@@ -2369,7 +2387,7 @@ const mrow=(l,p,v)=>`<div class="mrow"><label>${l}</label>
   <div class="bar"><i class="${barCls(p)}" style="width:${clamp(p||0,0,100)}%"></i></div>
   <span class="v">${v}</span></div>`;
 function tempRow(c,kind,extra){
-  const b=tempBand(c,kind),ceil={pi:85,pkg:100,gpu:90}[kind]||90;
+  const b=tempBand(c,kind),ceil={pi:85,pkg:100,gpu:90,asic:70}[kind]||90;
   const p=c!=null?clamp((+c)/ceil*100,0,100):0;
   return `<div class="mrow"><label>temp</label>
     <div class="bar"><i style="width:${p}%;background:var(--${
@@ -2500,14 +2518,64 @@ function start9Html(s){
         ${st(x.up?"ok":"bad")}<span>${esc(x.name)}</span></div>`).join("")
       ||'<div class="empty">none</div>'}</div></div>`;
 }
+function minerHtml(m){
+  if(!m||!m.reachable){
+    const p=m&&m.parasite;
+    return `<div class="card node" id="fn-${esc(m&&m.id||"miner")}">
+      <h2>${esc((m&& (m.hostname||m.name))||"miner")}
+        <span class="role">${esc((m&&m.role)||"AxeOS")}</span>
+        <span class="up">AxeOS down</span></h2>
+      <div class="empty">${esc((m&&m.error)||"AxeOS not answering")}</div>
+      ${p?`<div class="kv"><span class="k">Parasite</span>
+        <span class="v">${esc(p.hashrate||"—")} · best ${esc(p.best_diff||"—")}
+          · share ${esc(p.last_share||"—")}</span></div>`:""}
+      </div>`;
+  }
+  const rssi=m.wifi_rssi, rssiCls=rssi==null?"":(rssi>-70?"good":rssi>-85?"warn":"crit");
+  const href=m.open_url||(m.ip?`http://${m.ip}/`:"");
+  return `<div class="card node" id="fn-${esc(m.id)}"><h2>${esc(m.hostname||m.name)}
+    <span class="role">${esc(m.role||"miner")}</span>
+    <span class="up">${esc(m.hashrate||"—")}</span></h2>
+    ${mrow("hash",clamp((m.hashrate_ghs||0)/((/1370/.test(m.role||""))?55:7),0,100),esc(m.hashrate||"—"))}
+    ${m.power_w!=null?mrow("power",clamp(m.power_w/((/1370/.test(m.role||""))?95:16)*100,0,100),`${m.power_w} W`):""}
+    ${tempRow(m.temp_c,"asic","ASIC")}
+    <div class="kv"><span class="k">Pool / worker</span>
+      <span class="v">${esc(m.pool||"—")} · ${esc(m.worker||"—")}</span></div>
+    ${(()=>{const p=m.parasite; if(!p)return "";
+      return `<div class="kv"><span class="k">Parasite</span>
+        <span class="v">${esc(p.hashrate||"—")} · best ${esc(p.best_diff||"—")}
+          · share ${esc(p.last_share||"—")}</span></div>`;})()}
+    <div class="kv"><span class="k">Wi‑Fi</span>
+      <span class="v ${rssiCls}">${rssi!=null?rssi+" dBm":"?"} · ${esc(m.ssid||"?")}</span></div>
+    <div class="kv"><span class="k">Clock</span>
+      <span class="v">${esc(m.frequency??"?")} MHz · ${esc(m.core_mv??"?")} mV
+        ${m.fw?`<span class="faint">${esc(m.fw)}</span>`:""}</span></div>
+    <div class="kv"><span class="k">Fan / rail</span>
+      <span class="v">${esc(m.fan_rpm??"?")} rpm · ${m.rail_mv!=null?(m.rail_mv/1000).toFixed(2)+" V":"—"}</span></div>
+    ${href?`<div class="kv"><span class="k">AxeOS</span>
+      <span class="v"><a href="${esc(href)}" target="_blank" rel="noopener">${esc(m.ip||href)}</a>
+      ${m.via?`<span class="faint">via ${esc(m.via)}</span>`:""}</span></div>`:""}
+    </div>`;
+}
 function renderFleet(d){
   paintElecPanel();
-  // Keep #elec-panel (rate editor) — only rebuild the four node cards.
+  // Keep #elec-panel (rate editor) — only rebuild the node cards.
   const root=$("v-fleet");
   if(!root)return;
   [...root.children].forEach(c=>{if(c.id!=="elec-panel")c.remove();});
+  const mlist=(d.miners&&d.miners.miners)||[];
+  const farm=d.miners&&d.miners.parasite;
+  const farmUrl=d.miners&&d.miners.parasite_url;
+  const farmLine=farm?`<div class="kv" style="grid-column:1/-1"><span class="k">Parasite farm</span>
+      <span class="v">${esc(farm.hashrate||"—")} · ${esc(String(farm.workers_n??mlist.length))} workers
+        · best ${esc(farm.best_diff||"—")} · last share ${esc(farm.last_share||"—")}
+        · up ${esc(farm.uptime||"—")}
+        ${farmUrl?` · <a href="${esc(farmUrl)}" target="_blank" rel="noopener">parasite.space</a>`:""}</span></div>`:"";
+  const miners=mlist.length
+    ? `<div id="miners-panel"><h2 class="sec">Bitcoin miners · Tantalizing</h2>${farmLine}${mlist.map(minerHtml).join("")}</div>`
+    : "";
   root.insertAdjacentHTML("afterbegin",
-    node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9));
+    node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9)+miners);
   if(TAB==="fleet")drawAll();     /* innerHTML wipes the canvases — redraw now */
 }
 
@@ -2517,10 +2585,11 @@ const GROUP_META={
   inference:{label:"Inference",hint:"models & engines"},
   hermes:{label:"Hermes",hint:"gateways"},
   apps:{label:"Apps",hint:"sites & games"},
+  miners:{label:"Miners",hint:"Bitaxe / NerdQAxe"},
   meta:{label:"Meta",hint:"this console"},
   other:{label:"Other",hint:""},
 };
-const GROUP_ORDER=["inference","hermes","apps","meta","other"];
+const GROUP_ORDER=["inference","hermes","apps","miners","meta","other"];
 function servingBits(d){
   return (((d&&d.node1)||{}).endpoints||[]).filter(e=>e&&e.status==="ok");
 }
@@ -2679,7 +2748,7 @@ function renderLora(s){
   if(blurb){
     blurb.textContent=running
       ? (op.message||"Training…")
-      : (s.reason||"Qwen 3.8 extract adapter. Default train uses both Sparks.");
+      : (s.reason||"Qwen 3.8 house+extract LoRA. Both Sparks. Triple ship gate. Never auto-wires :8100.");
   }
   const meta=$("lora-meta");
   if(meta){
@@ -2726,8 +2795,8 @@ function askLora(dual){
     ?(stop?"Stop 0731 and train both Sparks?":"Train LoRA on both Sparks?")
     :(stop?"Stop 0731 and train this Spark?":"Train LoRA on this Spark only?");
   $("stack-dlg-body").textContent=dual
-    ? `Stops Dream/0731 if up and stops Qwen :8100, then torchrun DDP QLoRA on ${s.train_n||"?"} rows (~${eta}). Does not bring Dream back. Does not load the adapter on :8100.`
-    : `QLoRA on this Spark only (${s.train_n||"?"} rows, ~${eta}). :8100 can stay. Does not wire the adapter.`;
+    ? `Stops Dream/0731 if up and stops Qwen :8100, then torchrun DDP QLoRA on the Qwen mix (${s.train_n||"?"} rows, extract + house, ~${eta}). Triple ship gate after: extract ≥ stock, parse-fail 0, quality-lab ≥ 95. Does not bring Dream back. Does not load the adapter on :8100. Do not train 0731 the same night.`
+    : `QLoRA on this Spark only (${s.train_n||"?"} rows, ~${eta}). :8100 can stay. Does not wire the adapter. Same ship gate.`;
   $("stack-dlg-go").textContent=dual?(stop?"Stop + both Sparks":"Train both Sparks"):"This Spark only";
   $("stack-modal").hidden=false;
 }
@@ -2804,13 +2873,15 @@ function renderUpdates(data){
       ? (op.message||"Updating…")
       : op&&op.status==="failed"
         ? (op.message||"Last update failed")
-        : (data.cached_at?`Last check ${String(data.cached_at).replace("T"," ").slice(0,19)} UTC`:"Tap Check to fetch origin.");
+        : (data.cached_at
+          ?`Last check ${String(data.cached_at).replace("T"," ").slice(0,19)} UTC · tap to check again`
+          :"Opening Control checks GitHub. Sync GitHub merges DS4F if behind (keeps local). Checkout only — no engine restart.");
   }
   const rows=$("upd-rows");
   if(rows&&targets.length){
     rows.innerHTML=targets.map(t=>{
       const cls=t.state==="behind"?"behind":(t.state==="dirty"||t.state==="diverged")?"blocked":t.state==="current"?"current":"";
-      const label=t.can_apply?(t.key==="ds4f"&&(t.behind||t.state==="diverged")?"Sync GitHub":t.kind==="bundle"?"Pull safe":"Update"):(t.state==="current"?"Current":"Blocked");
+      const label=t.can_apply?(t.key==="ds4f"&&(t.behind||t.state==="diverged")?"Sync GitHub":t.kind==="bundle"?"Pull safe":t.kind==="apt"?"Upgrade":"Update"):(t.state==="current"&&t.kind!=="apt"?"Current":"Blocked");
       return `<div class="upd-row ${cls}">
         <div class="who">${st(updGlyph(t))}<b>${esc(t.label)}</b>
           <span title="${esc(t.reason||t.warn||"")}">${esc(updLine(t))}</span></div>
@@ -2842,7 +2913,7 @@ function askUpdate(key){
   $("stack-dlg-title").textContent=`${t.key==="ds4f"?"Sync GitHub":"Update"} ${t.label}?`;
   $("stack-dlg-body").textContent=
     `${t.warn} ${t.reason?t.reason+". ":""}Takes about ${t.eta}.`;
-  $("stack-dlg-go").textContent=t.key==="ds4f"?"Sync GitHub":"Update";
+  $("stack-dlg-go").textContent=t.key==="ds4f"?"Sync GitHub":(t.kind==="apt"?"Upgrade":"Update");
   $("stack-modal").hidden=false;
 }
 async function loadUpdates(fetchOrigin){
@@ -2896,16 +2967,23 @@ async function pollUpdateOp(id){
   await tick();
   UPD_POLL=setInterval(tick,2000);
 }
-$("upd-refresh").onclick=()=>loadUpdates(true);
+$("upd-apt-n1").onclick=()=>askUpdate("apt-node1");
+$("upd-apt-n2").onclick=()=>askUpdate("apt-node2");
+$("upd-note").onclick=()=>{
+  if(UPD_POLL)return;
+  $("err").textContent="checking GitHub…";
+  loadUpdates(true);
+};
 $("upd-sync").onclick=async()=>{
-  $("err").textContent="fetching GitHub…";
+  $("err").textContent="checking GitHub…";
   await loadUpdates(true);
   const st=DATA.updates||{};
   const t=(st.targets||[]).find(x=>x.key==="ds4f");
   if(t&&t.can_apply){askUpdate("ds4f");return;}
   const bundle=(st.targets||[]).find(x=>x.key==="recipes");
   if(bundle&&bundle.can_apply){askUpdate("recipes");return;}
-  $("err").textContent=(t&&t.reason)||"nothing to sync — Fetch GitHub first if SHAs look stale";
+  const why=(t&&t.reason)||"already current";
+  $("err").textContent=why.startsWith("already")?`GitHub check done — ${why}`:`nothing to pull — ${why}`;
 };
 
 /* ══════════════════════ CONTROL tab ══════════════════════ */
@@ -3446,7 +3524,8 @@ async function checkBuild(){
     const v=await(await fetch("/api/version",{cache:"no-store"})).json();
     if(v&&v.build&&mine&&v.build!==mine){
       bar.hidden=false;
-      bar.textContent=`New console ${v.build} — tap to reload (this copy is ${mine})`;
+      bar.textContent=`New console ${v.build} — reloading…`;
+      setTimeout(reloadFresh, 400);
     }else bar.hidden=true;
   }catch(e){/* offline: leave whatever we have */}
 }

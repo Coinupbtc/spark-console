@@ -18,6 +18,8 @@ import json
 import os
 import re
 import subprocess
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -234,6 +236,7 @@ def temp_band(c: float | None, kind: str = "gpu") -> str | None:
       pi  → warn ≥75   (throttle risk)
       pkg → warn ≥90   (x86 package / Start9)
       gpu → hot  ≥80   (GB10 comfort band)
+      asic → warn ≥62  (Bitaxe/NerdQAxe abort band)
     """
     if c is None:
         return None
@@ -246,6 +249,7 @@ def temp_band(c: float | None, kind: str = "gpu") -> str | None:
         "pi": (45.0, 60.0, 75.0),
         "pkg": (55.0, 75.0, 90.0),
         "gpu": (50.0, 70.0, 80.0),
+        "asic": (48.0, 56.0, 62.0),
     }.get(kind, (50.0, 70.0, 85.0))
     if t < cuts[0]:
         return "cool"
@@ -636,6 +640,295 @@ def query_start9() -> dict:
     return base
 
 
+# ---------------------------------------------------------------- Bitaxe / NerdQAxe (AxeOS HTTP)
+
+FLEET_JSON = Path.home() / "scripts/nerdqaxe/fleet.json"
+AXE_TIMEOUT = 4.0
+# Known ASICs (wiki/projects/home-bitcoin-miners.md) — IPs move after mesh/DHCP.
+MINER_MAC = {
+    "Tantalizing": "f0:9e:9e:20:91:30",
+    "Tantalizing-2": "f0:f5:bd:4b:d6:10",
+}
+# Abort bands from wiki/projects/home-bitcoin-miners.md (2026-08-19)
+MINER_GUARDS = {
+    "Tantalizing": {"temp": 64.0, "power": 95.0, "rssi": -91},
+    "Tantalizing-2": {"temp": 62.0, "power": 16.0, "rssi": -80},
+}
+
+
+def _load_miner_catalog() -> list[dict]:
+    try:
+        data = json.loads(FLEET_JSON.read_text())
+        return list(data.get("miners") or [])
+    except (OSError, json.JSONDecodeError):
+        return [
+            {"name": "Tantalizing", "model": "NerdQAxe++", "last_ip": "192.168.50.66"},
+            {"name": "Tantalizing-2", "model": "Bitaxe Ultra", "last_ip": "192.168.50.104"},
+        ]
+
+
+def _arp_ip_for_mac(mac: str) -> str | None:
+    want = mac.lower().replace("-", ":")
+    try:
+        raw = Path("/proc/net/arp").read_text()
+    except OSError:
+        return None
+    for line in raw.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) >= 4 and parts[3].lower() == want:
+            return parts[0]
+    return None
+
+
+def _axe_get(url: str) -> dict | None:
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=AXE_TIMEOUT) as r:
+            return json.loads(r.read().decode("utf-8", errors="replace"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError):
+        return None
+
+
+def _fmt_hashrate(ghs: float | None) -> str | None:
+    if ghs is None:
+        return None
+    try:
+        v = float(ghs)
+    except (TypeError, ValueError):
+        return None
+    if v >= 1000:
+        return f"{v / 1000.0:.2f} TH/s"
+    return f"{v:.0f} GH/s"
+
+
+def _worker_short(user: str | None, hostname: str | None) -> str | None:
+    if hostname:
+        return hostname
+    if not user:
+        return None
+    # wallet.Worker.suffix@pool → Worker
+    core = user.split("@", 1)[0]
+    parts = core.split(".")
+    if len(parts) >= 2:
+        return parts[1]
+    return core[-18:]
+
+
+def query_miner(spec: dict) -> dict:
+    now = datetime.now(timezone.utc)
+    name = spec.get("name") or "miner"
+    ip = spec.get("last_ip") or ""
+    mac = (spec.get("mac") or MINER_MAC.get(name) or "").lower()
+    found = _arp_ip_for_mac(mac) if mac else None
+    if found:
+        ip = found
+    sid = "miner-" + re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    base: dict = {
+        "id": sid, "name": name, "role": spec.get("model") or "AxeOS miner",
+        "kind": "miner", "ip": ip, "iso_ts": now.isoformat(), "ts": now.timestamp(),
+        "open_url": f"http://{ip}/" if ip else None,
+    }
+    issues: list[dict] = []
+    info = _axe_get(f"http://{ip}/api/system/info") if ip else None
+    # NerdQAxe++ AxeOS UI is often too slow; Spark proxy talks to the same API.
+    if info is None and name == "Tantalizing":
+        info = _axe_get("http://127.0.0.1:8766/api/system/info")
+        if info:
+            base["via"] = "nerdqaxe-proxy"
+    if not info:
+        base.update({"reachable": False, "error": f"AxeOS {ip or '?'} no /api/system/info",
+                     "issues": [{"level": "warning",
+                                 "message": f"{name} unreachable — {ip or 'no IP'}"}]})
+        return base
+    base["reachable"] = True
+    hr = info.get("hashRate")
+    try:
+        base["hashrate_ghs"] = round(float(hr), 1) if hr is not None else None
+    except (TypeError, ValueError):
+        base["hashrate_ghs"] = None
+    base["hashrate"] = _fmt_hashrate(base.get("hashrate_ghs"))
+    try:
+        base["temp_c"] = float(info["temp"]) if info.get("temp") is not None else None
+    except (TypeError, ValueError):
+        base["temp_c"] = None
+    base["temp_band"] = temp_band(base["temp_c"], "asic")
+    try:
+        base["power_w"] = round(float(info["power"]), 1) if info.get("power") is not None else None
+    except (TypeError, ValueError):
+        base["power_w"] = None
+    try:
+        base["wifi_rssi"] = int(info["wifiRSSI"]) if info.get("wifiRSSI") is not None else None
+    except (TypeError, ValueError):
+        base["wifi_rssi"] = None
+    base["ssid"] = info.get("ssid") or None
+    base["pool"] = info.get("stratumURL") or None
+    base["worker"] = _worker_short(info.get("stratumUser"), info.get("hostname"))
+    base["hostname"] = info.get("hostname") or name
+    base["frequency"] = info.get("frequency")
+    base["core_mv"] = info.get("coreVoltage")
+    base["fan_rpm"] = info.get("fanrpm")
+    base["fw"] = info.get("version") or None
+    try:
+        v = info.get("voltage")
+        base["rail_mv"] = round(float(v), 0) if v is not None else None
+    except (TypeError, ValueError):
+        base["rail_mv"] = None
+    guard = MINER_GUARDS.get(name, {"temp": 64.0, "power": 95.0, "rssi": -90})
+    if base["temp_c"] is not None and base["temp_c"] >= guard["temp"]:
+        issues.append({"level": "warning",
+                       "message": f"{name} ASIC {base['temp_c']}°C ≥ {guard['temp']} abort"})
+    if base["power_w"] is not None and base["power_w"] >= guard["power"]:
+        issues.append({"level": "warning",
+                       "message": f"{name} {base['power_w']} W ≥ {guard['power']} abort"})
+    if base["wifi_rssi"] is not None and base["wifi_rssi"] <= -88:
+        issues.append({"level": "warning",
+                       "message": f"{name} Wi‑Fi {base['wifi_rssi']} dBm — dropouts likely"})
+    pool = (base.get("pool") or "").lower()
+    if pool and "parasite" not in pool and "public-pool" not in pool:
+        issues.append({"level": "warning", "message": f"{name} pool {base['pool']}"})
+    if base.get("hashrate_ghs") is not None and base["hashrate_ghs"] < 50:
+        issues.append({"level": "warning", "message": f"{name} hashrate {base['hashrate']} (stalled?)"})
+    base["issues"] = issues
+    return base
+
+
+PARASITE_API = "https://parasite.space/api/user/"
+PARASITE_PAGE = "https://parasite.space/user/"
+
+
+def _fmt_hs(hs) -> str | None:
+    try:
+        v = float(hs)
+    except (TypeError, ValueError):
+        return None
+    if v >= 1e12:
+        return f"{v / 1e12:.2f} TH/s"
+    if v >= 1e9:
+        return f"{v / 1e9:.0f} GH/s"
+    if v >= 1e6:
+        return f"{v / 1e6:.0f} MH/s"
+    return f"{v:.0f} H/s"
+
+
+def _fmt_diff(v) -> str | None:
+    if v is None or v == "":
+        return None
+    if isinstance(v, str) and not v.replace(".", "", 1).isdigit():
+        return v
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return str(v)
+    if n >= 1e9:
+        return f"{n / 1e9:.2f}G"
+    if n >= 1e6:
+        return f"{n / 1e6:.2f}M"
+    if n >= 1e3:
+        return f"{n / 1e3:.2f}k"
+    return f"{n:.0f}"
+
+
+def _parasite_user(wallet: str) -> dict | None:
+    if not wallet:
+        return None
+    url = PARASITE_API + wallet
+    req = urllib.request.Request(
+        url, headers={"Accept": "application/json", "User-Agent": "spark-console/miners"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as r:
+            data = json.loads(r.read().decode("utf-8", errors="replace"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    workers = []
+    for w in data.get("workerData") or []:
+        if not isinstance(w, dict):
+            continue
+        last = w.get("lastSubmission")
+        last_ts = None
+        try:
+            last_ts = float(last)
+        except (TypeError, ValueError):
+            last_ts = None
+        workers.append({
+            "name": w.get("name") or "",
+            "id": w.get("id") or "",
+            "hashrate_hs": _float_or_none(w.get("hashrate")),
+            "hashrate": _fmt_hs(w.get("hashrate")),
+            "best_diff": _fmt_diff(w.get("bestDifficulty")),
+            "last_share_ts": last_ts,
+            "last_share": ago_human(last_ts) if last_ts else (str(last) if last else None),
+            "uptime": None if w.get("uptime") in (None, "N/A", "") else str(w.get("uptime")),
+        })
+    return {
+        "wallet": wallet,
+        "url": PARASITE_PAGE + wallet,
+        "hashrate_hs": _float_or_none(data.get("hashrate")),
+        "hashrate": _fmt_hs(data.get("hashrate")),
+        "workers_n": data.get("workers"),
+        "last_share": data.get("lastSubmission"),
+        "best_diff": _fmt_diff(data.get("bestDifficulty")) or data.get("bestDifficulty"),
+        "uptime": data.get("uptime"),
+        "workers": workers,
+    }
+
+
+def _float_or_none(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _match_parasite_worker(farm: dict | None, name: str) -> dict | None:
+    if not farm:
+        return None
+    want = (name or "").lower()
+    for w in farm.get("workers") or []:
+        if (w.get("name") or "").lower() == want:
+            return w
+    for w in farm.get("workers") or []:
+        ident = (w.get("id") or "").lower()
+        if want and want in ident:
+            return w
+    return None
+
+
+def query_miners() -> dict:
+    now = datetime.now(timezone.utc)
+    catalog = _load_miner_catalog()
+    try:
+        wallet = json.loads(FLEET_JSON.read_text()).get("wallet") or ""
+    except (OSError, json.JSONDecodeError):
+        wallet = "bc1qv2n8e0d6nq9rafwyqxy44r3d6mj8e2zazy0psx"
+    farm = _parasite_user(wallet)
+    rows = []
+    for spec in catalog:
+        m = query_miner(spec)
+        w = _match_parasite_worker(farm, spec.get("name") or m.get("name") or "")
+        if w:
+            m["parasite"] = w
+            issues = list(m.get("issues") or [])
+            last_ts = w.get("last_share_ts")
+            if last_ts and (now.timestamp() - last_ts) > 600:
+                issues.append({
+                    "level": "warning",
+                    "message": f"{m.get('name')} last Parasite share {w.get('last_share')}",
+                })
+            m["issues"] = issues
+        rows.append(m)
+    out = {
+        "iso_ts": now.isoformat(),
+        "miners": rows,
+        "reachable": any(m.get("reachable") for m in rows),
+        "parasite": farm,
+        "parasite_url": (farm or {}).get("url") or (PARASITE_PAGE + wallet if wallet else None),
+    }
+    return out
+
+
 if __name__ == "__main__":
     import sys
     which = sys.argv[1] if len(sys.argv) > 1 else "both"
@@ -643,3 +936,5 @@ if __name__ == "__main__":
         print(json.dumps(query_pi(), indent=2))
     if which in ("start9", "both"):
         print(json.dumps(query_start9(), indent=2))
+    if which in ("miners", "both"):
+        print(json.dumps(query_miners(), indent=2))

@@ -142,6 +142,45 @@
       "finished_at": "2026-08-22T04:09:50.542760+00:00",
       "returncode": 0,
       "log_tail": "discord-send: ok channel=ledger chunks=1\nalertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-21T23:09:50-05:00 ===\ndetected: dream\ndesired: dream\nphase: idle\nmessage: 0731 :8888 348k \u00b7 Qwen 27B VL 116k n2 :8100 \u00b7 baton\nupdated: 2026-08-22T04:09:49.937497+00:00\n8888 models deepseek-v4-flash-0731\nn2 8888     \nn2 :8100    UP qwen3.8-27b  # 192.168.100.11:8100 \u2014 NEVER curl 127.0.0.1:8100 from node1\nbaton :8877 UP {\"ok\": true, \"qwen\": \"http://192.168.100.11:8100/v1\", \"ds4f\": \"http://127.0.0.1:8888/v1\", \"n2_0731\": 1, \"n2_qwen_fat\": 0, \"n2_fat\": 24000}\nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nqwen eyes   yes  # n2 :8100 modalities.vision (Dream)\ntwins n1    UP  # SGLang DSpark :8888\ntwins n2    DOWN\n4B n1       DOWN (proxy DOWN)  # Prime sidecar\n4B n2       DOWN\n4B flag     disabled\ngateways    orch=active smeagle=active (smeagle Telegram platform is off; chat is orch \u2192 baton)\n               total        used        free      shared  buff/cache   available\nMem:             121         103           3           3          19          18"
+    },
+    "36a83f805153": {
+      "id": "36a83f805153",
+      "type": "stack",
+      "key": "dream",
+      "status": "failed",
+      "message": "Dream switch failed (exit 1).",
+      "pid": 116244,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_36a83f805153.log",
+      "started_at": "2026-08-23T22:55:50.723295+00:00",
+      "finished_at": "2026-08-23T22:55:58.067442+00:00",
+      "returncode": 1,
+      "log_tail": "Music3 serve stopped (port 8801 free)\nMusic3 serve stopped (port 8801 free)\nspark2 Music3 stop requested. node1 untouched.\n[spark-stack 2026-08-23T17:55:51-05:00] stop Mia Qwen3.8 NVFP4 vLLM + GGUF leftover on both Sparks\n[spark-stack 2026-08-23T17:55:52-05:00] stop Mia Qwen3.8 SGLang on both Sparks\nContainer qwen3.8-27b-sglang does not exist; nothing to stop\nContainer qwen3.8-27b-sglang-mtp does not exist; nothing to stop\nContainer qwen3.8-27b-sglang does not exist; nothing to stop\nContainer qwen3.8-27b-sglang-mtp does not exist; nothing to stop\n[spark-stack 2026-08-23T17:55:53-05:00] disable house vision (proxy + both nodes) \u2014 leaving a non-picture setup\n[spark-stack 2026-08-23T17:55:53-05:00] stop 4B vision on node1 only (leave node2)\nStopping qwen-vision-tp1 on this host (node1)\nTP1 vision stopped (scope=local).\n[spark-stack 2026-08-23T17:55:53-05:00] stop 4B vision on node2 only (leave node1)\nStopping qwen-vision-tp1 on spark2 (node2)\nTP1 vision stopped (scope=remote).\n[spark-stack 2026-08-23T17:55:53-05:00] cluster mode: DS4F TP2 :8888 (env MAX_MODEL_LEN / 0.74)\n[spark-mode] \u2192 CLUSTER mode (DSpark TP=2 :8888). This loads BOTH Sparks; Hermes :8889 will go down.\n[spark-mode] Stopping llama-miaai35.service (required \u2014 free UMA for TP=2)\u2026\n               total        used        free      shared  buff/cache   available\nMem:             121           9          75           0          38         112\n[spark-mode] Starting DSpark (long cold start possible)\u2026\nDSpark worker container already exists for project deepseek-v4-flash (head is not up \u2014 likely a stale rank after a head-only reboot). Stop it first.\nCannot start: worker check on spark2 failed (ssh exit 1)."
+    },
+    "8b2ef6699a73": {
+      "id": "8b2ef6699a73",
+      "type": "stack",
+      "key": "dream",
+      "status": "failed",
+      "message": "Dream switch failed (exit 1).",
+      "pid": 191483,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_8b2ef6699a73.log",
+      "started_at": "2026-08-23T23:23:31.627965+00:00",
+      "finished_at": "2026-08-23T23:23:38.575706+00:00",
+      "returncode": 1,
+      "log_tail": "Music3 serve stopped (port 8801 free)\nMusic3 serve stopped (port 8801 free)\nspark2 Music3 stop requested. node1 untouched.\n[spark-stack 2026-08-23T18:23:32-05:00] stop Mia Qwen3.8 NVFP4 vLLM + GGUF leftover on both Sparks\n[spark-stack 2026-08-23T18:23:33-05:00] stop Mia Qwen3.8 SGLang on both Sparks\nContainer qwen3.8-27b-sglang does not exist; nothing to stop\nContainer qwen3.8-27b-sglang-mtp does not exist; nothing to stop\nContainer qwen3.8-27b-sglang does not exist; nothing to stop\nContainer qwen3.8-27b-sglang-mtp does not exist; nothing to stop\n[spark-stack 2026-08-23T18:23:33-05:00] disable house vision (proxy + both nodes) \u2014 leaving a non-picture setup\n[spark-stack 2026-08-23T18:23:34-05:00] stop 4B vision on node1 only (leave node2)\nStopping qwen-vision-tp1 on this host (node1)\nTP1 vision stopped (scope=local).\n[spark-stack 2026-08-23T18:23:34-05:00] stop 4B vision on node2 only (leave node1)\nStopping qwen-vision-tp1 on spark2 (node2)\nTP1 vision stopped (scope=remote).\n[spark-stack 2026-08-23T18:23:34-05:00] cluster mode: DS4F TP2 :8888 (env MAX_MODEL_LEN / 0.74)\n[spark-mode] \u2192 CLUSTER mode (DSpark TP=2 :8888). This loads BOTH Sparks; Hermes :8889 will go down.\n[spark-mode] Stopping llama-miaai35.service (required \u2014 free UMA for TP=2)\u2026\n               total        used        free      shared  buff/cache   available\nMem:             121           8          75           0          39         112\n[spark-mode] Starting DSpark (long cold start possible)\u2026\nDSpark worker container already exists for project deepseek-v4-flash (head is not up \u2014 likely a stale rank after a head-only reboot). Stop it first.\nCannot start: worker check on spark2 failed (ssh exit 1)."
+    },
+    "b07680a2a9e4": {
+      "id": "b07680a2a9e4",
+      "type": "stack",
+      "key": "dream",
+      "status": "completed",
+      "message": "Dream is live.",
+      "pid": 1664504,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_b07680a2a9e4.log",
+      "started_at": "2026-08-24T10:38:28.983342+00:00",
+      "finished_at": "2026-08-24T10:46:31.675342+00:00",
+      "returncode": 0,
+      "log_tail": "discord-send: ok channel=ledger chunks=1\nalertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-24T05:46:31-05:00 ===\ndetected: dream\ndesired: dream\nphase: idle\nmessage: 0731 :8888 348k \u00b7 Qwen 27B VL 116k n2 :8100 \u00b7 baton\nupdated: 2026-08-24T10:46:30.873060+00:00\n8888 models deepseek-v4-flash-0731\nn2 8888     \nn2 :8100    UP qwen3.8-27b  # 192.168.100.11:8100 \u2014 NEVER curl 127.0.0.1:8100 from node1\nbaton :8877 UP {\"ok\": true, \"qwen\": \"http://192.168.100.11:8100/v1\", \"ds4f\": \"http://127.0.0.1:8888/v1\", \"n2_0731\": 0, \"n2_qwen_fat\": 0, \"n2_fat\": 24000}\nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nqwen eyes   yes  # n2 :8100 modalities.vision (Dream)\ntwins n1    UP  # SGLang DSpark :8888\ntwins n2    DOWN\n4B n1       DOWN (proxy DOWN)  # Prime sidecar\n4B n2       DOWN\n4B flag     disabled\ngateways    orch=active smeagle=active (smeagle Telegram platform is off; chat is orch \u2192 baton)\n               total        used        free      shared  buff/cache   available\nMem:             121         107           3           3          16          14"
     }
   }
 }

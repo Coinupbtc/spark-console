@@ -62,7 +62,7 @@ LOCAL_EXTRA = [
 
 
 def query_links(services: dict | None = None, start9: dict | None = None,
-                pi: dict | None = None) -> dict:
+                pi: dict | None = None, miners: dict | None = None) -> dict:
     groups: list[dict] = []
 
     # ---- this Spark (node1): registry entries that expose a port
@@ -142,6 +142,23 @@ def query_links(services: dict | None = None, start9: dict | None = None,
     groups.append({"host": "raspberrypi", "kind": "pi", "label": "Raspberry Pi 5",
                    "links": pi_links,
                    "note": None if pi and pi.get("reachable") else "host unreachable"})
+
+    m_links: list[dict] = []
+    for m in (miners or {}).get("miners") or []:
+        url = m.get("open_url") or (f"http://{m['ip']}/" if m.get("ip") else None)
+        if not url:
+            continue
+        m_links.append({
+            "id": m.get("id") or m.get("name"),
+            "label": m.get("hostname") or m.get("name") or "miner",
+            "detail": (m.get("hashrate") or m.get("role") or ""),
+            "url": url,
+            "status": "up" if m.get("reachable") else "down",
+            "group": "miners",
+        })
+    groups.append({"host": "miners", "kind": "miners", "label": "Bitcoin miners · Tantalizing",
+                   "links": m_links,
+                   "note": None if m_links else "no miners in fleet.json"})
 
     total = sum(len(g["links"]) for g in groups)
     up = sum(1 for g in groups for l in g["links"] if l["status"] == "up")

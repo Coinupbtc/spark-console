@@ -265,9 +265,11 @@ def status() -> dict:
         "dual_default": True,
         "wired_8100": False,
         "warn": (
-            "Default is both Sparks (torchrun DDP). Stops 0731 if up and stops :8100. "
-            "Does not bring Dream back. Does not load the adapter on :8100. "
-            "Discord #training pings when done."
+            "Default is both Sparks (torchrun DDP) on the Qwen mix "
+            "(extract + house). Triple ship gate: extract field-acc ≥ stock, "
+            "parse-fail 0, quality-lab ≥ 95. Never auto-wires :8100. "
+            "0731 house train is a different night (improve-train-0731.sh). "
+            "No QLoRA cron. Discord #training pings when done."
         ),
         "active_operation": busy_op,
         "last_operation": busy_op or last_operation(),

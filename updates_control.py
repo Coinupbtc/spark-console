@@ -22,11 +22,32 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 OPS_FILE = DATA_DIR / "update_operations.json"
 CACHE_FILE = DATA_DIR / "updates_status.json"
 APPLY_SH = Path(__file__).resolve().parent / "apply_update.sh"
+APT_SH = HOME / "scripts/dgx/apply-system-packages.sh"
 RECIPES_SH = HOME / ".hermes/scripts/recipe-autoupdate.sh"
 DSPARK_FF = HOME / "scripts/dgx/dspark-ff-pull.sh"
 
 # Closed list. Keys are the only strings POST /api/updates/apply will accept.
 TARGETS: dict[str, dict] = {
+    "apt-node1": {
+        "label": "Update System Package Node1",
+        "short": "apt dist-upgrade this Spark",
+        "path": None,
+        "ref": "main",
+        "kind": "apt",
+        "eta": "2–15 min",
+        "warn": "apt-get dist-upgrade on sparkmax-10ef. Does not reboot. Kernel packages wait until you reboot. Dream/0731 can stay up (same as Software Updater).",
+        "node": "node1",
+    },
+    "apt-node2": {
+        "label": "Update System Package Node2",
+        "short": "apt dist-upgrade spark2",
+        "path": None,
+        "ref": "main",
+        "kind": "apt",
+        "eta": "2–15 min",
+        "warn": "apt-get dist-upgrade on sparkymaxxx-12ef over CX7. Does not reboot. Qwen :8100 can stay up.",
+        "node": "node2",
+    },
     "hermes": {
         "label": "Hermes Agent",
         "short": "Telegram /update replacement",
@@ -218,6 +239,8 @@ def can_apply(kind: str, info: dict, busy: bool) -> tuple[bool, str]:
         return False, "another update is running"
     if kind == "bundle":
         return True, "safe ff-only of every recipe repo"
+    if kind == "apt":
+        return True, "apt dist-upgrade (no reboot)"
     if not info.get("exists"):
         return False, info.get("error") or "missing checkout"
     if info.get("state") == "unknown":
@@ -360,7 +383,20 @@ def _build_status(*, fetched: bool) -> dict:
     behind_n = 0
     blocked_n = 0
     for key, spec in TARGETS.items():
-        info = inspect_repo(spec.get("path"), spec.get("ref") or "main")
+        if spec["kind"] == "apt":
+            info = {
+                "exists": True,
+                "head": spec.get("node"),
+                "remote": None,
+                "behind": 0,
+                "ahead": 0,
+                "dirty": False,
+                "dirty_files": [],
+                "state": "current",
+                "error": None,
+            }
+        else:
+            info = inspect_repo(spec.get("path"), spec.get("ref") or "main")
         row = _public_target(key, spec, info, busy)
         items.append(row)
         if key != "recipes":
@@ -450,6 +486,9 @@ def _cmd_for(key: str) -> list[str] | None:
     if not spec:
         return None
     kind = spec["kind"]
+    if kind == "apt":
+        node = spec.get("node") or "node1"
+        return ["bash", str(APT_SH), node]
     if kind == "hermes":
         return ["bash", str(APPLY_SH), "hermes"]
     if kind == "ds4f":
