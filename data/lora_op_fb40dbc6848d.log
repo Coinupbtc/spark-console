@@ -1,0 +1,54 @@
+=== stopping 0731 / DS4F (Dream will not auto-return) ===
+No DSpark 0731 head resources for project deepseek-v4-flash; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash on spark2; skipping.
+No DSpark 0731 head resources for project deepseek-v4-flash-dspark-2x-dgx-spark; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash-dspark-2x-dgx-spark on spark2; skipping.
+DeepSeek V4 Flash DSpark stopped (0731 text-only; any leftover VL sidecar swept).
+0731 :8888 is down after 1 probe(s)
+=== student 0731 house mix (both Sparks) ===
+0731 mix n=2048 extract_frac=0.1499 (target 0.15, band 0.10–0.20)
+0731 house LoRA (FP8 ZeRO-3, no BitsAndBytes) — vision Stage 2 OFF, no auto-serve, LoRA=q_a_proj,q_b_proj,kv_proj,o_b_proj
+=== improve-train-dual 2026-08-24T22:09:41-05:00 adapter=ds0731-house-v1 ===
+ADMIT improve-train-dual: free=110G swap=1G (ok)
+syncing trainer + mix jsonl to spark2 (scripts/datasets only; no venv)
+BASE_MODEL=/home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb
+DATA_FILE=/home/coinupbtc/Documents/projects/spark-training-lab/datasets/improve/mix-0731.jsonl n=2048
+rdzv 192.168.100.10:29501 id=qlora-1787627381
+starting spark2 worker (rank 1)…
+[rank0/2] loading FP8 base /home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb ZeRO-3 (no BitsAndBytes)…
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] You have loaded an FP8 model on CPU and have a CUDA or XPU device available, make sure to set your model on a GPU or XPU device in order to run your model. To remove this warning, pass device_map = 'cuda' or 'xpu'. 
+Loading weights:   0%|          | 0/1736 [00:00<?, ?it/s]Loading weights:   1%|          | 20/1736 [00:01<01:26, 19.89it/s]Loading weights:   1%|▏         | 22/1736 [00:02<04:06,  6.96it/s]Loading weights:   1%|▏         | 23/1736 [00:03<05:11,  5.50it/s]Loading weights:   3%|▎         | 53/1736 [00:03<01:29, 18.83it/s]Loading weights:   3%|▎         | 56/1736 [00:05<03:27,  8.08it/s]Loading weights:   6%|▌         | 97/1736 [00:06<01:22, 19.89it/s]Loading weights:   6%|▌         | 101/1736 [00:08<02:41, 10.14it/s]Loading weights:   8%|▊         | 134/1736 [00:09<01:27, 18.27it/s]Loading weights:   8%|▊         | 139/1736 [00:11<02:32, 10.49it/s]Loading weights:  10%|█         | 178/1736 [00:12<01:25, 18.24it/s]Loading weights:  11%|█         | 183/1736 [00:14<02:18, 11.17it/s]Loading weights:  12%|█▏        | 215/1736 [00:15<01:25, 17.72it/s]Loading weights:  13%|█▎        | 220/1736 [00:17<02:18, 10.91it/s]Loading weights:  15%|█▍        | 259/1736 [00:17<01:14, 19.71it/s]Loading weights:  15%|█▌        | 265/1736 [00:20<02:07, 11.50it/s]Loading weights:  17%|█▋        | 296/1736 [00:20<01:22, 17.45it/s]Loading weights:  17%|█▋        | 301/1736 [00:23<02:21, 10.16it/s]Loading weights:  20%|█▉        | 340/1736 [00:23<01:19, 17.53it/s]Loading weights:  20%|█▉        | 345/1736 [00:26<02:04, 11.15it/s]Loading weights:  22%|██▏       | 377/1736 [00:27<01:30, 14.95it/s]Loading weights:  22%|██▏       | 380/1736 [00:29<02:28,  9.16it/s]Loading weights:  24%|██▍       | 421/1736 [00:30<01:26, 15.23it/s]Loading weights:  24%|██▍       | 424/1736 [00:33<02:09, 10.16it/s]Loading weights:  26%|██▋       | 458/1736 [00:33<01:19, 16.04it/s]Loading weights:  27%|██▋       | 461/1736 [00:36<02:08,  9.92it/s]Loading weights:  29%|██▉       | 502/1736 [00:36<01:13, 16.86it/s]Loading weights:  29%|██▉       | 505/1736 [00:38<01:44, 11.83it/s]Loading weights:  31%|███       | 539/1736 [00:39<01:06, 18.06it/s]Loading weights:  31%|███       | 542/1736 [00:40<01:38, 12.13it/s]Loading weights:  34%|███▎      | 583/1736 [00:41<00:52, 21.85it/s]Loading weights:  34%|███▍      | 588/1736 [00:43<01:29, 12.89it/s]Loading weights:  36%|███▌      | 620/1736 [00:44<01:00, 18.56it/s]Loading weights:  36%|███▌      | 624/1736 [00:48<02:26,  7.61it/s]Loading weights:  38%|███▊      | 664/1736 [00:49<01:16, 13.94it/s]Loading weights:  39%|███▊      | 669/1736 [00:54<02:44,  6.49it/s]Loading weights:  40%|████      | 701/1736 [00:55<01:39, 10.39it/s]Loading weights:  41%|████      | 705/1736 [01:00<03:10,  5.41it/s]Loading weights:  43%|████▎     | 745/1736 [01:01<01:36, 10.28it/s]Loading weights:  43%|████▎     | 750/1736 [01:06<02:54,  5.67it/s]Loading weights:  45%|████▌     | 782/1736 [01:07<01:50,  8.62it/s]Loading weights:  45%|████▌     | 786/1736 [01:11<02:53,  5.48it/s]Loading weights:  48%|████▊     | 826/1736 [01:12<01:36,  9.47it/s]Loading weights:  48%|████▊     | 829/1736 [01:16<02:30,  6.04it/s]Loading weights:  50%|████▉     | 863/1736 [01:17<01:26, 10.08it/s]Loading weights:  50%|████▉     | 866/1736 [01:21<02:30,  5.79it/s]Loading weights:  52%|█████▏    | 907/1736 [01:22<01:21, 10.13it/s]Loading weights:  52%|█████▏    | 910/1736 [01:27<02:19,  5.93it/s]Loading weights:  54%|█████▍    | 944/1736 [01:28<01:28,  8.97it/s]Loading weights:  54%|█████▍    | 946/1736 [01:33<02:30,  5.25it/s]Loading weights:  55%|█████▍    | 948/1736 [01:33<02:29,  5.25it/s]Loading weights:  57%|█████▋    | 988/1736 [01:34<01:09, 10.74it/s]Loading weights:  57%|█████▋    | 990/1736 [01:39<02:13,  5.57it/s]Loading weights:  57%|█████▋    | 992/1736 [01:39<02:13,  5.56it/s]Loading weights:  59%|█████▉    | 1025/1736 [01:40<01:09, 10.27it/s]Loading weights:  59%|█████▉    | 1027/1736 [01:45<02:21,  5.01it/s]Loading weights:  59%|█████▉    | 1029/1736 [01:45<02:20,  5.03it/s]Loading weights:  62%|██████▏   | 1069/1736 [01:46<00:58, 11.42it/s]Loading weights:  62%|██████▏   | 1071/1736 [01:51<02:01,  5.47it/s]Loading weights:  62%|██████▏   | 1073/1736 [01:51<02:01,  5.48it/s]Loading weights:  64%|██████▎   | 1106/1736 [01:52<00:59, 10.62it/s]Loading weights:  64%|██████▍   | 1108/1736 [01:59<02:44,  3.83it/s]Loading weights:  64%|██████▍   | 1110/1736 [02:00<02:44,  3.80it/s]Loading weights:  66%|██████▌   | 1150/1736 [02:01<01:08,  8.56it/s]Loading weights:  66%|██████▋   | 1152/1736 [02:07<02:26,  4.00it/s]Loading weights:  66%|██████▋   | 1154/1736 [02:08<02:29,  3.89it/s]Loading weights:  68%|██████▊   | 1187/1736 [02:10<01:19,  6.93it/s]Loading weights:  68%|██████▊   | 1189/1736 [02:19<03:11,  2.86it/s]Loading weights:  69%|██████▊   | 1190/1736 [02:20<03:11,  2.85it/s]Loading weights:  71%|███████   | 1231/1736 [02:20<01:07,  7.45it/s]Loading weights:  71%|███████   | 1233/1736 [02:33<03:22,  2.49it/s]Loading weights:  71%|███████   | 1234/1736 [02:33<03:20,  2.50it/s]Loading weights:  73%|███████▎  | 1268/1736 [02:35<01:31,  5.10it/s]Loading weights:  73%|███████▎  | 1270/1736 [02:47<03:39,  2.12it/s]Loading weights:  73%|███████▎  | 1271/1736 [02:48<03:37,  2.14it/s]Loading weights:  76%|███████▌  | 1312/1736 [02:49<01:18,  5.42it/s]Loading weights:  76%|███████▌  | 1314/1736 [02:57<02:25,  2.90it/s]Loading weights:  76%|███████▌  | 1316/1736 [02:57<02:24,  2.91it/s]Loading weights:  78%|███████▊  | 1349/1736 [02:59<01:05,  5.93it/s]Loading weights:  78%|███████▊  | 1349/1736 [03:10<01:05,  5.93it/s]Loading weights:  78%|███████▊  | 1350/1736 [03:15<03:34,  1.80it/s]Loading weights:  78%|███████▊  | 1351/1736 [03:15<03:29,  1.84it/s]Loading weights:  78%|███████▊  | 1353/1736 [03:15<03:15,  1.96it/s]Loading weights:  80%|████████  | 1393/1736 [03:17<00:59,  5.78it/s]Loading weights:  80%|████████  | 1395/1736 [03:25<02:02,  2.78it/s]Loading weights:  80%|████████  | 1397/1736 [03:26<02:01,  2.79it/s]Loading weights:  82%|████████▏ | 1430/1736 [03:27<00:51,  5.90it/s]Loading weights:  82%|████████▏ | 1430/1736 [03:40<00:51,  5.90it/s]Loading weights:  82%|████████▏ | 1431/1736 [03:43<02:56,  1.72it/s]Loading weights:  82%|████████▏ | 1432/1736 [03:43<02:51,  1.77it/s]Loading weights:  83%|████████▎ | 1434/1736 [03:44<02:40,  1.89it/s]Loading weights:  85%|████████▍ | 1474/1736 [03:45<00:42,  6.11it/s]E0824 22:14:17.100000 3864783 torch/distributed/elastic/multiprocessing/api.py:1002] failed (exitcode: -15) local_rank: 0 (pid: 3864856) of binary: /home/coinupbtc/Documents/projects/spark-training-lab/.venv/bin/python3
+Traceback (most recent call last):
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/bin/torchrun", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 367, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 1028, in main
+    run(args)
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 1019, in run
+    elastic_launch(
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 194, in __call__
+    return launch_agent(
+           ^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 383, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+=========================================================
+scripts/train_qlora_ddp.py FAILED
+---------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+---------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-08-24_22:14:17
+  host      : sparkmax-10ef
+  rank      : 0 (local_rank: 0)
+  exitcode  : -15 (pid: 3864856)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 3864856
+=========================================================
+❌ train_qlora_ddp.py n1 exit 1 (n2 log /tmp/ds0731-house-v1-dual-n2.log)

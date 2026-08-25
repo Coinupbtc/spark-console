@@ -1,0 +1,72 @@
+=== stopping 0731 / DS4F (Dream will not auto-return) ===
+Stopping DSpark 0731 on head (project deepseek-v4-flash)...
+Stopping DSpark 0731 on worker spark2 (project deepseek-v4-flash)...
+No DSpark 0731 head resources for project deepseek-v4-flash-dspark-2x-dgx-spark; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash-dspark-2x-dgx-spark on spark2; skipping.
+DeepSeek V4 Flash DSpark stopped (0731 text-only; any leftover VL sidecar swept).
+0731 :8888 is down after 1 probe(s)
+=== student 0731 house mix (both Sparks) ===
+0731 mix n=2048 extract_frac=0.1499 (target 0.15, band 0.10–0.20)
+0731 house QLoRA — vision Stage 2 OFF, no auto-serve, LoRA=q_a_proj,q_b_proj,kv_a_proj_with_mqa,kv_b_proj,o_proj,gate
+=== improve-train-dual 2026-08-24T21:55:34-05:00 adapter=ds0731-house-v1 ===
+stopping node2 :8100 (Qwen GGUF would fight n2 QLoRA)
+[node2-deep] stopping llama-server + deep vLLM containers (puzzle/qwen27) on spark2
+node2-deep-lane.sh already running, exiting
+ADMIT improve-train-dual: free=110G swap=1G (ok)
+syncing trainer + mix jsonl to spark2 (scripts/datasets only; no venv)
+BASE_MODEL=/home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb
+DATA_FILE=/home/coinupbtc/Documents/projects/spark-training-lab/datasets/improve/mix-0731.jsonl n=2048
+rdzv 192.168.100.10:29501 id=qlora-1787626534
+starting spark2 worker (rank 1)…
+[rank0/2] loading base /home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb in 4-bit…
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/scripts/train_qlora_ddp.py", line 63, in <module>
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 402, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4332, in from_pretrained
+    hf_quantizer, config, device_map = get_hf_quantizer(
+                                       ^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/quantizers/auto.py", line 340, in get_hf_quantizer
+    config.quantization_config = AutoHfQuantizer.merge_quantization_configs(
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/quantizers/auto.py", line 255, in merge_quantization_configs
+    raise ValueError(
+ValueError: The model is quantized with FineGrainedFP8Config but you are passing a BitsAndBytesConfig config. Please make sure to pass the same quantization config class to `from_pretrained` with different loading attributes.
+E0824 21:55:51.838000 3769922 torch/distributed/elastic/multiprocessing/api.py:1002] failed (exitcode: 1) local_rank: 0 (pid: 3770025) of binary: /home/coinupbtc/Documents/projects/spark-training-lab/.venv/bin/python3
+Traceback (most recent call last):
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/bin/torchrun", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 367, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 1028, in main
+    run(args)
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 1019, in run
+    elastic_launch(
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 194, in __call__
+    return launch_agent(
+           ^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 383, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+scripts/train_qlora_ddp.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-08-24_21:55:51
+  host      : sparkmax-10ef
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 3770025) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+❌ train_qlora_ddp.py n1 exit 1 (n2 log /tmp/ds0731-house-v1-dual-n2.log)

@@ -1,37 +1,37 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-24 10:57:05",
-  "iso_ts": "2026-08-24T10:57:05.614555+00:00",
-  "hour": 10,
-  "dow": 0,
+  "timestamp_utc": "2026-08-25 04:47:22",
+  "iso_ts": "2026-08-25T04:47:22.516300+00:00",
+  "hour": 4,
+  "dow": 1,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 2.8,
-    "load_1": 0.65,
-    "load_5": 0.92,
-    "load_15": 0.99,
-    "mem_used_gb": 107.85,
+    "cpu_pct": 16.1,
+    "load_1": 3.44,
+    "load_5": 42.78,
+    "load_15": 79.39,
+    "mem_used_gb": 90.98,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 13.84,
-    "mem_pct": 88.6,
-    "swap_used_gb": 7.62,
+    "mem_avail_gb": 30.71,
+    "mem_pct": 74.8,
+    "swap_used_gb": 6.64,
     "swap_total_gb": 16.0,
-    "swap_pct": 47.6,
+    "swap_pct": 41.5,
     "disk_used_pct": 40.1,
     "disk_free_tb": 2.08
   },
   "num_gpus": 1,
   "avg_util_pct": 0.0,
-  "total_power_watts": 10.1,
-  "avg_temp_c": 39.0,
+  "total_power_watts": 10.61,
+  "avg_temp_c": 42.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.1,
-      "power_avg_w": 10.1,
-      "power_instant_w": 10.25,
-      "temp_c": 39,
+      "power_w": 10.61,
+      "power_avg_w": 10.61,
+      "power_instant_w": 11.62,
+      "temp_c": 42,
       "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
@@ -45,12 +45,8 @@
       "mem_mb": 242
     },
     {
-      "name": "/home/coinupbtc/Documents/projects/pokemon-arb/.venv/bin/python",
-      "mem_mb": 2010
-    },
-    {
       "name": "VLLM::Worker_TP0",
-      "mem_mb": 91503
+      "mem_mb": 83084
     }
   ],
   "ollama": [],
@@ -160,17 +156,17 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 2.8,
-        "load_1": 0.65,
-        "load_5": 0.92,
-        "load_15": 0.99,
-        "mem_used_gb": 107.85,
+        "cpu_pct": 16.1,
+        "load_1": 3.44,
+        "load_5": 42.78,
+        "load_15": 79.39,
+        "mem_used_gb": 90.98,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 13.84,
-        "mem_pct": 88.6,
-        "swap_used_gb": 7.62,
+        "mem_avail_gb": 30.71,
+        "mem_pct": 74.8,
+        "swap_used_gb": 6.64,
         "swap_total_gb": 16.0,
-        "swap_pct": 47.6,
+        "swap_pct": 41.5,
         "disk_used_pct": 40.1,
         "disk_free_tb": 2.08
       },
@@ -178,10 +174,10 @@
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.1,
-          "power_avg_w": 10.1,
-          "power_instant_w": 10.25,
-          "temp_c": 39,
+          "power_w": 10.61,
+          "power_avg_w": 10.61,
+          "power_instant_w": 11.62,
+          "temp_c": 42,
           "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
@@ -200,10 +196,9 @@
         {
           "port": 8888,
           "engine": "vLLM",
-          "status": "ok",
-          "models": [
-            "deepseek-v4-flash-0731"
-          ]
+          "status": "down",
+          "models": [],
+          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
         },
         {
           "port": 11434,
@@ -218,52 +213,43 @@
       ],
       "workloads": [
         "agent-cron",
-        "llama",
         "ollama",
-        "pokemon",
         "vllm"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-24T10:57:06.475685+00:00",
+      "iso_ts": "2026-08-25T04:47:23.446575+00:00",
       "reachable": true,
       "error": null,
       "cpu_pct": 0.7,
       "mem": {
-        "used_gb": 119.6,
+        "used_gb": 88.8,
         "total_gb": 121.7,
-        "avail_gb": 2.1,
-        "pct": 98.3
+        "avail_gb": 32.9,
+        "pct": 73.0
       },
       "swap": {
-        "used_gb": 5.2,
+        "used_gb": 3.0,
         "total_gb": 16.0,
-        "pct": 32.8
+        "pct": 18.8
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.13,
+          "power_w": 11.15,
           "temp_c": 38,
           "util_gpu": 0.0
         }
       ],
-      "models": [
-        {
-          "id": "Qwen3.8-27B",
-          "port": 8100,
-          "engine": "llama.cpp-deep",
-          "status": "ok"
-        }
-      ],
+      "models": [],
       "endpoints": [
         {
           "port": 8100,
           "engine": "llama.cpp-deep",
-          "status": "ok"
+          "status": "down"
         },
         {
           "port": 8889,
@@ -277,28 +263,27 @@
         }
       ],
       "workloads": [
-        "llama",
         "vllm"
       ],
       "top_procs": [
         {
-          "name": "llama-server",
-          "mem_gb": 2.2
-        },
-        {
           "name": "VLLM::Worker_TP",
-          "mem_gb": 0.4
+          "mem_gb": 0.8
         },
         {
-          "name": "systemd-journal",
+          "name": "vllm",
           "mem_gb": 0.1
         },
         {
-          "name": "gnome-shell",
+          "name": "llamafactory-cl",
+          "mem_gb": 0.1
+        },
+        {
+          "name": "polkitd",
           "mem_gb": 0.0
         },
         {
-          "name": "dockerd",
+          "name": "gnome-shell",
           "mem_gb": 0.0
         }
       ]
@@ -316,10 +301,9 @@
       {
         "port": 8888,
         "engine": "vLLM",
-        "status": "ok",
-        "models": [
-          "deepseek-v4-flash-0731"
-        ]
+        "status": "down",
+        "models": [],
+        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
       },
       {
         "port": 11434,
@@ -336,7 +320,7 @@
       {
         "port": 8100,
         "engine": "llama.cpp-deep",
-        "status": "ok"
+        "status": "down"
       },
       {
         "port": 8889,
@@ -353,13 +337,10 @@
   "workloads": {
     "node1": [
       "agent-cron",
-      "llama",
       "ollama",
-      "pokemon",
       "vllm"
     ],
     "node2": [
-      "llama",
       "vllm"
     ]
   },
@@ -370,11 +351,17 @@
       "category": "gpu",
       "message": "gnome-remote-desktop using 242 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
+    },
+    {
+      "level": "warning",
+      "category": "qwen",
+      "message": "Dream Qwen roommate is down on node2 192.168.100.11:8100 (127.0.0.1:8100 on node1 is the wrong probe)",
+      "action": "bash ~/scripts/dgx/spark-stack.sh status   # then heal if n2 :8100 DOWN"
     }
   ],
   "alert_count": {
     "critical": 0,
-    "warning": 0,
+    "warning": 1,
     "info": 1
   }
 }

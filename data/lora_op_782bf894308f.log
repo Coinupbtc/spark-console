@@ -1,0 +1,21 @@
+=== stopping 0731 / DS4F (Dream will not auto-return) ===
+No DSpark 0731 head resources for project deepseek-v4-flash; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash on spark2; skipping.
+No DSpark 0731 head resources for project deepseek-v4-flash-dspark-2x-dgx-spark; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash-dspark-2x-dgx-spark on spark2; skipping.
+DeepSeek V4 Flash DSpark stopped (0731 text-only; any leftover VL sidecar swept).
+0731 :8888 is down after 1 probe(s)
+=== student 0731 house mix (both Sparks) ===
+0731 mix n=2048 extract_frac=0.1499 (target 0.15, band 0.10–0.20)
+0731 house LoRA (FP8 ZeRO-3, no BitsAndBytes) — vision Stage 2 OFF, no auto-serve, LoRA=q_a_proj,q_b_proj,kv_proj,o_b_proj
+=== improve-train-dual 2026-08-24T23:50:10-05:00 adapter=ds0731-house-v1 ===
+ADMIT improve-train-dual: free=116G swap=3G (ok)
+syncing trainer + mix jsonl to spark2 (scripts/datasets only; no venv)
+BASE_MODEL=/home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb
+DATA_FILE=/home/coinupbtc/Documents/projects/spark-training-lab/datasets/improve/mix-0731.jsonl n=2048
+rdzv 192.168.100.10:29501 id=qlora-1787633410
+starting spark2 worker (rank 1)…
+NCCL version 2.29.7+cuda13.2
+[rank0/2] loading FP8 base /home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb ZeRO-3 (no BitsAndBytes, no full-CPU merge)…
+[rank0/2] constructing 0731 under deepspeed.zero.Init…
+W0824 23:55:25.921000 3925465 torch/distributed/elastic/rendezvous/dynamic_rendezvous.py:1346] The node 'sparkmax-10ef_3925465_0' has failed to send a keep-alive heartbeat to the rendezvous 'qlora-1787633410' due to an error of type RendezvousTimeoutError.

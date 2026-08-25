@@ -245,6 +245,10 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 #lora-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
 #lora-card .btn{margin-top:8px;min-height:44px;width:100%;max-width:280px}
 #lora-go-single{max-width:280px;background:transparent;border:1px solid var(--line, #3a3a3a);color:var(--ink-2)}
+#lora-students{display:flex;gap:8px;margin:4px 0 2px}
+#lora-students button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:12px;
+  background:transparent;color:var(--ink-2);font:650 14px/1.2 var(--sans);cursor:pointer}
+#lora-students button.on{border-color:rgba(74,222,154,.5);background:rgba(74,222,154,.1);color:var(--ink)}
 #lora-log{margin:8px 0 0;max-height:160px;overflow:auto;font:11px/1.35 var(--mono);
   color:var(--ink-2);white-space:pre-wrap}
 #stack-modal{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;
@@ -880,6 +884,7 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 #lora-card{margin:0 12px 12px}
 #lora-card .btn{min-height:48px;font-size:16px;max-width:none}
 #lora-go-single{min-height:44px;font-size:15px}
+#lora-students button{min-height:48px;font-size:16px}
 .upd-row{grid-template-columns:minmax(0,1fr);gap:8px}
 .upd-row .btn{min-height:44px;width:100%}
 .upd-row .who span{white-space:normal}
@@ -1079,7 +1084,11 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
     <div class="stack-cards" id="stack-cards"></div>
     <div id="lora-card">
       <h4>LoRA Train <em id="lora-badge" hidden>READY</em></h4>
-      <p id="lora-blurb">Qwen 3.8 house+extract LoRA. Both Sparks. Ships only if extract, parse-fail, and quality-lab all pass. Never auto-wires :8100. 0731 is a separate night.</p>
+      <div id="lora-students" role="group" aria-label="Which model to train">
+        <button type="button" id="lora-stu-qwen" class="on">Qwen 3.8</button>
+        <button type="button" id="lora-stu-0731">0731</button>
+      </div>
+      <p id="lora-blurb">Pick Qwen 3.8 or 0731. Default is both Sparks. Never auto-wires the adapter.</p>
       <div class="meta" id="lora-meta"></div>
       <button type="button" class="btn go" id="lora-go" disabled>Train both Sparks</button>
       <button type="button" class="btn" id="lora-go-single" disabled>This Spark only</button>
@@ -2686,7 +2695,7 @@ $("stack-modal").addEventListener("click",e=>{if(e.target===$("stack-modal"))clo
 $("stack-dlg-go").onclick=()=>{
   const c=CONFIRM; if(!c)return;
   if(c.kind==="update") doUpdate(c.key);
-  else if(c.kind==="lora") doLora(!!c.stop, c.dual!==false);
+  else if(c.kind==="lora") doLora(!!c.stop, c.dual!==false, c.student||"qwen38");
   else doStack(c.key);
 };
 document.addEventListener("keydown",e=>{
@@ -2730,33 +2739,68 @@ async function pollStackOp(id){
 
 /* ══════════════════════ LoRA Train (under Setup) ══════════════════════ */
 let LORA_POLL=null;
+let LORA_STUDENT="qwen38";
 function loraAcc(v){
   return (v==null||v==="")?"—":(Number(v).toFixed(1)+"%");
+}
+function loraStu(s){
+  const id=LORA_STUDENT==="ds0731"?"ds0731":"qwen38";
+  const pack=((s&&s.students)||{})[id];
+  if(pack && (pack.can_train!=null || pack.can_stop_and_train!=null)){
+    return {id, ...pack};
+  }
+  // Old /api/lora has no students[] — Qwen can still use top-level gates.
+  // 0731 must wait for the new API or it would silently train Qwen.
+  if(id==="ds0731"){
+    return {
+      id,
+      train_n: s.mix_0731_n||0,
+      can_train: false,
+      can_stop_and_train: false,
+      reason: "Console API is stale. Hard-refresh or wait a few seconds after restart, then pick 0731 again.",
+    };
+  }
+  return {
+    id,
+    train_n: s.train_n||0,
+    can_train: !!s.can_train,
+    can_stop_and_train: !!s.can_stop_and_train,
+    reason: s.reason,
+  };
+}
+function setLoraStudent(id){
+  LORA_STUDENT=id==="ds0731"?"ds0731":"qwen38";
+  renderLora();
 }
 function renderLora(s){
   if(!s)s=DATA.lora||{};
   DATA.lora=s;
+  const stu=loraStu(s);
   const op=s.active_operation||s.last_operation;
   const running=op&&op.status==="running";
+  const qBtn=$("lora-stu-qwen");
+  const dBtn=$("lora-stu-0731");
+  if(qBtn){qBtn.className=LORA_STUDENT==="qwen38"?"on":"";qBtn.onclick=()=>setLoraStudent("qwen38");qBtn.disabled=!!running;}
+  if(dBtn){dBtn.className=LORA_STUDENT==="ds0731"?"on":"";dBtn.onclick=()=>setLoraStudent("ds0731");dBtn.disabled=!!running;}
+  const can=running?false:(stu.can_train||stu.can_stop_and_train);
   const badge=$("lora-badge");
   if(badge){
-    const show=s.can_train||s.can_stop_and_train;
-    badge.hidden=!show||running;
+    badge.hidden=!can||running;
     badge.textContent=s.ds4f_up?"0731 UP":"READY";
   }
   const blurb=$("lora-blurb");
   if(blurb){
     blurb.textContent=running
       ? (op.message||"Training…")
-      : (s.reason||"Qwen 3.8 house+extract LoRA. Both Sparks. Triple ship gate. Never auto-wires :8100.");
+      : (stu.reason||stu.blurb||s.warn||"Pick Qwen 3.8 or 0731.");
   }
   const meta=$("lora-meta");
   if(meta){
     const bits=[
-      `gold ${s.train_n||0}/${s.holdout_n||0}`,
-      `stock ${loraAcc(s.stock_acc)}`,
-      `lora ${loraAcc(s.lora_acc)}`,
-      s.adapter?"adapter on disk":"no adapter",
+      stu.id==="ds0731"?"student 0731":"student Qwen 3.8",
+      `gold ${stu.train_n||0}`,
+      stu.id==="qwen38"?`stock ${loraAcc(s.stock_acc)}`:`extract frac ${s.mix_0731_extract_frac??"—"}`,
+      stu.id==="qwen38"?(s.adapter?"Qwen adapter on disk":"no Qwen adapter"):(s.adapter_0731?"0731 adapter on disk":"no 0731 adapter"),
       s.wired_8100?":8100+LoRA":":8100 stock",
       s.ds4f_up?"0731 LIVE":"0731 down",
       s.qwen_up?":8100 up":":8100 down",
@@ -2766,15 +2810,16 @@ function renderLora(s){
   }
   const btn=$("lora-go");
   if(btn){
-    const can=running?false:(s.can_train||s.can_stop_and_train);
     btn.disabled=!can;
-    btn.textContent=running?"Training…":(s.ds4f_up&&s.can_stop_and_train?"Stop 0731 + both Sparks":"Train both Sparks");
+    btn.textContent=running?"Training…":(s.ds4f_up&&stu.can_stop_and_train?"Stop 0731 + both Sparks":"Train both Sparks");
     btn.onclick=()=>askLora(true);
   }
   const btn1=$("lora-go-single");
   if(btn1){
-    const can=running?false:(s.can_train||s.can_stop_and_train);
-    btn1.disabled=!can;
+    const singleOk=stu.id!=="ds0731";
+    const can1=running?false:singleOk&&(stu.can_train_single||stu.can_stop_and_train_single||stu.can_train||stu.can_stop_and_train);
+    btn1.hidden=!singleOk;
+    btn1.disabled=!can1;
     btn1.textContent=running?"Training…":"This Spark only";
     btn1.onclick=()=>askLora(false);
   }
@@ -2787,27 +2832,33 @@ function renderLora(s){
 }
 function askLora(dual){
   const s=DATA.lora||{};
-  if(!(s.can_train||s.can_stop_and_train))return;
+  const stu=loraStu(s);
+  if(!(stu.can_train||stu.can_stop_and_train))return;
+  if(stu.id==="ds0731"&&!dual)return;
   const stop=!!s.ds4f_up;
-  CONFIRM={kind:"lora",stop,dual:!!dual};
+  CONFIRM={kind:"lora",stop,dual:!!dual,student:stu.id};
   const eta=dual?(s.eta||"2–4 hours both Sparks"):(s.eta_single||"4–8 hours n1");
+  const name=stu.id==="ds0731"?"0731":"Qwen 3.8";
   $("stack-dlg-title").textContent=dual
-    ?(stop?"Stop 0731 and train both Sparks?":"Train LoRA on both Sparks?")
-    :(stop?"Stop 0731 and train this Spark?":"Train LoRA on this Spark only?");
-  $("stack-dlg-body").textContent=dual
-    ? `Stops Dream/0731 if up and stops Qwen :8100, then torchrun DDP QLoRA on the Qwen mix (${s.train_n||"?"} rows, extract + house, ~${eta}). Triple ship gate after: extract ≥ stock, parse-fail 0, quality-lab ≥ 95. Does not bring Dream back. Does not load the adapter on :8100. Do not train 0731 the same night.`
-    : `QLoRA on this Spark only (${s.train_n||"?"} rows, ~${eta}). :8100 can stay. Does not wire the adapter. Same ship gate.`;
+    ?(stop?`Stop serving and train ${name} on both Sparks?`:`Train ${name} on both Sparks?`)
+    :(stop?`Stop 0731 and train ${name} on this Spark?`:`Train ${name} on this Spark only?`);
+  $("stack-dlg-body").textContent=stu.id==="ds0731"
+    ? `Stops Dream if 0731 is up, stops Qwen :8100, then dual-Spark house QLoRA on 0731 (${stu.train_n||"?"} rows, extract ~15%, ~${eta}). Does not bring Dream back. Does not serve the adapter. Run ship_gate before using it.`
+    : (dual
+      ? `Stops Dream/0731 if up and stops Qwen :8100, then torchrun DDP QLoRA on the Qwen mix (${stu.train_n||"?"} rows, extract + house, ~${eta}). Triple ship gate after. Does not bring Dream back. Does not load the adapter on :8100.`
+      : `Qwen QLoRA on this Spark only (${stu.train_n||"?"} rows, ~${eta}). :8100 can stay. Does not wire the adapter.`);
   $("stack-dlg-go").textContent=dual?(stop?"Stop + both Sparks":"Train both Sparks"):"This Spark only";
   $("stack-modal").hidden=false;
 }
-async function doLora(stop, dual){
+async function doLora(stop, dual, student){
   closeStackModal();
   $("err").textContent="starting LoRA train…";
   const log=$("lora-log"); if(log){log.hidden=false;log.textContent="starting…";}
+  const who=student||LORA_STUDENT||"qwen38";
   try{
     const r=await fetch("/api/lora/start",{method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({stop_0731:!!stop,dual:dual!==false})});
+      body:JSON.stringify({stop_0731:!!stop,dual:dual!==false,student:who})});
     const d=await r.json();
     if(!d.ok){$("err").textContent=d.error||"LoRA start failed";return;}
     pollLoraOp((d.operation||{}).id);

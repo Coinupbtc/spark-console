@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-22T04:06:19.492045+00:00",
+  "updated_at": "2026-08-24T21:18:45.625486+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -265,7 +265,7 @@
     },
     "dream-baton": {
       "label": "Dream baton",
-      "detail": "teb 94 \u00b7 Qwen default \u00b7 0731 on required/notify/script/research \u00b7 116k MTP4",
+      "detail": "Qwen default \u00b7 0731 on required/notify/script/research \u00b7 116k in / clamp 20k out",
       "group": "apps",
       "kind": "systemd",
       "critical": false,
@@ -351,6 +351,24 @@
       "port": 8768,
       "show_projects_tile": true,
       "registered_at": "2026-08-22T04:06:19.491840+00:00"
+    },
+    "phone-blackjack": {
+      "label": "Phone Blackjack",
+      "detail": ":8076",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "phone-blackjack.service",
+      "probe": [
+        "http://127.0.0.1:8076/",
+        2.0
+      ],
+      "port": 8076,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-24T21:18:45.625392+00:00"
     }
   }
 }
