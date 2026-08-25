@@ -53,14 +53,14 @@ _ID_RE = re.compile(r"^[a-z][a-z0-9_-]{1,48}$")
 BUILTIN_SERVICES: dict[str, dict] = {
     # ---- inference ----
     "llama-miaai35": {
-        "label": "Hermes 35B",
-        "detail": "llama.cpp :8889",
+        "label": "Hermes 35B (helper)",
+        "detail": "llama.cpp :8889 — setup-keyed",
         "group": "inference",
         "kind": "systemd",
         "unit": "llama-miaai35.service",
         "probe": ("http://127.0.0.1:8889/v1/models", 2),
-        "critical": True,
-        "hint": "Primary Hermes model. Stop only for maintenance.",
+        "critical": False,
+        "hint": "Helper 35B. EXPECTED DOWN in Dream (0731 :8888 is primary). Only needed in music/legacy helper setups where it is the default text endpoint. Do not page critical when it is off in Dream.",
         "activity_journal": True,
     },
     "ollama": {
