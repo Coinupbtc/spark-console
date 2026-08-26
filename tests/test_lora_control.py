@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import lora_control as lc
 
@@ -55,13 +55,22 @@ class CanStartTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("setup", reason.lower())
 
-    def test_admit_refused_when_0731_already_down(self) -> None:
+    def test_admit_shows_real_message(self) -> None:
         ok, reason = lc.can_start(
             stop_0731=False, ds4f=False, train_n=931, admit=False,
-            busy=False, lock=False,
+            busy=False, lock=False, admit_msg="REFUSE: swap used 12G > max 8G",
         )
         self.assertFalse(ok)
-        self.assertIn("admit", reason.lower())
+        self.assertIn("swap used", reason.lower())
+
+    def test_pokemon_scan_does_not_block_when_ram_ok(self) -> None:
+        fake_run = Mock(returncode=1, stderr="REFUSE improve-train: pokemon-arb full scan running | free=111G swap=4G\n", stdout="")
+        with patch.object(lc, "_mem", return_value=(111, 4)), \
+             patch.object(lc, "ADMIT_SH", lc.Path("/bin/true")), \
+             patch("lora_control.subprocess.run", return_value=fake_run):
+            ok, msg = lc._admit_ok()
+        self.assertTrue(ok)
+        self.assertIn("pokemon-arb", msg.lower())
 
     def test_dual_copy_mentions_both_sparks(self) -> None:
         ok, reason = lc.can_start(

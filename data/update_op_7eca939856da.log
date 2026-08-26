@@ -1,0 +1,28 @@
+[dspark-ff-pull] DIVERGED ahead=8 behind=14 @ fb1e0c7 — merging origin/main (keeps local commits, no restart)
+Auto-merging docker-compose.dspark.yml
+Merge made by the 'ort' strategy.
+ .env.dspark.example               |  29 +++++++
+ CHANGELOG.md                      |   8 ++
+ docker-compose.dspark.yml         |  38 +++++++++
+ docs/ENVS.md                      |   5 ++
+ scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-
+ scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------
+ start-deepseek-v4-flash-dspark.sh |  13 ++++
+ 7 files changed, 330 insertions(+), 30 deletions(-)
+cccl hunk already present: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml
+[dspark-ff-pull] merged fb1e0c7 -> 5ad7148 (+14 from GitHub, kept 8 local)
+merged fb1e0c7 -> 5ad7148 (+14)
+[dspark-ff-pull] CCCL-only dirty compose — backing up, resetting, ff-only, re-applying hunk
+Updating c1fc732..70a7cc4
+Fast-forward
+ .env.dspark.example               |  29 +++++++
+ CHANGELOG.md                      |   8 ++
+ docker-compose.dspark.yml         |  38 +++++++++
+ docs/ENVS.md                      |   5 ++
+ scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-
+ scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------
+ start-deepseek-v4-flash-dspark.sh |  13 ++++
+ 7 files changed, 330 insertions(+), 30 deletions(-)
+cccl hunk applied: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml
+[dspark-ff-pull] pulled c1fc732 -> 70a7cc4 (+14)
+pulled c1fc732 -> 70a7cc4 (+14)

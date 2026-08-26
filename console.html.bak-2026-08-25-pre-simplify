@@ -10,8 +10,8 @@
 <title>Spark Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-<meta name="theme-color" content="#100c08">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#090b10">
 <meta name="console-build" content="{{CONSOLE_BUILD}}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,22 +25,28 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Spark Console — instrument-panel theme (desktop + iPhone PWA).
 
-   Direction: night-watch face on the phone (big serif verdict, host list),
-   instrument panel on the desk (gauges stay on Fleet + desktop Pulse).
-   Accent is brass, not admin-blue. Glyphs still carry status.
+   Direction: precision hardware console with a spark of personality —
+   not neon cyberpunk, not a generic admin theme.
+   Series hexes kept for chart continuity (validated earlier). Status still
+   uses distinct glyphs (● ▲ ✕ ○) — never hue alone.
+   Type: Sora (UI) + IBM Plex Mono (numbers).
+   Layout: Control groups by function (Inference / Hermes / Apps / Meta);
+   Jobs leads with the job list; Fleet leads with machines, bill last.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root{
-  --bg:#100c08; --surface:#1a1410; --surface-2:#221b16; --raise:#2a221c;
-  --line:rgba(255,228,196,.08); --line-2:rgba(255,228,196,.16);
-  --ink:#f6efe4; --ink-2:#b9a894; --ink-3:#7d6e5c;
-  --s1:#e8b86d; --s2:#ff9b72; --s3:#5ed4a8;
-  --good:#7dcea0; --warn:#e8b86d; --crit:#e07a7a; --neutral:#8a7d70;
-  --cool:#e8b86d;
-  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  /* Midnight ice — soft, high-end dark UI (desktop + iPhone) */
+  --bg:#080a0e; --surface:#10141c; --surface-2:#151a24; --raise:#1c2230;
+  --line:rgba(230,236,248,.06); --line-2:rgba(230,236,248,.12);
+  --ink:#f3f5f9; --ink-2:#9aa4b8; --ink-3:#667085;
+  /* series — soft sky / warm coral / mint (charts + accents) */
+  --s1:#6eb6ff; --s2:#ff9b72; --s3:#5ed4a8;
+  /* status — readable but not neon-alarm */
+  --good:#4ade9a; --warn:#f5c15a; --crit:#ff7a8a; --neutral:#7d8494;
+  --cool:#6eb6ff;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --sans:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --r:18px; --r-sm:12px;
-  --shadow:0 24px 60px -28px rgba(0,0,0,.8);
+  --r:16px; --r-sm:10px;
+  --shadow:0 18px 50px -22px rgba(0,0,0,.75);
   --sat:env(safe-area-inset-top,0px);   --sab:env(safe-area-inset-bottom,0px);
   --sal:env(safe-area-inset-left,0px);  --sar:env(safe-area-inset-right,0px);
   --tabbar:0px;
@@ -57,12 +63,27 @@ body{
   letter-spacing:-.01em;
 }
 @supports (height:100dvh){body{height:100dvh}}
-/* One quiet wash — no grid overlay, no looping spark haze */
+/* Atmosphere: soft instrument glow + faint grid (not purple haze) */
 body::before{
-  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;
   background:
-    radial-gradient(90% 55% at 50% -10%,rgba(232,184,109,.16),transparent 55%),
-    radial-gradient(40% 30% at 100% 80%,rgba(224,122,122,.06),transparent 60%);
+    radial-gradient(44% 38% at 10% 6%,rgba(110,182,255,.14),transparent 64%),
+    radial-gradient(34% 30% at 90% 12%,rgba(255,155,114,.08),transparent 66%),
+    radial-gradient(48% 42% at 72% 100%,rgba(94,212,168,.07),transparent 70%),
+    linear-gradient(180deg,rgba(255,255,255,.018),transparent 30%);
+  filter:blur(32px);animation:drift 52s var(--ease) infinite alternate;
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 30%,#000 20%,transparent 75%);
+}
+@keyframes drift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(1.8%,-1.4%,0) scale(1.05)}
 }
 body>*{position:relative;z-index:1}
 @media (prefers-reduced-motion:reduce){
@@ -93,39 +114,15 @@ body>*{position:relative;z-index:1}
   border:1px solid var(--line);border-radius:var(--r);
   box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);
   display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
-.card>h3{font-size:13px;font-weight:650;letter-spacing:-.02em;text-transform:none;
-  color:var(--ink-2);padding:14px 16px 10px;display:flex;align-items:center;
+.card>h3{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);padding:14px 16px 10px;display:flex;align-items:center;
   justify-content:space-between;gap:10px;flex:none}
-.dial-lg{display:none}
 .card>h3 .cnt{font:500 11px/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--ink-3)}
 .scroll{overflow:auto;flex:1;min-height:0;padding:0 16px 14px}
 .scroll::-webkit-scrollbar,.view::-webkit-scrollbar{width:6px;height:6px}
 .scroll::-webkit-scrollbar-thumb,.view::-webkit-scrollbar-thumb{
   background:var(--line-2);border-radius:99px}
 .empty{color:var(--ink-3);font-size:12.5px;padding:14px 2px}
-
-/* Collapsed bays — secondary jobs stay one tap away, not on first paint */
-details.fold{
-  background:linear-gradient(165deg,rgba(255,255,255,.03),transparent 42%),var(--surface);
-  border:1px solid var(--line);border-radius:var(--r);
-  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);
-  min-width:0;overflow:hidden}
-details.fold>summary{
-  list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  min-height:44px;padding:12px 16px;cursor:pointer;
-  font:650 14px/1.2 var(--sans);letter-spacing:-.02em;color:var(--ink);
-  user-select:none;-webkit-user-select:none;touch-action:manipulation}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary .cnt{font:500 11px/1 var(--mono);color:var(--ink-3);font-weight:500}
-details.fold>summary::after{
-  content:"";margin-left:auto;flex:none;width:8px;height:8px;
-  border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
-  transform:rotate(45deg);transition:transform .18s var(--ease)}
-details.fold[open]>summary{border-bottom:1px solid var(--line)}
-details.fold[open]>summary::after{transform:rotate(225deg);margin-top:3px}
-.fold-body{padding:10px 0 4px}
-.fold-body>.upd-tools,.fold-body>.stack-note{padding:0 14px 8px}
-.fold-tools{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 10px}
 
 .btn{font:600 12px var(--sans);color:var(--ink-2);background:var(--raise);
   border:1px solid var(--line-2);border-radius:8px;padding:6px 12px;cursor:pointer;
@@ -154,11 +151,14 @@ header{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;
   box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05)}
 .brand{display:flex;align-items:center;gap:10px;white-space:nowrap;margin-right:4px;
   text-decoration:none;color:inherit;user-select:none}
-.brand .bolt{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;
-  background:linear-gradient(145deg,#f0d09a,#c4893a);
-  border:0;flex:none;position:relative;box-shadow:0 0 20px rgba(232,184,109,.35)}
-.brand .bolt svg{width:14px;height:14px;display:block}
-.brand .bolt svg path{fill:#2a1c0e}
+.brand .bolt{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;
+  background:linear-gradient(145deg,rgba(110,182,255,.32),rgba(110,182,255,.06));
+  border:1px solid rgba(110,182,255,.32);flex:none;position:relative}
+.brand .bolt::after{content:"";position:absolute;inset:-5px;border-radius:inherit;
+  background:radial-gradient(circle,rgba(110,182,255,.4),transparent 70%);
+  opacity:.35;animation:spark 2.8s ease-in-out infinite;pointer-events:none;z-index:-1}
+.brand .bolt svg{width:15px;height:15px;display:block}
+@keyframes spark{0%,100%{opacity:.2;transform:scale(.92)}50%{opacity:.7;transform:scale(1.08)}}
 .brand-txt{display:flex;flex-direction:column;line-height:1.05;gap:1px}
 .brand-txt b{font-size:13.5px;font-weight:700;letter-spacing:-.02em}
 .brand-txt i{font:500 9px/1 var(--mono);font-style:normal;letter-spacing:.02em;
@@ -176,7 +176,8 @@ nav::-webkit-scrollbar{display:none}
   border:1px solid transparent;transition:color .16s,background .16s,border-color .16s;
   user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .tab:hover{color:var(--ink-2);background:rgba(255,255,255,.04)}
-.tab.on{color:var(--bg);background:var(--s1);border-color:transparent}
+.tab.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.28);
+  box-shadow:0 1px 0 rgba(255,255,255,.04)}
 .tab kbd{font:600 9px var(--mono);color:var(--ink-3);border:1px solid var(--line);
   border-radius:4px;padding:1px 4px;background:rgba(0,0,0,.35)}
 .tab .badge{font:700 10px var(--mono);border-radius:999px;padding:1px 6px;
@@ -234,10 +235,12 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .stack-card p{margin:0;font:12.5px/1.4 var(--sans);color:var(--ink-2)}
 .stack-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
 .stack-card .btn{margin-top:auto;min-height:40px;width:100%}
-#lora-card{margin:0;padding:14px 14px 12px;display:flex;flex-direction:column;gap:6px}
-#lora-fold summary em{font:600 10px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
-  color:var(--warn);border:1px solid rgba(232,176,74,.45);border-radius:999px;padding:3px 7px;
-  font-style:normal}
+#lora-card{margin:0 14px 14px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:6px;
+  background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px}
+#lora-card h4{margin:0;font:650 15px/1.2 var(--sans);letter-spacing:-.02em;display:flex;
+  align-items:center;gap:8px}
+#lora-card h4 em{font:600 10px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--warn);border:1px solid rgba(232,176,74,.45);border-radius:999px;padding:3px 7px}
 #lora-card p{margin:0;font:12.5px/1.4 var(--sans);color:var(--ink-2)}
 #lora-card .meta{font:11px/1.35 var(--mono);color:var(--ink-3)}
 #lora-card .btn{margin-top:8px;min-height:44px;width:100%;max-width:280px}
@@ -286,7 +289,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .view.on{display:grid}
 
 /* ─────────────── PULSE ─────────────── */
-#v-pulse{grid-template-rows:auto auto minmax(160px,1fr)}
+#v-pulse{grid-template-rows:auto auto auto minmax(180px,1fr)}
 
 /* hero verdict — first story on Pulse */
 .hero{display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:var(--r);
@@ -302,13 +305,12 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .hero.warn{--hero-glow:rgba(245,193,90,.14);--hero-bar:var(--warn)}
 .hero.bad{--hero-glow:rgba(255,122,138,.16);--hero-bar:var(--crit)}
 .hero>*{position:relative}
-.hero .mark{font-size:22px;line-height:1;flex:none;width:28px;text-align:center;margin-left:2px}
+.hero .mark{font-size:28px;line-height:1;flex:none;width:40px;text-align:center;margin-left:6px}
 .hero.ok .mark{color:var(--good)}
 .hero.warn .mark{color:var(--warn)}
 .hero.bad .mark{color:var(--crit)}
 .hero .msg{min-width:0;flex:1}
-.hero .msg b{display:block;font-family:var(--display);font-size:40px;font-weight:500;
-  letter-spacing:-.04em;line-height:.95;font-optical-sizing:auto}
+.hero .msg b{display:block;font-size:22px;font-weight:650;letter-spacing:-.03em;line-height:1.15}
 .hero .msg span{display:block;font-size:13px;color:var(--ink-2);margin-top:4px;line-height:1.35}
 .hero .stats{display:flex;gap:22px;flex:none}
 .hero .stat{text-align:right;min-width:4.5ch}
@@ -428,12 +430,10 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .host .foot b{color:var(--ink);font-family:var(--mono);font-weight:550}
 .host.bad{border-color:rgba(255,122,138,.4)}
 .host.warn{border-color:rgba(245,193,90,.36)}
-.host.side{padding:12px 12px 10px;opacity:.92}
-.host.side .gauge{width:76px;height:76px}
-.host.side .gauge .gv{font-size:18px}
-.host.side .spark{height:28px;margin-top:4px}
 
-#v-pulse .attn{min-height:0}
+/* pulse bottom row — Needs you | Projects | Quick actions */
+.prow{display:grid;gap:12px;min-height:0;
+  grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,1.05fr)}
 
 /* projects */
 .prj{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;
@@ -477,8 +477,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 
 /* ─────────────── FLEET ─────────────── */
 #v-fleet{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
-#elec-panel .elec-top,#elec-panel .elec-grid{padding-left:14px;padding-right:14px}
-#elec-panel .elec-grid{padding-bottom:12px}
+#elec-panel{grid-column:1/-1}
 #miners-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 #miners-panel h2.sec{grid-column:1/-1;font:650 12px/1.2 var(--sans);letter-spacing:.14em;
   text-transform:uppercase;color:var(--ink-3);margin:4px 0 0}
@@ -572,29 +571,9 @@ tr:last-child td{border-bottom:0}
 .pill.on{color:var(--ink);background:rgba(110,182,255,.14);border-color:rgba(110,182,255,.4)}
 .bar-row .note{font:11.5px var(--mono);color:var(--ink-3);margin-left:auto}
 
-#v-control{grid-template-rows:auto minmax(220px,1fr) auto auto auto auto;align-content:start}
-#v-jobs{grid-template-rows:auto auto auto auto auto;align-content:start}
+#v-control{grid-template-rows:auto auto auto minmax(0,1fr);align-content:start}
+#v-jobs{grid-template-rows:auto auto auto;align-content:start}
 .jobs-aux{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;min-width:0}
-.use-meters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.meter{appearance:none;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
-  min-height:88px;padding:14px 16px 14px 18px;border-radius:20px;cursor:pointer;text-align:left;
-  background:linear-gradient(165deg,rgba(232,184,109,.08),transparent 55%),var(--surface);
-  border:1px solid var(--line);color:inherit;touch-action:manipulation;
-  box-shadow:inset 3px 0 0 var(--s1)}
-.meter:active{transform:scale(.99)}
-.meter i{font:600 11px/1 var(--sans);color:var(--ink-3);font-style:normal;letter-spacing:.06em;
-  text-transform:uppercase}
-.meter b{font-family:var(--display);font-size:28px;font-weight:500;letter-spacing:-.04em;line-height:1.05}
-.meter span{font:12px/1.35 var(--sans);color:var(--ink-2)}
-.jcard{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;min-height:56px;
-  border-bottom:1px solid var(--line)}
-.jcard:last-child{border-bottom:0}
-.jcard .body{min-width:0;flex:1}
-.jcard b{display:block;font-size:14px;font-weight:650;letter-spacing:-.02em}
-.jcard p{margin:4px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.35}
-.jcard .jmeta{display:block;margin-top:6px;font:11px/1.3 var(--mono);color:var(--ink-3)}
-.jcard.fail p{color:var(--crit)}
-#jobs-broken-list .empty,#jobs .empty{padding:16px;color:var(--ink-3)}
 .board{display:flex;flex-direction:column;min-height:0}
 .board>.bar-row{flex:none}
 .qwrap{position:relative;flex:1;min-width:160px;max-width:340px}
@@ -708,19 +687,23 @@ tr:last-child td{border-bottom:0}
 .view.on>*:nth-child(3){animation-delay:.1s}
 
 /* responsive */
+@media (max-width:1680px){.prow{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);
+  grid-auto-rows:minmax(190px,auto)}}
 @media (max-width:1280px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #v-pulse{grid-template-rows:auto auto minmax(140px,1fr)}}
+  #v-pulse{grid-template-rows:auto auto auto}
+  .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
   .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:761px){
   /* Pin filter/dock; only the tile list / job table scrolls on desktop */
   #v-control .board #svc-body{flex:1;min-height:0;overflow:auto}
   /* Jobs table gets a real pane (~12 rows). Token/Comfy sit below; the view scrolls. */
-  #v-jobs{grid-template-rows:minmax(0,1fr) auto;align-content:start}
+  #v-jobs{grid-template-rows:auto auto auto;align-content:start}
   #v-jobs .board{height:min(58vh,640px);min-height:360px}
   #v-jobs .board .scroll{flex:1;min-height:0;overflow:auto}
 }
 @media (max-width:860px){
+  .prow{grid-template-columns:minmax(0,1fr)}
   .hero{flex-wrap:wrap}.hero .stats{width:100%;justify-content:flex-start}
   body{padding:10px;gap:10px}header{padding:0 8px 0 12px}
   .tab kbd{display:none}header .stamp{display:none}
@@ -749,12 +732,14 @@ tr:last-child td{border-bottom:0}
    44px touch targets.
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width:760px), (max-height:500px) and (max-width:950px){
-:root{--tabbar:72px;--r:18px}
+:root{--tabbar:62px;--r:16px}
 
 body{
   grid-template-rows:52px minmax(0,1fr);gap:10px;
   padding:calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px);
 }
+body::before{filter:blur(36px)}
+body::after{opacity:.25;background-size:36px 36px}
 
 /* ── top bar: identity + what's serving + live. Clock is already in the
    iOS status bar, so it yields the slot to the DS4F chip. Build id stays
@@ -808,43 +793,13 @@ header .err:not(:empty){
 
 /* ── PULSE ── */
 #v-pulse{grid-template-rows:auto auto auto}
-/* Phone: verdict + tap list first; host gauges after. Desktop keeps hosts in the middle. */
-#v-pulse .attn{order:1;background:var(--surface);border-radius:22px;border:1px solid var(--line)}
-#v-pulse .hosts{order:2}
-#v-pulse .attn>h3{font-family:var(--display);font-size:20px;font-weight:500;color:var(--ink);padding-bottom:4px}
 .hero{padding:14px 14px 14px 16px;gap:12px;align-items:flex-start;border-radius:16px}
 .hero::after{top:12%;bottom:12%;width:3px}
 .hero .mark{font-size:22px;width:26px;margin-left:4px}
-.hero .msg b{font-size:44px;letter-spacing:-.045em;max-width:12ch}
-.hero .stats{display:none!important}
-.hero{background:transparent;border:0;box-shadow:none;padding:8px 4px 4px}
-.hero::before,.hero::after{display:none}
-.hero .mark{display:none}
-
-/* Pulse hosts become a watch-complication list — gauges live on Fleet */
-#v-pulse .hosts{
-  grid-template-columns:1fr;gap:0;
-  background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden}
-#v-pulse .host,#v-pulse .host.side{
-  display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:12px;
-  border-radius:0;border:0;border-bottom:1px solid var(--line);box-shadow:none;
-  background:transparent;min-height:56px;padding:12px 16px;opacity:1}
-#v-pulse .host:last-child{border-bottom:0}
-#v-pulse .host .hh{margin:0;min-width:0}
-#v-pulse .host .hh b{font-size:15px}
-#v-pulse .host .hh .up,#v-pulse .host .role,#v-pulse .host .gwrap,#v-pulse .host .foot{display:none}
-#v-pulse .host .dial-lg{
-  display:block;
-  font-family:var(--display);font-size:26px;font-weight:500;letter-spacing:-.04em;
-  font-variant-numeric:tabular-nums;color:var(--ink);line-height:1}
-
-#stack-cnt{display:none}
+.hero .msg b{font-size:17px;letter-spacing:-.025em}
 .hero .msg span{font-size:12px;white-space:normal;line-height:1.4}
-.attn{max-height:none}
-.attn .att{padding:12px 10px}
 .hero .stats{gap:0;width:100%;margin-top:12px;padding-top:12px;
-  border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,1fr)}
-.hero .stat:nth-child(n+3){display:none}
+  border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr)}
 .hero .stat{text-align:center}
 .hero .stat b{font-size:15px}
 .hero .stat span{font-size:8px;letter-spacing:.1em}
@@ -876,9 +831,6 @@ header .err:not(:empty){
 .prj{padding:8px 2px}
 .prj .n{flex:0 0 52%}
 .act{padding:11px 2px}
-.use-meters{grid-template-columns:1fr}
-.meter{min-height:76px}
-.meter b{font-size:24px}
 
 /* ── FLEET ── */
 .node{padding:13px 13px 12px}
@@ -928,11 +880,8 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 .stack-chip b{font-size:15px}
 .stack-chip span{font-size:11.5px;white-space:normal}
 .stack-cards{grid-template-columns:minmax(0,1fr);padding:0 12px 12px}
-#stack-cnt{display:none}
 .stack-card .btn{min-height:48px;font-size:16px}
-details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
-.fold-tools .btn{min-height:44px;font-size:15px}
-#lora-card{margin:0;padding:12px 12px 12px}
+#lora-card{margin:0 12px 12px}
 #lora-card .btn{min-height:48px;font-size:16px;max-width:none}
 #lora-go-single{min-height:44px;font-size:15px}
 #lora-students button{min-height:48px;font-size:16px}
@@ -970,30 +919,29 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 
 /* ══════════════════ bottom tab bar (thumb arc) ══════════════════ */
 .tabbar{
-  display:flex;position:fixed;z-index:60;
-  left:calc(var(--sal) + 12px);right:calc(var(--sar) + 12px);
-  bottom:calc(var(--sab) + 10px);
-  padding:6px;height:auto;
-  background:rgba(26,20,16,.82);backdrop-filter:blur(28px) saturate(1.4);
-  -webkit-backdrop-filter:blur(28px) saturate(1.4);
-  border:1px solid var(--line-2);border-radius:28px;
-  box-shadow:0 12px 40px -16px rgba(0,0,0,.7);
+  display:flex;position:fixed;z-index:60;left:0;right:0;bottom:0;
+  padding:4px calc(var(--sar) + 8px) calc(var(--sab) + 4px) calc(var(--sal) + 8px);
+  background:rgba(9,11,16,.88);backdrop-filter:blur(24px) saturate(1.25);
+  -webkit-backdrop-filter:blur(24px) saturate(1.25);
+  border-top:1px solid var(--line);
+  box-shadow:0 -12px 40px -20px rgba(0,0,0,.55);
 }
 .tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;height:52px;min-width:0;background:none;border:0;cursor:pointer;
+  gap:3px;height:var(--tabbar);min-width:0;background:none;border:0;cursor:pointer;
   color:var(--ink-3);font:600 10px/1 var(--sans);letter-spacing:.02em;
   position:relative;-webkit-tap-highlight-color:transparent;transition:color .18s;
   user-select:none;-webkit-user-select:none;touch-action:manipulation;
-  border-radius:22px}
-.tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.85;
-  stroke-linecap:round;stroke-linejoin:round}
-.tb.on{color:var(--bg);background:var(--s1)}
-.tb.on svg{transform:none;stroke:var(--bg)}
-.tb.on::before{display:none}
-.tb:active{transform:scale(.97)}
-.tb .badge{position:absolute;top:4px;left:calc(50% + 10px);font:700 9px var(--mono);
+  border-radius:12px}
+.tb svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.85;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s var(--ease)}
+.tb.on{color:var(--s1);background:rgba(110,182,255,.12)}
+.tb.on svg{transform:translateY(-1px)}
+.tb.on::before{content:"";position:absolute;top:2px;left:30%;right:30%;height:2px;
+  border-radius:99px;background:var(--s1);box-shadow:0 0 8px rgba(110,182,255,.45)}
+.tb:active{color:var(--ink-2);transform:scale(.97)}
+.tb .badge{position:absolute;top:6px;left:calc(50% + 8px);font:700 9px var(--mono);
   border-radius:999px;padding:0 5px;line-height:14px;background:var(--crit);color:#fff;
-  box-shadow:0 0 0 2px var(--bg)}
+  box-shadow:0 0 0 2px rgba(9,11,16,.9)}
 .tb .badge.w{background:var(--warn);color:#241a03}
 
 /* ══════════════════ pull-to-refresh ══════════════════ */
@@ -1028,11 +976,10 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 /* landscape phone: compact tab bar; 2 host columns so names stay readable
    (4-col at 844px truncated sparkmax-10ef / sparkymaxxx-12ef to lookalikes) */
 @media (max-height:460px) and (max-width:900px){
-  :root{--tabbar:64px}
-  .tb{font-size:8.5px;height:44px}
+  :root{--tabbar:46px}
+  .tb{font-size:8.5px}
   .tb svg{width:18px;height:18px}
-  .hero .msg b{font-size:28px}
-  #v-pulse .hosts{grid-template-columns:1fr}
+  .hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>
 </head>
@@ -1042,7 +989,7 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
   <div class="brand" aria-label="Spark Console">
     <span class="bolt" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M13 2L6 13h5l-1 9 9-13h-5l1-7z" fill="currentColor"/>
+        <path d="M13 2L6 13h5l-1 9 9-13h-5l1-7z" fill="#6eb6ff"/>
       </svg>
     </span>
     <span class="brand-txt"><b>Spark</b><i id="build-label" title="This page's build. If it doesn't match desktop, the iPhone still has a cached copy.">{{CONSOLE_BUILD}}</i></span>
@@ -1071,51 +1018,86 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
     <div class="msg"><b id="hero-title">Checking the fleet…</b><span id="hero-sub">connecting</span></div>
     <div class="stats" id="hero-stats"></div>
   </div>
+  <div class="card" id="stack-pulse">
+    <h3>Setup</h3>
+    <div class="stack-note" id="stack-note-pulse"></div>
+    <div class="stack-bar" id="stack-bar"></div>
+  </div>
+
   <div class="hosts" id="hosts"></div>
 
-  <div class="card attn">
-    <h3>Needs you <span class="cnt" id="att-cnt"></span></h3>
-    <div class="scroll" id="attention"></div>
+  <div class="prow">
+    <div class="card"><h3>Needs you <span class="cnt" id="att-cnt"></span></h3>
+      <div class="scroll" id="attention"></div></div>
+    <div class="card"><h3>Projects <span class="cnt" id="proj-cnt"></span></h3>
+      <div class="scroll" id="projects"></div></div>
+    <div class="card"><h3>Quick actions</h3>
+      <div class="scroll" id="actions"></div></div>
   </div>
 </section>
 
-<!-- ═══════════════ FLEET — machines first; bill last, folded ═══════════════ -->
+<!-- ═══════════════ FLEET ═══════════════ -->
 <section class="view" id="v-fleet">
-  <details class="fold elec" id="elec-panel">
-    <summary>Power bill <span class="cnt" id="elec-sum">rate · idle</span></summary>
-    <div class="fold-body">
-      <div class="elec-top">
-        <div class="elec-rate">
-          <label for="elec-rate">$/kWh</label>
-          <input id="elec-rate" type="number" min="0" max="5" step="0.001" inputmode="decimal"
-                 title="Energy charge only (Ameren MO 1(M) Evening/Morning Saver: 15.24¢/kWh Jun–Sep, 10.45¢ winter first 750 kWh). Does not include the $9.19/mo customer charge.">
-        </div>
-        <div class="elec-rate">
-          <label for="elec-mode">Bill basis</label>
-          <select id="elec-mode" title="Wall est ≈ outlet bill for Sparks. Measured = GPU/PMIC/RAPL only (understates AC).">
-            <option value="wall">Wall estimate</option>
-            <option value="sensor">Measured sensors</option>
-          </select>
-        </div>
-        <div class="elec-rate" id="elec-idle-wrap">
-          <label for="elec-idle">Spark idle wall W</label>
-          <input id="elec-idle" type="number" min="10" max="200" step="1" inputmode="decimal"
-                 title="Outlet watts at idle with CX7 in its usual state (this cluster ~50 W with fabric up). Measure with a USB-C / Kill-A-Watt. GPU floor is 11 W (this fleet's idle nvidia-smi).">
-        </div>
-        <span class="elec-note" id="elec-note">Wall estimate × rate — bill-like, not a live projection.</span>
+  <div class="card elec" id="elec-panel">
+    <div class="elec-top">
+      <h3 style="margin:0">Electricity</h3>
+      <div class="elec-rate">
+        <label for="elec-rate">$/kWh</label>
+        <input id="elec-rate" type="number" min="0" max="5" step="0.001" inputmode="decimal"
+               title="Energy charge only (Ameren MO 1(M) Evening/Morning Saver: 15.24¢/kWh Jun–Sep, 10.45¢ winter first 750 kWh). Does not include the $9.19/mo customer charge.">
       </div>
-      <div class="elec-grid" id="elec-grid"></div>
+      <div class="elec-rate">
+        <label for="elec-mode">Bill basis</label>
+        <select id="elec-mode" title="Wall est ≈ outlet bill for Sparks. Measured = GPU/PMIC/RAPL only (understates AC).">
+          <option value="wall">Wall estimate</option>
+          <option value="sensor">Measured sensors</option>
+        </select>
+      </div>
+      <div class="elec-rate" id="elec-idle-wrap">
+        <label for="elec-idle">Spark idle wall W</label>
+        <input id="elec-idle" type="number" min="10" max="200" step="1" inputmode="decimal"
+               title="Outlet watts at idle with CX7 in its usual state (this cluster ~50 W with fabric up). Measure with a USB-C / Kill-A-Watt. GPU floor is 11 W (this fleet's idle nvidia-smi).">
+      </div>
+      <span class="elec-note" id="elec-note">Wall estimate × rate — bill-like, not a live projection.</span>
     </div>
-  </details>
+    <div class="elec-grid" id="elec-grid"></div>
+  </div>
 </section>
 
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
+  <div class="card" id="updates-card">
+    <h3>Updates <span class="cnt" id="upd-cnt"></span>
+      <span class="upd-tools">
+        <button type="button" class="btn go" id="upd-apt-n1">Update System Package Node1</button>
+        <button type="button" class="btn go" id="upd-apt-n2">Update System Package Node2</button>
+        <button type="button" class="btn go" id="upd-sync">Sync GitHub</button>
+      </span>
+    </h3>
+    <div class="stack-note" id="upd-note" title="Tap to check GitHub again (no checkout change)">Opening Control checks GitHub. Sync GitHub merges DS4F if you are behind (keeps local commits). Row Update is other recipes. Checkout only — does not restart 0731 or Qwen.</div>
+    <div class="upd-rows" id="upd-rows"></div>
+    <pre class="upd-log" id="upd-log" hidden></pre>
+  </div>
   <div class="card" id="stack-control">
     <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
+    <div id="lora-card">
+      <h4>LoRA Train <em id="lora-badge" hidden>READY</em></h4>
+      <div id="lora-students" role="group" aria-label="Which model to train">
+        <button type="button" id="lora-stu-qwen" class="on">Qwen 3.8</button>
+        <button type="button" id="lora-stu-0731">0731</button>
+      </div>
+      <p id="lora-blurb">Pick Qwen 3.8 or 0731. Default is both Sparks. Never auto-wires the adapter.</p>
+      <div class="meta" id="lora-meta"></div>
+      <button type="button" class="btn go" id="lora-go" disabled>Train both Sparks</button>
+      <button type="button" class="btn" id="lora-go-single" disabled>This Spark only</button>
+      <pre class="upd-log" id="lora-log" hidden></pre>
+    </div>
   </div>
+  <div class="card dock-card">
+    <h3>This desk <span class="cnt">opens on the physical display</span></h3>
+    <div class="launch" id="launch-apps"></div></div>
   <div class="card board">
     <div class="bar-row">
       <div class="qwrap">
@@ -1136,143 +1118,77 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
       <div id="remote-links"></div>
     </div>
   </div>
-  <details class="fold" id="updates-fold">
-    <summary>Updates <span class="cnt" id="upd-cnt"></span></summary>
-    <div class="fold-body" id="updates-card">
-      <div class="fold-tools upd-tools">
-        <button type="button" class="btn go" id="upd-apt-n1">Node 1 apt</button>
-        <button type="button" class="btn go" id="upd-apt-n2">Node 2 apt</button>
-        <button type="button" class="btn go" id="upd-sync">Sync GitHub</button>
-      </div>
-      <div class="stack-note" id="upd-note" title="Tap to check GitHub again (no checkout change)">Tap to check GitHub. Checkout does not restart the engines.</div>
-      <div class="upd-rows" id="upd-rows"></div>
-      <pre class="upd-log" id="upd-log" hidden></pre>
-    </div>
-  </details>
-  <details class="fold" id="lora-fold">
-    <summary>LoRA Train <em id="lora-badge" hidden>READY</em></summary>
-    <div class="fold-body" id="lora-card">
-      <div id="lora-students" role="group" aria-label="Which model to train">
-        <button type="button" id="lora-stu-qwen" class="on">Qwen 3.8</button>
-        <button type="button" id="lora-stu-0731">0731</button>
-      </div>
-      <p id="lora-blurb">Pick Qwen 3.8 or 0731. Default is both Sparks. Never auto-wires the adapter.</p>
-      <div class="meta" id="lora-meta"></div>
-      <button type="button" class="btn go" id="lora-go" disabled>Train both Sparks</button>
-      <button type="button" class="btn" id="lora-go-single" disabled>This Spark only</button>
-      <pre class="upd-log" id="lora-log" hidden></pre>
-    </div>
-  </details>
-  <details class="fold" id="desk-fold">
-    <summary>This desk <span class="cnt">physical display</span></summary>
-    <div class="fold-body"><div class="launch" id="launch-apps"></div></div>
-  </details>
-  <details class="fold" id="scripts-fold">
-    <summary>Scripts</summary>
-    <div class="fold-body"><div class="scroll" id="actions"></div></div>
-  </details>
 </section>
 
 <!-- ═══════════════ JOBS ═══════════════ -->
 <section class="view" id="v-jobs">
-  <div class="use-meters" id="use-meters">
-    <button type="button" class="meter" id="tok-meter" title="Hermes session_model_usage, last 24 hours, this machine's local clock">
-      <i>Tokens · last 24h</i>
-      <b id="tok-meter-v">…</b>
-      <span id="tok-meter-s">Hermes session_model_usage · rolling</span>
-    </button>
-    <button type="button" class="meter" id="elec-meter" title="Wall estimate × Ameren energy rate. Missing samples count as 0 W.">
-      <i>Power · last 24h</i>
-      <b id="elec-meter-v">…</b>
-      <span id="elec-meter-s">wall estimate · not an outlet meter</span>
-    </button>
-  </div>
-  <div class="card" id="jobs-broken">
-    <h3>Broken <span class="cnt" id="jobs-broken-cnt"></span></h3>
-    <div id="jobs-broken-list"></div>
-  </div>
-  <details class="fold" id="jobs-ok-fold">
-    <summary>The rest of the schedule <span class="cnt" id="jobs-ok-cnt"></span></summary>
-    <div class="fold-body">
-      <div class="bar-row">
-        <div class="qwrap">
-          <input type="text" id="auto-q" placeholder="Find a job…" autocomplete="off"
-                 oninput="renderJobs()" aria-label="Filter jobs">
-          <kbd>/</kbd>
-        </div>
-        <span class="pill on" data-l="all" onclick="autoLayer(this)">All</span>
-        <span class="pill" data-l="hermes" onclick="autoLayer(this)">Hermes</span>
-        <span class="pill" data-l="crontab" onclick="autoLayer(this)">Crontab</span>
-        <span class="pill" data-l="timer" onclick="autoLayer(this)">Timers</span>
-        <span class="note" id="auto-summary"></span>
+  <div class="card board">
+    <div class="bar-row">
+      <div class="qwrap">
+        <input type="text" id="auto-q" placeholder="Find a job…" autocomplete="off"
+               oninput="renderJobs()" aria-label="Filter jobs">
+        <kbd>/</kbd>
       </div>
-      <div id="jobs"></div>
+      <span class="pill on" data-l="all" onclick="autoLayer(this)">All</span>
+      <span class="pill" data-l="hermes" onclick="autoLayer(this)">Hermes</span>
+      <span class="pill" data-l="crontab" onclick="autoLayer(this)">Crontab</span>
+      <span class="pill" data-l="timer" onclick="autoLayer(this)">Timers</span>
+      <span class="pill" data-l="problem" onclick="autoLayer(this)">Problems</span>
+      <span class="note" id="auto-summary"></span>
     </div>
-  </details>
-  <details class="fold" id="tok-fold">
-    <summary>Token detail <span class="cnt" id="tok-cnt"></span></summary>
-    <div class="fold-body" id="tokenusage">
-      <div class="tok-card">
+    <div class="scroll" id="jobs"></div>
+  </div>
+  <div class="card"><h3>Backup tiers <span class="cnt" id="bk-cnt"></span></h3>
+    <div class="bks" id="backups"></div></div>
+  <div class="jobs-aux">
+    <div class="card"><h3>LLM token usage <span class="cnt" id="tok-cnt"></span></h3>
+      <div id="tokenusage" class="tok-card">
         <div class="tok-chart-wrap">
           <div class="tok-chart-h">
-            <span>14 days · local calendar (not UTC)</span>
+            <span>14-day tokens (by last activity)</span>
             <span class="leg"><i style="background:var(--s1)"></i>in <i style="background:var(--s3)"></i>out</span>
             <b id="tok-chart-sum">…</b>
           </div>
           <canvas id="tok-chart" aria-label="14-day input and output tokens"></canvas>
+        </div>
+        <div class="tok-stats">
+          <div class="tok-stat">
+            <div class="lbl">Per session · in+out</div>
+            <div class="row"><span>mean</span><span id="tok-s-mean">…</span></div>
+            <div class="row"><span>median</span><span id="tok-s-median">…</span></div>
+            <div class="row"><span>mode</span><span id="tok-s-mode">…</span></div>
+            <div class="row"><span>p90 / n</span><span id="tok-s-p90">…</span></div>
+          </div>
+          <div class="tok-stat">
+            <div class="lbl">Per API call · in+out</div>
+            <div class="row"><span>mean</span><span id="tok-c-mean">…</span></div>
+            <div class="row"><span>median</span><span id="tok-c-median">…</span></div>
+            <div class="row"><span>mode</span><span id="tok-c-mode">…</span></div>
+            <div class="row"><span>p90 / n</span><span id="tok-c-p90">…</span></div>
+          </div>
         </div>
         <div class="mrow"><label>24h in/out</label><span class="v" id="tok-24h">…</span></div>
         <div class="mrow"><label>all-time in</label><span class="v" id="tok-in">…</span></div>
         <div class="mrow"><label>all-time out</label><span class="v" id="tok-out">…</span></div>
         <div class="mrow"><label>cache reads</label><span class="v" id="tok-cache">…</span></div>
         <div class="mrow"><label>api calls / sessions</label><span class="v" id="tok-calls">…</span></div>
-        <div class="tok-models-h">Per model · aliases folded (0731 / Qwen 3.8)</div>
+        <div class="tok-models-h">Per model · Hermes names (0731 / Qwen 3.8 folded)</div>
         <div id="tok-models" class="tok-models"></div>
-        <details class="fold" id="tok-nerd" style="margin:10px 8px 8px;box-shadow:none">
-          <summary>Mean / median / mode</summary>
-          <div class="fold-body tok-stats">
-            <div class="tok-stat">
-              <div class="lbl">Per session · in+out</div>
-              <div class="row"><span>mean</span><span id="tok-s-mean">…</span></div>
-              <div class="row"><span>median</span><span id="tok-s-median">…</span></div>
-              <div class="row"><span>mode</span><span id="tok-s-mode">…</span></div>
-              <div class="row"><span>p90 / n</span><span id="tok-s-p90">…</span></div>
-            </div>
-            <div class="tok-stat">
-              <div class="lbl">Per API call · in+out</div>
-              <div class="row"><span>mean</span><span id="tok-c-mean">…</span></div>
-              <div class="row"><span>median</span><span id="tok-c-median">…</span></div>
-              <div class="row"><span>mode</span><span id="tok-c-mode">…</span></div>
-              <div class="row"><span>p90 / n</span><span id="tok-c-p90">…</span></div>
-            </div>
-          </div>
-        </details>
-      </div>
-    </div>
-  </details>
-  <details class="fold" id="jobs-more">
-    <summary>Backups & Comfy <span class="cnt" id="jobs-more-cnt"></span></summary>
-    <div class="fold-body">
-      <div class="card"><h3>Projects <span class="cnt" id="proj-cnt"></span></h3>
-        <div class="scroll" id="projects"></div></div>
-      <div class="card"><h3>Backup tiers <span class="cnt" id="bk-cnt"></span></h3>
-        <div class="bks" id="backups"></div></div>
-      <div class="jobs-aux">
-        <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
-          <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
-            <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
-            <div class="mrow" style="border:0"><label>open</label>
-              <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
-            <div id="comfy-body">
-              <div class="cfy-idle" id="comfy-empty">offline / on-demand</div>
-            </div>
-            <div class="mrow" id="comfy-vram-row" style="margin-top:8px"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
-            <div id="comfy-inv-wrap"></div>
-          </div></div>
-      </div>
-    </div>
-  </details>
+      </div></div>
+    <div class="card"><h3>ComfyUI <span class="cnt" id="comfy-chip">…</span></h3>
+      <div id="comfy" style="font:400 11px/1.5 var(--mono);padding:6px 4px 2px">
+        <div class="mrow"><label>state</label><span class="v" id="comfy-state">…</span></div>
+        <div class="mrow" style="border:0"><label>open</label>
+          <span class="v"><a href="http://127.0.0.1:8188" target="_blank" rel="noopener" id="comfy-open">ComfyUI UI</a></span></div>
+        <div id="comfy-body">
+          <div class="cfy-idle" id="comfy-empty">offline / on-demand</div>
+        </div>
+        <div class="mrow" id="comfy-vram-row" style="margin-top:8px"><label>vram</label><span class="v" id="comfy-vram">…</span></div>
+        <div id="comfy-inv-wrap"></div>
+      </div></div>
+  </div>
 </section>
+
 <div id="tip"></div>
 
 <!-- ═══════════════ phone chrome (hidden ≥761px) ═══════════════ -->
@@ -1469,7 +1385,7 @@ function offlineHost(id,name,role,h){
    gauges would snap instead of sweep. Build the DOM when the host SET changes;
    after that only write values. ────────────────────────────────────────── */
 const ARC=216.8, CIRC=289.0;           /* 270° of r=46 · full circumference */
-const CARD_MARK="g8";                  /* bump to force in-place card rebuild */
+const CARD_MARK="g6";                  /* bump to force in-place card rebuild */
 let cardKeys="";
 const HIST={};                          /* per-host dial trend, fed at 1 Hz */
 const HIST_N=120;                       /* 120 × 1 s tick = 2 min of trace */
@@ -1492,12 +1408,10 @@ function gaugeCapXY(p){
 function hostCardHtml(h){
   const gid=`gg-${h.id}`;
   const [cx0,cy0]=gaugeCapXY(0);
-  const spark=h.id==="node1"||h.id==="node2";
   return `
-  <div class="card host${spark?"":" side"}" id="hc-${h.id}" onclick="switchTab('fleet')">
+  <div class="card host" id="hc-${h.id}" onclick="switchTab('fleet')">
     <div class="hh"><i class="st stale" data-f="mark">○</i><b data-f="name">${esc(h.name)}</b>
       <span class="up" data-f="up"></span></div>
-    <span class="dial-lg num" data-f="dvl">–</span>
     <div class="role">${esc(h.role)}</div>
     <div class="gwrap">
       <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
@@ -1552,8 +1466,7 @@ function renderHosts(hosts){
   hosts.forEach(h=>{
     const c=$("hc-"+h.id); if(!c)return;
     const f=n=>c.querySelector(`[data-f="${n}"]`);
-    const spark=h.id==="node1"||h.id==="node2";
-    c.className="card host"+(spark?"":" side")+(h.state==="ok"?"":" "+h.state);
+    c.className="card host"+(h.state==="ok"?"":" "+h.state);
     const mark=f("mark");mark.className="st "+h.state;mark.textContent=GLYPH[h.state]||"○";
     f("name").textContent=h.name;
     f("up").textContent=h.up;
@@ -1577,7 +1490,6 @@ function renderHosts(hosts){
     if(g1)g1.setAttribute("stop-color",pal.g1);
     if(gc0)gc0.setAttribute("stop-color",pal.hex);
     f("dv").textContent=h.offline?"–":Math.round(p)+"%";
-    const dvl=f("dvl"); if(dvl) dvl.textContent=h.offline?"–":Math.round(p)+"%";
     f("dl").textContent=h.dialLabel;
     for(const[k,val,txt]of[["cpu",h.cpu,Math.round(h.cpu)+"%"],
                            ["mem",h.mem,h.memTxt],["disk",h.disk,h.diskTxt]]){
@@ -1643,16 +1555,16 @@ function renderHero(hosts,items,d){
   const el=$("hero"),state=bad?"bad":warn?"warn":"ok";
   el.className="hero "+state;
   $("hero-mark").textContent=GLYPH[state];
-  if(bad){$("hero-title").textContent="Hold up";
-    $("hero-sub").textContent=`${bad} need${bad>1?"":"s"} you — ${items.find(i=>i.sev==="bad").msg}`;}
-  else if(warn){$("hero-title").textContent="Careful";
-    $("hero-sub").textContent=`${warn} warning${warn>1?"s":""} — ${items.find(i=>i.sev==="warn").msg}`;}
-  else{$("hero-title").textContent="All quiet";
+  if(bad){$("hero-title").textContent=`${bad} thing${bad>1?"s":""} need${bad>1?"":"s"} you`;
+    $("hero-sub").textContent=items.find(i=>i.sev==="bad").msg;}
+  else if(warn){$("hero-title").textContent=`${warn} warning${warn>1?"s":""}`;
+    $("hero-sub").textContent=items.find(i=>i.sev==="warn").msg;}
+  else{$("hero-title").textContent="All systems nominal";
     const st=((d.stack||{}).presets||[]).find(p=>p.active);
     const serve=servingBits(d).map(e=>shortModel(e.id)+(e.port?` :${e.port}`:"")).join(" · ");
     $("hero-sub").textContent=st
       ?`${st.label} — ${st.short}`
-      :(serve?`Serving ${serve}`:"Nothing on the fleet needs you right now");}
+      :(serve?`Serving ${serve}`:"nothing on the fleet needs you right now");}
   const up=hosts.filter(h=>!h.offline).length;
   const svc=(((d.services||{}).services)||[]);
   const auto=(d.automation||{}).counts||{},bk=(d.backups||{}).counts||{};
@@ -2012,12 +1924,6 @@ function renderTokenUsage(tu){
   const sumIn=series.reduce((a,p)=>a+(+p.input_tokens||0),0);
   const sumOut=series.reduce((a,p)=>a+(+p.output_tokens||0),0);
   setTok("tok-chart-sum",series.length?`${tokFmt(sumIn)} / ${tokFmt(sumOut)}`:"—");
-  const mv=$("tok-meter-v"),ms=$("tok-meter-s");
-  if(mv){
-    mv.textContent=tokFmt((u.input_tokens||0)+(u.output_tokens||0));
-    const tz=tu.tz?` · ${tu.tz}`:"";
-    ms.textContent=`${tokFmt(u.input_tokens)} in · ${tokFmt(u.output_tokens)} out · rolling 24h${tz}`;
-  }
   renderTokStats(st.per_session,"tok-s");
   renderTokStats(st.per_call,"tok-c");
   const box=document.getElementById("tok-models");
@@ -2373,29 +2279,10 @@ function elecCellHtml(title, src, kwh24, kwh30, hrs24, hrs30, complete24, comple
     <div class="w"><b>${fmtUsd(u24)}</b> /24h <span style="color:var(--ink-3)">· ${fmtKwh(kwh24)} · ${cov24}${mark24}${sens}</span></div>
     <div class="c"><b>${fmtUsd(u30)}</b> /30d <span>· ${fmtKwh(kwh30)} · ${cov30}${mark30}</span></div></div>`;
 }
-function paintElecMeters(){
-  /* Jobs meters must not depend on Fleet's #elec-grid being painted. */
-  const rate=getKwhRate();
-  const em=$("elec-meter-v"), es=$("elec-meter-s");
-  if(!em)return;
-  const e=ENERGY, w=(e&&e.window_24h)||{};
-  if(!e||!e.ok){
-    em.textContent="…";
-    if(es)es.textContent="loading wall estimate…";
-    return;
-  }
-  const usd=w.fleet_kwh!=null?w.fleet_kwh*rate:null;
-  em.textContent=fmtUsd(usd);
-  const cov=w.fleet_complete
-    ? "24 clock hours · gaps = 0 W"
-    : `sampled ${w.fleet_hours??"?"}h of 24 · gaps = 0 W`;
-  if(es) es.textContent=`${fmtKwh(w.fleet_kwh)} · wall est · ${cov}`;
-}
 function paintElecPanel(){
   const rate=getKwhRate();
   const idle=getIdleWallW();
   const mode=getElecMode();
-  paintElecMeters();
   const inp=$("elec-rate"), idleInp=$("elec-idle"), modeSel=$("elec-mode");
   const idleWrap=$("elec-idle-wrap");
   if(inp&&document.activeElement!==inp)inp.value=String(rate);
@@ -2459,12 +2346,8 @@ function paintElecPanel(){
     const basis=mode==="wall"?`wall est · idle ${idle} W`: "measured (GPU understates wall)";
     const paceBit=paceFleet!=null?` · ≈${fmtUsd(paceFleet)}/mo pace`:"";
     const tariff=`Ameren energy ${ELEC_DEFAULT===0.1524?"15.24¢ summer":"10.45¢ winter"}`;
-    const cov=w24.fleet_complete?"24 clock hours":`sampled ${w24.fleet_hours??"?"}h of 24 (gaps = 0 W)`;
-    note.textContent=`Fleet ${basis}: ${tag}${fmtUsd(f24)} /24h (${fmtKwh(w24.fleet_kwh)}) · ${cov} · ${fmtUsd(f30)} /30d${paceBit} @ $${rate}/kWh (${tariff}) · ${age}`;
+    note.textContent=`Fleet ${basis}: ${tag}${fmtUsd(f24)} /24h · ${fmtUsd(f30)} /30d${paceBit} @ $${rate}/kWh (${tariff}) · ${age}`;
   }
-  paintElecMeters();
-  const sum=$("elec-sum");
-  if(sum) sum.textContent=paceFleet!=null?`≈${fmtUsd(paceFleet)}/mo`:`$${rate}/kWh`;
 }
 async function pollEnergy(){
   if(document.hidden)return;
@@ -2474,7 +2357,6 @@ async function pollEnergy(){
     let url=`/api/energy-cost?mode=${encodeURIComponent(mode)}`;
     if(mode==="wall")url+=`&idle_wall_w=${encodeURIComponent(idle)}`;
     ENERGY=await(await fetch(url,{cache:"no-store"})).json();
-    paintElecMeters();
     paintElecPanel();
     if(DATA&&Object.keys(DATA).length)renderHosts(fleetHosts(DATA));
   }catch(e){
@@ -2754,8 +2636,19 @@ function renderStack(s){
   const presets=s.presets||[];
   const busy=!!(s.active_operation&&s.active_operation.status==="running");
   const note=stackNote(s);
-  const noteEl=$("stack-note-control");
-  if(noteEl) noteEl.textContent=note;
+  ["stack-note-pulse","stack-note-control"].forEach(id=>{
+    const el=$(id); if(el) el.textContent=note;
+  });
+  const bar=$("stack-bar");
+  if(bar){
+    bar.innerHTML=presets.map(p=>
+      `<button type="button" class="stack-chip ${p.active?"on":""}" data-stack="${esc(p.key)}"
+         ${(!p.can_switch||busy)?"disabled":""} title="${esc(p.detail)}">
+         <b>${esc(p.label)}</b><span>${esc(p.short)}</span></button>`).join("");
+    bar.querySelectorAll("[data-stack]").forEach(btn=>{
+      btn.onclick=()=>askStack(btn.dataset.stack);
+    });
+  }
   const cards=$("stack-cards");
   if(cards){
     cards.innerHTML=presets.map(p=>{
@@ -2763,7 +2656,7 @@ function renderStack(s){
       const go=p.active?(busy?"Wait":"Refresh"):(busy?"Wait":"Switch");
       return `<div class="stack-card ${p.active?"on":""}">
         <h4>${esc(p.label)} ${live}</h4>
-        <p>${esc(p.short||p.detail)}</p>
+        <p>${esc(p.detail)}</p>
         <div class="meta">Stops ${esc(p.stops)} · ${esc(p.eta)}</div>
         <button type="button" class="btn go" data-stack="${esc(p.key)}"
           ${(!p.can_switch||busy)?"disabled":""}>${go}</button>
@@ -3033,12 +2926,7 @@ function renderUpdates(data){
         ? (op.message||"Last update failed")
         : (data.cached_at
           ?`Last check ${String(data.cached_at).replace("T"," ").slice(0,19)} UTC · tap to check again`
-          :"Tap to check GitHub. Checkout does not restart the engines.");
-  }
-  const fold=$("updates-fold");
-  if(fold&&!fold.dataset.user){
-    const dirty=behind||blocked||(op&&op.status==="failed");
-    if(!phone()&&dirty) fold.open=true;
+          :"Opening Control checks GitHub. Sync GitHub merges DS4F if behind (keeps local). Checkout only — no engine restart.");
   }
   const rows=$("upd-rows");
   if(rows&&targets.length){
@@ -3147,28 +3035,6 @@ $("upd-sync").onclick=async()=>{
   if(bundle&&bundle.can_apply){askUpdate("recipes");return;}
   const why=(t&&t.reason)||"already current";
   $("err").textContent=why.startsWith("already")?`GitHub check done — ${why}`:`nothing to pull — ${why}`;
-};
-
-const foldUser=el=>{if(el)el.addEventListener("toggle",()=>{el.dataset.user="1";});};
-foldUser($("updates-fold"));foldUser($("lora-fold"));foldUser($("desk-fold"));foldUser($("scripts-fold"));
-foldUser($("elec-panel"));
-const jobsMore=$("jobs-more");
-if(jobsMore)jobsMore.addEventListener("toggle",()=>{jobsMore.dataset.user="1";});
-const tokFold=$("tok-fold");
-if(tokFold)tokFold.addEventListener("toggle",()=>{
-  tokFold.dataset.user="1";
-  if(tokFold.open)requestAnimationFrame(()=>drawTokChart(_tokSeries));
-});
-const tokMeter=$("tok-meter");
-if(tokMeter)tokMeter.onclick=()=>{
-  switchTab("jobs");
-  if(tokFold){tokFold.open=true;requestAnimationFrame(()=>drawTokChart(_tokSeries));}
-};
-const elecMeter=$("elec-meter");
-if(elecMeter)elecMeter.onclick=()=>{
-  switchTab("fleet");
-  const ep=$("elec-panel");
-  if(ep)ep.open=true;
 };
 
 /* ══════════════════════ CONTROL tab ══════════════════════ */
@@ -3282,17 +3148,6 @@ function autoLayer(el){
   document.querySelectorAll("#v-jobs .pill").forEach(p=>p.classList.toggle("on",p===el));
   AUTO_LAYER=el.dataset.l;renderJobs();
 }
-function jobCard(j){
-  const sev=j.state==="paused"?"stale":norm(j.state);
-  const err=j.error?`<p class="crit">${esc(j.error)}</p>`:"";
-  const det=(!j.error&&(j.detail||j.where))?`<p>${esc(j.where)}${j.detail?" · "+esc(j.detail):""}</p>`:"";
-  return `<article class="jcard ${esc(j.state||"")}">
-    ${st(sev)}
-    <div class="body">
-      <b>${esc(j.name)}</b>${err}${det}
-      <span class="jmeta">${esc(j.layer)} · ${esc(j.schedule)} · next ${esc(j.next_in)} · last ${esc(j.last_ago)}</span>
-    </div></article>`;
-}
 function renderJobs(){
   const bk=DATA.backups||{},bc=bk.counts||{};
   $("bk-cnt").textContent=`${bc.ok??0} ok · ${bc.warn??0} warn · ${bc.fail??0} fail`;
@@ -3317,22 +3172,22 @@ function renderJobs(){
   const shown=[...jobs]
     .sort((a,b)=>(order[a.state]??5)-(order[b.state]??5)||(a.next_ts||9e12)-(b.next_ts||9e12))
     .filter(j=>{
-      if(AUTO_LAYER!=="all"&&j.layer!==AUTO_LAYER)return false;
+      if(AUTO_LAYER==="problem"&&j.state!=="fail"&&j.state!=="paused")return false;
+      if(AUTO_LAYER!=="all"&&AUTO_LAYER!=="problem"&&j.layer!==AUTO_LAYER)return false;
       return !q||(j.name+" "+j.detail+" "+j.schedule+" "+j.where).toLowerCase().includes(q);
     });
-  const broken=shown.filter(j=>j.state==="fail");
-  const rest=shown.filter(j=>j.state!=="fail");
-  const br=$("jobs-broken-list"), brc=$("jobs-broken-cnt"), okc=$("jobs-ok-cnt");
-  if(br) br.innerHTML=broken.map(jobCard).join("")||`<div class="empty">Nothing failing.</div>`;
-  if(brc) brc.textContent=broken.length?String(broken.length):"";
-  if(okc) okc.textContent=String(rest.length);
-  const more=$("jobs-more-cnt");
-  if(more){
-    const bits=[];
-    if(bc.fail||bc.warn)bits.push(`${(bc.fail||0)+(bc.warn||0)} backup`);
-    more.textContent=bits.length?bits.join(" · "):"projects · backups · Comfy";
-  }
-  $("jobs").innerHTML=rest.map(jobCard).join("")||`<div class="empty">no jobs match</div>`;
+  $("jobs").innerHTML=`<table class="jtab"><thead><tr><th></th><th>Job</th>
+    <th>Layer</th><th>Schedule</th><th>Next</th><th>Last</th></tr></thead><tbody>
+    ${shown.map(j=>`<tr>
+      <td>${st(j.state==="paused"?"stale":norm(j.state))}</td>
+      <td><div class="jname" title="${esc(j.name)}">${esc(j.name)}</div>
+        <div class="jdetail" title="${esc(j.detail)}">${esc(j.where)} · ${esc(j.detail)}${
+          j.error?` · <span class="crit">${esc(j.error)}</span>`:""}</div></td>
+      <td><span class="lay ${esc(j.layer)}">${esc(j.layer)}</span></td>
+      <td class="num faint" style="white-space:nowrap">${esc(j.schedule)}</td>
+      <td class="num" style="white-space:nowrap">${esc(j.next_in)}</td>
+      <td class="num faint" style="white-space:nowrap">${esc(j.last_ago)}</td></tr>`).join("")
+    ||`<tr><td colspan="6" class="empty">no jobs match</td></tr>`}</tbody></table>`;
 }
 
 /* ══════════════════════ mutations ══════════════════════ */

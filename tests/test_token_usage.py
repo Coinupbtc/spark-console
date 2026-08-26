@@ -49,6 +49,8 @@ class TokenUsageStatsTests(unittest.TestCase):
         # continuous ascending days
         days = [d["day"] for d in series]
         self.assertEqual(days, sorted(days))
+        from datetime import date
+        self.assertEqual(days[-1], date.today().isoformat())
 
     def test_family_folds_0731_and_qwen38(self) -> None:
         self.assertEqual(
@@ -59,7 +61,7 @@ class TokenUsageStatsTests(unittest.TestCase):
             _family_label("deepseek/deepseek-v4-flash-0731"),
             "0731 (DeepSeek-V4-Flash)",
         )
-        self.assertEqual(_family_label("Qwen3.8-27B"), "Qwen 3.8 27B")
+        self.assertEqual(_family_label("qwen3.8-27b"), "Qwen 3.8 27B")
         self.assertEqual(
             _family_label("qwen38-27b-unsloth-nvfp4"),
             "Qwen 3.8 27B",

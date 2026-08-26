@@ -1,0 +1,90 @@
+=== stopping 0731 / DS4F (Dream will not auto-return) ===
+No DSpark 0731 head resources for project deepseek-v4-flash; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash on spark2; skipping.
+No DSpark 0731 head resources for project deepseek-v4-flash-dspark-2x-dgx-spark; skipping.
+No DSpark 0731 worker resources for project deepseek-v4-flash-dspark-2x-dgx-spark on spark2; skipping.
+DeepSeek V4 Flash DSpark stopped (0731 text-only; any leftover VL sidecar swept).
+0731 :8888 is down after 1 probe(s)
+=== student 0731 house mix (both Sparks) ===
+0731 mix n=2075 extract_frac=0.1499 (target 0.15, band 0.10–0.20)
+0731 house LoRA (FP8 ZeRO-3, no BitsAndBytes) — vision Stage 2 OFF, no auto-serve, LoRA=q_a_proj,q_b_proj,kv_proj,o_b_proj
+=== improve-train-dual 2026-08-25T22:24:19-05:00 adapter=ds0731-house-v1 ===
+WARN: REFUSE improve-train-dual: pokemon-arb full scan running | free=111G swap=4G — continuing (scan is not GPU)
+syncing trainer + mix jsonl to spark2 (scripts/datasets only; no venv)
+BASE_MODEL=/home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb
+DATA_FILE=/home/coinupbtc/Documents/projects/spark-training-lab/datasets/improve/mix-0731.jsonl n=2075
+rdzv 192.168.100.10:29501 id=qlora-1787714659
+starting spark2 worker (rank 1)…
+[rank0/2] loading tokenizer (before dist init)…
+/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+[rank0]:[W825 22:24:38.866210143 ProcessGroupNCCL.cpp:5276] Guessing device ID based on global rank. This can cause a hang if rank to GPU mapping is heterogeneous. You can specify device_id in init_process_group()
+NCCL version 2.29.7+cuda13.2
+[rank0/2] dist ready rank=0 world=2
+[rank0/2] loading FP8 base /home/coinupbtc/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-V4-Flash-0731/snapshots/9e165c30e2704aec5d9d593cce3eebd58bbef1cb ZeRO-3 (no BitsAndBytes, no full-CPU merge)…
+[rank0/2] constructing 0731 empty graph as FP8 under ZeRO-3 (not bf16)…
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/scripts/train_qlora_ddp.py", line 303, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/scripts/train_qlora_ddp.py", line 207, in main
+[rank0]:     tok, model, ds_config, micro, accum = load_fp8_zero3(BASE)
+[rank0]:                                           ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/scripts/train_qlora_ddp.py", line 126, in load_fp8_zero3
+[rank0]:     model = construct_fp8_zero3(base, ds_config, log=log)
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/scripts/patch_fp8_zero3.py", line 199, in construct_fp8_zero3
+[rank0]:     model = AutoModelForCausalLM.from_config(
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 248, in from_config
+[rank0]:     return model_class._from_config(config, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1663, in _from_config
+[rank0]:     with ContextManagers(init_contexts):
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 585, in __enter__
+[rank0]:     self.stack.enter_context(context_manager)
+[rank0]:   File "/usr/lib/python3.12/contextlib.py", line 526, in enter_context
+[rank0]:     result = _enter(cm)
+[rank0]:              ^^^^^^^^^^
+[rank0]:   File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+[rank0]:     return next(self.gen)
+[rank0]:            ^^^^^^^^^^^^^^
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 257, in local_torch_dtype
+[rank0]:     torch.set_default_dtype(dtype)
+[rank0]:   File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/__init__.py", line 1385, in set_default_dtype
+[rank0]:     _C._set_default_dtype(d)
+[rank0]: TypeError: couldn't find storage object Float8_e4m3fnStorage
+[rank0]:[W825 22:24:39.637504326 ProcessGroupNCCL.cpp:1624] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+E0825 22:24:40.820000 2352154 torch/distributed/elastic/multiprocessing/api.py:1002] failed (exitcode: 1) local_rank: 0 (pid: 2352731) of binary: /home/coinupbtc/Documents/projects/spark-training-lab/.venv/bin/python3
+Traceback (most recent call last):
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/bin/torchrun", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 367, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 1028, in main
+    run(args)
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/run.py", line 1019, in run
+    elastic_launch(
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 194, in __call__
+    return launch_agent(
+           ^^^^^^^^^^^^^
+  File "/home/coinupbtc/Documents/projects/spark-training-lab/.venv/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 383, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+scripts/train_qlora_ddp.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-08-25_22:24:40
+  host      : sparkmax-10ef
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 2352731) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+❌ train_qlora_ddp.py n1 exit 1 (n2 log /tmp/ds0731-house-v1-dual-n2.log)

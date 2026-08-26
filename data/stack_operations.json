@@ -181,6 +181,19 @@
       "finished_at": "2026-08-24T10:46:31.675342+00:00",
       "returncode": 0,
       "log_tail": "discord-send: ok channel=ledger chunks=1\nalertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-24T05:46:31-05:00 ===\ndetected: dream\ndesired: dream\nphase: idle\nmessage: 0731 :8888 348k \u00b7 Qwen 27B VL 116k n2 :8100 \u00b7 baton\nupdated: 2026-08-24T10:46:30.873060+00:00\n8888 models deepseek-v4-flash-0731\nn2 8888     \nn2 :8100    UP qwen3.8-27b  # 192.168.100.11:8100 \u2014 NEVER curl 127.0.0.1:8100 from node1\nbaton :8877 UP {\"ok\": true, \"qwen\": \"http://192.168.100.11:8100/v1\", \"ds4f\": \"http://127.0.0.1:8888/v1\", \"n2_0731\": 0, \"n2_qwen_fat\": 0, \"n2_fat\": 24000}\nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nqwen eyes   yes  # n2 :8100 modalities.vision (Dream)\ntwins n1    UP  # SGLang DSpark :8888\ntwins n2    DOWN\n4B n1       DOWN (proxy DOWN)  # Prime sidecar\n4B n2       DOWN\n4B flag     disabled\ngateways    orch=active smeagle=active (smeagle Telegram platform is off; chat is orch \u2192 baton)\n               total        used        free      shared  buff/cache   available\nMem:             121         107           3           3          16          14"
+    },
+    "4ee182d0f4d7": {
+      "id": "4ee182d0f4d7",
+      "type": "stack",
+      "key": "dream",
+      "status": "failed",
+      "message": "Dream switch failed (exit 1).",
+      "pid": 28264,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_4ee182d0f4d7.log",
+      "started_at": "2026-08-25T11:15:37.573884+00:00",
+      "finished_at": "2026-08-25T11:23:50.377913+00:00",
+      "returncode": 1,
+      "log_tail": "wired /home/coinupbtc/.hermes/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/dobby/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/light/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/smeagle/config.yaml \u2192 llama-qwen38-gguf http://192.168.100.11:8100/v1\npreferred deepseek-dspark\nwired profiles: dobby, light, orchestrator, smeagle\nTraceback (most recent call last):\n  File \"<stdin>\", line 2, in <module>\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/kanban_db.py\", line 8920\n    <<<<<<< ours\n    ^^\nSyntaxError: invalid syntax\n[spark-stack 2026-08-25T06:23:35-05:00] ERROR: hermes-gateway-import-smoke FAILED \u2014 not restarting gateways\n[spark-stack 2026-08-25T06:23:35-05:00] WARN: dream engines/wire written but Telegram gateways did not come up\nhit1 3.020s\nhit2 1.001s\nhit3 0.333s\nqwen-warm hit1 6.859s model=Qwen3.8-27B\nqwen-warm hit2 0.886s model=Qwen3.8-27B\nqwen-warm hit3 0.704s model=Qwen3.8-27B\n[spark-stack 2026-08-25T06:23:50-05:00] resume setup-keyed watchdogs for dream: 0731-keep-warm.timer dream-qwen-watchdog.timer mem-pressure-heal.timer comfyui-idle.timer\ndiscord-send: ok channel=ledger chunks=1\nalertbot-send: telegram skipped (channel=ledger critical=0)"
     }
   }
 }

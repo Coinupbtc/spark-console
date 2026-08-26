@@ -1,0 +1,7 @@
+=== student 0731 house mix (both Sparks) ===
+0731 mix n=2075 extract_frac=0.1499 (target 0.15, band 0.10–0.20)
+0731 house LoRA (FP8 ZeRO-3, no BitsAndBytes) — vision Stage 2 OFF, no auto-serve, LoRA=q_a_proj,q_b_proj,kv_proj,o_b_proj
+=== improve-train-dual 2026-08-25T22:18:40-05:00 adapter=ds0731-house-v1 ===
+WARN: REFUSE improve-train-dual: pokemon-arb full scan running | free=109G swap=4G — continuing (scan is not GPU)
+syncing trainer + mix jsonl to spark2 (scripts/datasets only; no venv)
+❌ spark2 MemAvailable 28G < 40G

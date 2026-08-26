@@ -1,21 +1,21 @@
 {
-  "fetched_at": "2026-08-25T03:18:06.662527+00:00",
-  "cached_at": "2026-08-25T03:18:06.662535+00:00",
-  "behind_total": 69,
-  "blocked": 3,
+  "fetched_at": null,
+  "cached_at": "2026-08-26T15:48:57.892459+00:00",
+  "behind_total": 209,
+  "blocked": 2,
   "active_operation": null,
   "last_operation": {
-    "id": "6c1d06e44f0f",
+    "id": "7eca939856da",
     "type": "update",
-    "key": "hermes",
-    "status": "failed",
-    "message": "Hermes Agent update failed (exit 1).",
-    "pid": 114814,
-    "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_6c1d06e44f0f.log",
-    "started_at": "2026-08-23T22:55:26.711686+00:00",
-    "finished_at": "2026-08-23T22:55:27.530051+00:00",
-    "returncode": 1,
-    "log_tail": "hermes HEAD 650cf3348\norigin/main behind=11 ahead=0\nTraceback (most recent call last):\n  File \"/home/coinupbtc/.hermes/hermes-agent/venv/bin/hermes\", line 10, in <module>\n    sys.exit(main())\n             ^^^^^^\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/main.py\", line 13041, in main\n    from hermes_cli.kanban import build_parser as _build_kanban_parser\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/kanban.py\", line 27, in <module>\n    from hermes_cli import kanban_db as kb\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/kanban_db.py\", line 8920\n    <<<<<<< ours\n    ^^\nSyntaxError: invalid syntax"
+    "key": "ds4f",
+    "status": "completed",
+    "message": "DS4F recipe (both Sparks) updated.",
+    "pid": 1685170,
+    "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_7eca939856da.log",
+    "started_at": "2026-08-25T23:54:34.457371+00:00",
+    "finished_at": "2026-08-25T23:54:36.885542+00:00",
+    "returncode": 0,
+    "log_tail": "[dspark-ff-pull] DIVERGED ahead=8 behind=14 @ fb1e0c7 \u2014 merging origin/main (keeps local commits, no restart)\nAuto-merging docker-compose.dspark.yml\nMerge made by the 'ort' strategy.\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk already present: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] merged fb1e0c7 -> 5ad7148 (+14 from GitHub, kept 8 local)\nmerged fb1e0c7 -> 5ad7148 (+14)\n[dspark-ff-pull] CCCL-only dirty compose \u2014 backing up, resetting, ff-only, re-applying hunk\nUpdating c1fc732..70a7cc4\nFast-forward\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk applied: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] pulled c1fc732 -> 70a7cc4 (+14)\npulled c1fc732 -> 70a7cc4 (+14)"
   },
   "targets": [
     {
@@ -64,15 +64,21 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "60 upstream, 118 local reapply \u2014 will reset then re-apply patches",
+      "reason": "205 commits behind",
       "exists": true,
-      "head": "a845a1e50",
-      "remote": "7c9734395",
-      "behind": 60,
-      "ahead": 118,
+      "head": "f751a8c54",
+      "remote": "d0351e323",
+      "behind": 205,
+      "ahead": 0,
       "dirty": true,
       "dirty_files": [
-        "tools/file_tools.py"
+        "cli.py",
+        "gateway/run.py",
+        "gateway/slash_commands.py",
+        "hermes_cli/commands.py",
+        "hermes_cli/kanban_db.py",
+        "plugins/platforms/telegram/adapter.py",
+        "tools/media_gen_gateway.py"
       ],
       "state": "dirty",
       "error": null
@@ -84,16 +90,16 @@
       "kind": "ds4f",
       "eta": "under 1 min",
       "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
-      "can_apply": true,
-      "reason": "diverged \u2014 merge GitHub (5 behind, keep 7 local)",
+      "can_apply": false,
+      "reason": "already current (9 local commits)",
       "exists": true,
-      "head": "e5c5d30",
-      "remote": "c1fc732",
-      "behind": 5,
-      "ahead": 7,
+      "head": "5ad7148",
+      "remote": "70a7cc4",
+      "behind": 0,
+      "ahead": 9,
       "dirty": false,
       "dirty_files": [],
-      "state": "diverged",
+      "state": "current",
       "error": null
     },
     {
@@ -245,15 +251,8 @@
       "key": "hermes",
       "label": "Hermes Agent",
       "state": "dirty",
-      "behind": 60,
-      "reason": "60 upstream, 118 local reapply \u2014 will reset then re-apply patches"
-    },
-    {
-      "key": "ds4f",
-      "label": "DS4F recipe (both Sparks)",
-      "state": "diverged",
-      "behind": 5,
-      "reason": "diverged \u2014 merge GitHub (5 behind, keep 7 local)"
+      "behind": 205,
+      "reason": "205 commits behind"
     },
     {
       "key": "h3-2x",

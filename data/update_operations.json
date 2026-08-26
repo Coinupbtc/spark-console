@@ -90,6 +90,58 @@
       "finished_at": "2026-08-23T22:55:27.530051+00:00",
       "returncode": 1,
       "log_tail": "hermes HEAD 650cf3348\norigin/main behind=11 ahead=0\nTraceback (most recent call last):\n  File \"/home/coinupbtc/.hermes/hermes-agent/venv/bin/hermes\", line 10, in <module>\n    sys.exit(main())\n             ^^^^^^\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/main.py\", line 13041, in main\n    from hermes_cli.kanban import build_parser as _build_kanban_parser\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/kanban.py\", line 27, in <module>\n    from hermes_cli import kanban_db as kb\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/kanban_db.py\", line 8920\n    <<<<<<< ours\n    ^^\nSyntaxError: invalid syntax"
+    },
+    "63f0ee8a2958": {
+      "id": "63f0ee8a2958",
+      "type": "update",
+      "key": "hermes",
+      "status": "failed",
+      "message": "Hermes Agent update failed (exit 2).",
+      "pid": 37130,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_63f0ee8a2958.log",
+      "started_at": "2026-08-25T11:15:46.167628+00:00",
+      "finished_at": "2026-08-25T11:16:07.664085+00:00",
+      "returncode": 2,
+      "log_tail": "    ../hermes_cli/web_dist/assets/EnvPage-D--VG__Z.js                      29.29 kB \u2502 gzip:   7.81 kB\n    ../hermes_cli/web_dist/assets/ModelsPage-BV6Pvl7s.js                   33.99 kB \u2502 gzip:  10.44 kB\n    ../hermes_cli/web_dist/assets/SystemPage-DFKa6Ff8.js                   40.67 kB \u2502 gzip:  10.92 kB\n    ../hermes_cli/web_dist/assets/CronPage-D-b_75E9.js                     43.54 kB \u2502 gzip:  14.02 kB\n    ../hermes_cli/web_dist/assets/SkillsPage-BZjFR20B.js                   44.09 kB \u2502 gzip:  12.48 kB\n    ../hermes_cli/web_dist/assets/SessionsPage-B0G6yqdx.js                 46.17 kB \u2502 gzip:  14.11 kB\n    ../hermes_cli/web_dist/assets/ChatPage-BqlHU99B.js                     49.32 kB \u2502 gzip:  16.75 kB\n    ../hermes_cli/web_dist/assets/vendor-B7eZBWFZ.js                       50.06 kB \u2502 gzip:  17.82 kB\n    ../hermes_cli/web_dist/assets/index-DUZHTcQg.js                        64.02 kB \u2502 gzip:  21.76 kB\n    ../hermes_cli/web_dist/assets/react-vendor-BoVnYuL4.js                226.99 kB \u2502 gzip:  72.78 kB\n    ../hermes_cli/web_dist/assets/ui-D6CeFIrh.js                          290.01 kB \u2502 gzip:  94.81 kB\n    ../hermes_cli/web_dist/assets/xterm-CXxU4Y2B.js                       474.38 kB \u2502 gzip: 122.64 kB\n    ../hermes_cli/web_dist/assets/i18n-XZPHmDjw.js                        477.80 kB \u2502 gzip: 140.85 kB\n    \n    \u001b[32m\u2713 built in 2.60s\u001b[39m\n  \u2713 Web UI built\n\u2713 Already up to date! [main @ d736f5d53]\nhermes now d736f5d53\nrestored tools/media_gen_gateway.py\nrestored gateway/slash_commands.py\npatched hermes_cli/commands.py image/video CommandDefs\npatched _TELEGRAM_MENU_PRIORITY for image/video\ninjected gateway/run.py\ninjected adapter picker state\ninjected adapter media methods\ninjected adapter callback gate\nmedia wizard inject OK\nMISSING \u2014 deterministic-exit sentinel was wiped\nsentinel missing \u2014 reapplying from /home/coinupbtc/.hermes/backups/deterministic-exit-2026-07-29/0001-deterministic-exit-sentinel.patch\ngit apply failed \u2014 NOT whole-file restoring July 29 cli.py (that wipe killed finalize_preloaded_skills and smeagle/kanban on 2026-08-20)\ndiscord-send: ok channel=page chunks=1\nalertbot-send: telegram critical ok"
+    },
+    "380f47a7a810": {
+      "id": "380f47a7a810",
+      "type": "update",
+      "key": "recipes",
+      "status": "completed",
+      "message": "All recipes (safe) updated.",
+      "pid": 102189,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_380f47a7a810.log",
+      "started_at": "2026-08-25T11:47:33.282696+00:00",
+      "finished_at": "2026-08-25T11:47:38.528835+00:00",
+      "returncode": 0,
+      "log_tail": ""
+    },
+    "2aa3fcb05a27": {
+      "id": "2aa3fcb05a27",
+      "type": "update",
+      "key": "apt-node1",
+      "status": "completed",
+      "message": "Update System Package Node1 updated.",
+      "pid": 119878,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_2aa3fcb05a27.log",
+      "started_at": "2026-08-25T11:57:04.186931+00:00",
+      "finished_at": "2026-08-25T11:57:20.119301+00:00",
+      "returncode": 0,
+      "log_tail": "Setting up libavutil58:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up libswresample4:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up libavcodec60:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up libpostproc57:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up curl (8.5.0-2ubuntu10.13) ...\nSetting up libswscale7:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up libavformat60:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up libavfilter9:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up libavdevice60:arm64 (7:6.1.1-3ubuntu5+esm11) ...\nSetting up ffmpeg (7:6.1.1-3ubuntu5+esm11) ...\nProcessing triggers for libc-bin (2.39-0ubuntu8.8) ...\nProcessing triggers for man-db (2.12.0-4build2) ...\nProcessing triggers for hicolor-icon-theme (0.17-2) ...\n\nRunning kernel seems to be up-to-date.\n\nThe processor microcode seems to be up-to-date.\n\nServices to be restarted:\n systemctl restart fwupd.service\n systemctl restart packagekit.service\n\nService restarts being deferred:\n systemctl restart NetworkManager.service\n\nNo containers need to be restarted.\n\nUser sessions running outdated binaries:\n coinupbtc @ user manager service: python[5316], systemd[2252]\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n[2026-08-25T06:57:20-05:00] remaining upgradable: 0"
+    },
+    "7eca939856da": {
+      "id": "7eca939856da",
+      "type": "update",
+      "key": "ds4f",
+      "status": "completed",
+      "message": "DS4F recipe (both Sparks) updated.",
+      "pid": 1685170,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_7eca939856da.log",
+      "started_at": "2026-08-25T23:54:34.457371+00:00",
+      "finished_at": "2026-08-25T23:54:36.885542+00:00",
+      "returncode": 0,
+      "log_tail": "[dspark-ff-pull] DIVERGED ahead=8 behind=14 @ fb1e0c7 \u2014 merging origin/main (keeps local commits, no restart)\nAuto-merging docker-compose.dspark.yml\nMerge made by the 'ort' strategy.\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk already present: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] merged fb1e0c7 -> 5ad7148 (+14 from GitHub, kept 8 local)\nmerged fb1e0c7 -> 5ad7148 (+14)\n[dspark-ff-pull] CCCL-only dirty compose \u2014 backing up, resetting, ff-only, re-applying hunk\nUpdating c1fc732..70a7cc4\nFast-forward\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk applied: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] pulled c1fc732 -> 70a7cc4 (+14)\npulled c1fc732 -> 70a7cc4 (+14)"
     }
   }
 }

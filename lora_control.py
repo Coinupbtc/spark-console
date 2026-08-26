@@ -75,8 +75,15 @@ def _mem() -> tuple[int, int]:
 
 
 def _admit_ok() -> tuple[bool, str]:
+    """RAM/swap (and HF download) gate LoRA. Pokemon full-scan does not.
+
+    heavy-job-admit.sh also refuses while pokemon-arb --refresh is up. That
+    scan is CPU/network; 0731/Qwen LoRA is GPU. Greying the console button
+    for a card scan hid the real occupancy and blocked an owner-requested
+    train with ~110G free. Still refuse on actual RAM/swap/HF download.
+    """
+    avail, swap = _mem()
     if not ADMIT_SH.is_file():
-        avail, swap = _mem()
         ok = avail >= 40 and swap <= 8
         return ok, f"avail {avail}G swap {swap}G (no admit script)"
     try:
@@ -85,8 +92,17 @@ def _admit_ok() -> tuple[bool, str]:
              "--max-swap-g", "8", "--label", "improve-train"],
             capture_output=True, text=True, timeout=8,
         )
-        msg = (r.stderr or r.stdout or "").strip().splitlines()[-1:] or [""]
-        return r.returncode == 0, msg[0][:200]
+        msg = ((r.stderr or r.stdout or "").strip().splitlines()[-1:] or [""])[0][:240]
+        if r.returncode == 0:
+            return True, msg
+        low = msg.lower()
+        ram_or_hf = (
+            "available ram" in low or "swap used" in low or "hf download" in low
+        )
+        poke_only = "pokemon-arb" in low and not ram_or_hf
+        if poke_only and avail >= 40 and swap <= 8:
+            return True, f"{msg} (LoRA allowed — scan is not GPU)"
+        return False, msg or "RAM admit refused (≥40G free, swap ≤8G)"
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e)[:200]
 
@@ -204,7 +220,7 @@ def normalize_student(student: str | None) -> str:
 
 def can_start(*, stop_0731: bool, ds4f: bool, train_n: int, admit: bool,
               busy: bool, lock: bool, dual: bool = True,
-              student: str = "qwen38") -> tuple[bool, str]:
+              student: str = "qwen38", admit_msg: str = "") -> tuple[bool, str]:
     who = normalize_student(student)
     if busy:
         return False, "a LoRA train is already running"
@@ -217,7 +233,7 @@ def can_start(*, stop_0731: bool, ds4f: bool, train_n: int, admit: bool,
     if ds4f and not stop_0731:
         return False, "0731 is LIVE — confirm Stop 0731 + Train"
     if not admit:
-        return False, "RAM admit refused (≥40G free, swap ≤8G)"
+        return False, (admit_msg or "RAM admit refused (≥40G free, swap ≤8G)")[:240]
     if who == "ds0731":
         if ds4f and stop_0731:
             return True, "will stop serving 0731 + :8100 then house LoRA (FP8 ZeRO-3) on both Sparks; Dream does not auto-return; does not serve the adapter"
@@ -253,11 +269,13 @@ def status() -> dict:
         ok, reason = can_start(
             stop_0731=False, ds4f=ds4f, train_n=n, admit=admit,
             busy=busy, lock=lock, dual=dual, student=who,
+            admit_msg=admit_msg,
         )
         ok_stop, reason_stop = can_start(
             stop_0731=True, ds4f=ds4f, train_n=n,
             admit=True if ds4f else admit,
             busy=busy, lock=lock, dual=dual, student=who,
+            admit_msg=admit_msg,
         )
         return {
             "train_n": n,
@@ -335,6 +353,9 @@ def start(*, stop_0731: bool = False, dual: bool = True,
     who = normalize_student(student)
     if who == "ds0731":
         dual = True
+        # n1 :8888 can be down while spark2 still holds the TP worker (~90G).
+        # Always sweep leftovers before 0731 LoRA.
+        stop_0731 = True
     st = status()
     stu = (st.get("students") or {}).get(who) or {}
     train_n = int(stu.get("train_n") or st.get("train_n") or 0)
@@ -348,6 +369,7 @@ def start(*, stop_0731: bool = False, dual: bool = True,
         lock=_lock_busy(),
         dual=dual,
         student=who,
+        admit_msg=str(st.get("admit_msg") or ""),
     )
     # After stopping 0731, admit may currently fail because 0731 still holds RAM.
     if st["ds4f_up"] and stop_0731 and ready and not st.get("active_operation") and not _lock_busy():

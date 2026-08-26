@@ -28,6 +28,7 @@ import sqlite3
 import statistics
 import time
 from collections import Counter
+from datetime import date, timedelta
 from pathlib import Path
 
 HOME = Path.home()
@@ -59,10 +60,11 @@ _FAMILY: list[tuple[str, tuple[str, ...]]] = [
         "Qwen3.8-27B",
         "qwen38-27b-unsloth-nvfp4",
         "Qwen3.8-27B-GGUF",
+        "qwen3.8-27b",
+        "Qwen3.8-27B (text+vision)",
     )),
     ("dream-baton (router, not a GPU)", ("dream-baton",)),
     ("Qwen3-VL 4B (vision)", ("qwen3-vl-4b", "qwen3.5-9b-vision")),
-    ("Qwen3.8-27B (text+vision)", ("qwen3.8-27b", "qwen3.8-27b")),
     ("Qwen 3.6 35B helper", (
         "qwen3.6:35b",
         "qwen3.6:35b-64k",
@@ -179,7 +181,7 @@ def _daily_rows(db: Path, since: float) -> list[tuple[str, int, int, int, int]]:
         # last_seen = when the row last billed. first_seen dumps a whole
         # multi-day session onto the open day and makes the 14d chart lie.
         cur.execute(
-            "SELECT date(COALESCE(last_seen, first_seen), 'unixepoch') AS d, "
+            "SELECT date(COALESCE(last_seen, first_seen), 'unixepoch', 'localtime') AS d, "
             "COALESCE(SUM(input_tokens),0), COALESCE(SUM(output_tokens),0), "
             "COALESCE(SUM(api_call_count),0), COUNT(DISTINCT session_id) "
             "FROM session_model_usage "
@@ -374,12 +376,12 @@ def _build_series(days: int = _SERIES_DAYS) -> list[dict]:
             slot["api_calls"] += calls
             slot["sessions"] += sess
 
-    # Fill missing days so the chart has a continuous X axis
+    # Fill missing days on the *calendar* (not now-i*86400, which skips/dupes DST).
     out: list[dict] = []
-    # Build last N UTC midnights via local date math from unix
+    lt = time.localtime(now)
+    today = date(lt.tm_year, lt.tm_mon, lt.tm_mday)
     for i in range(days - 1, -1, -1):
-        t = now - i * _DAY
-        day = time.strftime("%Y-%m-%d", time.gmtime(t))
+        day = (today - timedelta(days=i)).isoformat()
         slot = by_day.get(day) or {
             "day": day, "input_tokens": 0, "output_tokens": 0,
             "api_calls": 0, "sessions": 0,
@@ -448,6 +450,9 @@ def token_summary() -> dict:
             "sessions": _sum24("sessions"),
         },
         "series_14d": series,
+        "day_basis": "local",
+        "last_24h_basis": "rolling",
+        "tz": time.strftime("%Z"),
         "stats": stats,
     }
     _SUMMARY_CACHE["ts"] = now
