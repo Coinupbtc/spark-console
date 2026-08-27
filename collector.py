@@ -474,6 +474,15 @@ def diagnose(
                     "message": f"Qwen Twins incomplete (n1:8888={'up' if n1q else 'DOWN'} n2:8888={'up' if n2q else 'DOWN'})",
                     "action": "bash ~/scripts/dgx/spark-stack.sh twins",
                 })
+        elif desired == "flashnext":
+            n1q = _up("http://127.0.0.1:8888/v1/models")
+            if not n1q:
+                alerts.append({
+                    "level": "warning",
+                    "category": "qwen",
+                    "message": "Qwen3.8-Flash is the desired setup but :8888 is down",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh flashnext",
+                })
         elif desired == "prime":
             if not n2 and not proxy:
                 alerts.append({

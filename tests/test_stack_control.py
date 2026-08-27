@@ -67,6 +67,22 @@ class ClassifyTests(unittest.TestCase):
             "twins",
         )
 
+    def test_flashnext_before_twins(self) -> None:
+        self.assertEqual(
+            stack_control.classify(
+                {
+                    "ds4f": False,
+                    "flashnext": True,
+                    "twins": False,
+                    "dream": False,
+                    "helper": False,
+                    "h3": False,
+                    "music": False,
+                }
+            ),
+            "flashnext",
+        )
+
     def test_none(self) -> None:
         self.assertEqual(
             stack_control.classify({"ds4f": False, "helper": False, "h3": False, "music": False}),
@@ -78,7 +94,7 @@ class PresetTests(unittest.TestCase):
     def test_named_setups(self) -> None:
         self.assertEqual(
             list(stack_control.PRESETS),
-            ["prime", "dream", "twins", "video", "music"],
+            ["prime", "dream", "twins", "flashnext", "video", "music"],
         )
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
@@ -89,6 +105,8 @@ class PresetTests(unittest.TestCase):
         self.assertIn("20k", dream["detail"])
         self.assertIn("baton", dream["detail"])
         self.assertIn("sglang", stack_control.PRESETS["twins"]["starts"])
+        self.assertIn("qwen38-flash-next", stack_control.PRESETS["flashnext"]["starts"])
+        self.assertEqual(stack_control.PRESETS["flashnext"]["label"], "Qwen3.8-Flash")
 
     def test_unknown_key_refused(self) -> None:
         result = stack_control.switch_stack("nemotron")

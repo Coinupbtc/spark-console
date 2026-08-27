@@ -1,7 +1,7 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-08-26T15:48:57.892459+00:00",
-  "behind_total": 209,
+  "cached_at": "2026-08-27T10:53:59.245333+00:00",
+  "behind_total": 5,
   "blocked": 2,
   "active_operation": null,
   "last_operation": {
@@ -64,21 +64,16 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "205 commits behind",
+      "reason": "1 upstream, 3 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "f751a8c54",
-      "remote": "d0351e323",
-      "behind": 205,
-      "ahead": 0,
+      "head": "f7f8ad942",
+      "remote": "c693c772b",
+      "behind": 1,
+      "ahead": 3,
       "dirty": true,
       "dirty_files": [
-        "cli.py",
-        "gateway/run.py",
-        "gateway/slash_commands.py",
-        "hermes_cli/commands.py",
-        "hermes_cli/kanban_db.py",
-        "plugins/platforms/telegram/adapter.py",
-        "tools/media_gen_gateway.py"
+        "apps/desktop/src/plugins/accent/plugin.js",
+        "apps/desktop/src/plugins/kanban/plugin.js"
       ],
       "state": "dirty",
       "error": null
@@ -251,8 +246,8 @@
       "key": "hermes",
       "label": "Hermes Agent",
       "state": "dirty",
-      "behind": 205,
-      "reason": "205 commits behind"
+      "behind": 1,
+      "reason": "1 upstream, 3 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",

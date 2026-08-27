@@ -209,7 +209,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .serve::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor;
   box-shadow:0 0 8px currentColor;flex:none;transform:rotate(45deg)}
 
-/* Named setups — Prime / Dream / Qwen Twins / Videos / Music. */
+/* Named setups — Prime / Dream / Qwen Twins / Qwen3.8-Flash / Videos / Music. */
 .stack-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stack-chip{appearance:none;display:flex;flex-direction:column;align-items:flex-start;
   gap:2px;min-height:52px;padding:10px 12px;border-radius:12px;cursor:pointer;
@@ -1112,7 +1112,7 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
   <div class="card" id="stack-control">
-    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Videos · Music</span></h3>
+    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Twins · Qwen3.8-Flash · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
   </div>
@@ -2746,6 +2746,7 @@ function stackNote(s){
   if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
   if(s.detected==="dream") return "Both Sparks: 0731 TP2 348k. Node2: Qwen 27B VL 116k engine (prompt ~95k + 20k out; baton clamps). No 4B. Baton :8877.";
   if(s.detected==="twins") return "Qwen Twins: Mia SGLang DSpark NVFP4 on both Sparks :8888. DS4F parked. Orch=n1, smeagle=n2.";
+  if(s.detected==="flashnext") return "Qwen3.8-Flash: Flash-Next FP8 TP2 on :8888 (131k). Dream/0731 parked. Chat is local.";
   if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
@@ -2781,10 +2782,15 @@ function askStack(key){
   CONFIRM={kind:"stack",key};
   if(p.active){
     $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
-    $("stack-dlg-body").textContent=
-      p.key==="twins"
-        ? `Re-apply Qwen Twins only. One 27B GGUF per Spark on :8888. DS4F stays parked.`
-        : `Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.`;
+    const refresh={
+      flashnext:"Re-apply Qwen3.8-Flash only. SGLang TP2 FP8 on :8888. DS4F stays parked.",
+      twins:"Re-apply Qwen Twins only. Mia SGLang NVFP4 on both Sparks :8888. DS4F stays parked.",
+      dream:"Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.",
+      prime:"Re-apply Prime only. DS4F TP2 + 4B vision sidecar. Chat stays on :8888.",
+      video:"Re-apply Videos only. MiniMax H3 stays; chat wire back to Nous.",
+      music:"Re-apply Music only. Helper 35B + Music3 stay; refresh Hermes wire.",
+    };
+    $("stack-dlg-body").textContent=refresh[p.key]||`Re-apply ${p.label}. ${p.detail||""}`;
   }else{
     $("stack-dlg-title").textContent=`Switch to ${p.label}?`;
     $("stack-dlg-body").textContent=

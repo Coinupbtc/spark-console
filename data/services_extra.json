@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-24T21:18:45.625486+00:00",
+  "updated_at": "2026-08-27T02:13:09.340041+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -369,6 +369,24 @@
       "port": 8076,
       "show_projects_tile": true,
       "registered_at": "2026-08-24T21:18:45.625392+00:00"
+    },
+    "flash-next-watchdog": {
+      "label": "Flash-Next watchdog",
+      "detail": "Restarts qwen38-flash-next if container exited",
+      "group": "inference",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "flash-next-watchdog.service",
+      "probe": [
+        "http://127.0.0.1:8888/",
+        2.0
+      ],
+      "port": 8888,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-27T02:13:09.339934+00:00"
     }
   }
 }

@@ -1,4 +1,4 @@
-"""Named Spark stack switcher for the console (prime / dream / video / music).
+"""Named Spark stack switcher for the console (prime / dream / twins / flashnext / video / music).
 
 The heavy lifting lives in ~/scripts/dgx/spark-stack.sh — this module is the
 allowlisted API: detect what's up, spawn one switch, poll the log.
@@ -50,6 +50,14 @@ PRESETS: dict[str, dict] = {
         "eta": "10–20 min",
         "stops": "DS4F 0731, GGUF Qwen, baton, Music3, H3, 4B sidecar",
         "starts": "SGLang qwen3.8-27b-sglang n1+n2 :8888",
+    },
+    "flashnext": {
+        "label": "Qwen3.8-Flash",
+        "short": "Flash-Next FP8 TP2 · 131k",
+        "detail": "Qwen3.8-Flash-Next-FP8 on both Sparks (SGLang TP2/EP2). Parks Dream/0731. Chat stays local on :8888. First cold load ~10–20 min.",
+        "eta": "10–20 min",
+        "stops": "DS4F 0731, Dream Qwen, Twins, baton, Music3, H3, 4B sidecar",
+        "starts": "qwen38-flash-next :8888 TP2",
     },
     "video": {
         "label": "Videos",
@@ -257,16 +265,19 @@ def classify(probes: dict[str, bool]) -> str:
     qwen38 = probes.get("qwen38", False)
     dream = probes.get("dream", False)
     twins = probes.get("twins", False)
+    flashnext = probes.get("flashnext", False)
     helper = probes.get("helper", False)
     h3 = probes.get("h3", False)
     music = probes.get("music", False)
-    if h3 and (ds4f or qwen38 or dream or twins):
+    if h3 and (ds4f or qwen38 or dream or twins or flashnext):
         return "mixed"
     if h3:
         return "video"
     if qwen38:
         # Retired exclusive chip — leftover NVFP4 is not a preset.
         return "mixed"
+    if flashnext:
+        return "flashnext"
     if twins:
         return "twins"
     if dream:
@@ -300,13 +311,14 @@ def _probes_now() -> dict[str, bool]:
             found[fut[f]] = bool(f.result())
     ids = _model_ids("http://127.0.0.1:8888/v1/models")
     found["qwen38"] = any("qwen38-27b-unsloth-nvfp4" in i for i in ids)
+    found["flashnext"] = any("qwen38-flash-next" in i for i in ids)
     found["ds4f"] = any("deepseek" in i for i in ids) and not found["qwen38"]
     n2_ids = _model_ids("http://192.168.100.11:8100/v1/models")
     n2_8888 = _model_ids("http://192.168.100.11:8888/v1/models")
     found["dream"] = bool(found["ds4f"] and any("qwen3.8-27b" in i.lower() for i in n2_ids))
-    gguf_n1 = any("qwen3.8-27b" in i.lower() or i == "qwen3.8-27b" for i in ids) and not found["qwen38"]
+    gguf_n1 = any("qwen3.8-27b" in i.lower() or i == "qwen3.8-27b" for i in ids) and not found["qwen38"] and not found["flashnext"]
     gguf_n2 = any("qwen3.8-27b" in i.lower() for i in n2_8888)
-    found["twins"] = bool(gguf_n1 and gguf_n2 and not found["ds4f"])
+    found["twins"] = bool(gguf_n1 and gguf_n2 and not found["ds4f"] and not found["flashnext"])
     # Do not OR n1/n2 into one "vision" bit — Dream is n1, Prime is n2.
     found["vision"] = bool(found["vision_proxy"])
     # Keep qwen_n2 + baton in probes so the console never confuses

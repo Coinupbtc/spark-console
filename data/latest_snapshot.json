@@ -1,38 +1,38 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-08-26 16:09:07",
-  "iso_ts": "2026-08-26T16:09:07.918418+00:00",
-  "hour": 16,
-  "dow": 2,
+  "timestamp_utc": "2026-08-27 10:57:01",
+  "iso_ts": "2026-08-27T10:57:01.921992+00:00",
+  "hour": 10,
+  "dow": 3,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 9.0,
-    "load_1": 1.25,
-    "load_5": 1.5,
-    "load_15": 2.02,
-    "mem_used_gb": 113.15,
+    "cpu_pct": 5.4,
+    "load_1": 1.77,
+    "load_5": 1.66,
+    "load_15": 1.41,
+    "mem_used_gb": 73.39,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 8.54,
-    "mem_pct": 93.0,
-    "swap_used_gb": 6.2,
+    "mem_avail_gb": 48.3,
+    "mem_pct": 60.3,
+    "swap_used_gb": 3.08,
     "swap_total_gb": 16.0,
-    "swap_pct": 38.7,
-    "disk_used_pct": 46.2,
-    "disk_free_tb": 1.87
+    "swap_pct": 19.2,
+    "disk_used_pct": 54.9,
+    "disk_free_tb": 1.57
   },
   "num_gpus": 1,
-  "avg_util_pct": 5.0,
-  "total_power_watts": 10.76,
-  "avg_temp_c": 40.0,
+  "avg_util_pct": 0.0,
+  "total_power_watts": 14.16,
+  "avg_temp_c": 46.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.76,
-      "power_avg_w": 10.76,
-      "power_instant_w": 11.67,
-      "temp_c": 40,
-      "util_gpu": 5.0,
+      "power_w": 14.16,
+      "power_avg_w": 14.16,
+      "power_instant_w": 10.86,
+      "temp_c": 46,
+      "util_gpu": 0.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -42,26 +42,30 @@
   "processes": [
     {
       "name": "/usr/libexec/gnome-remote-desktop-daemon",
-      "mem_mb": 279
+      "mem_mb": 242
+    },
+    {
+      "name": "/home/coinupbtc/Documents/projects/pokemon-arb/.venv/bin/python",
+      "mem_mb": 2010
     },
     {
       "name": "python3",
       "mem_mb": 170
     },
     {
-      "name": "sglang::scheduler_TP0_EP0",
-      "mem_mb": 72598
+      "name": "sglang::scheduler_TP0",
+      "mem_mb": 41362
     }
   ],
   "ollama": [],
   "hermes": {
-    "orchestrator": "failed",
-    "light": "failed",
-    "dobby": "failed",
-    "smeagle": "failed",
+    "orchestrator": "active",
+    "light": "active",
+    "dobby": "active",
+    "smeagle": "active",
     "dashboard": "active",
     "llama_miaai35": "inactive",
-    "ollama": "active"
+    "ollama": "inactive"
   },
   "models": {
     "bundle_dir": "/home/coinupbtc/models/dgx_bundle",
@@ -144,13 +148,13 @@
       "qwen35-nvfp4"
     ],
     "hermes": {
-      "orchestrator": "failed",
-      "light": "failed",
-      "dobby": "failed",
-      "smeagle": "failed",
+      "orchestrator": "active",
+      "light": "active",
+      "dobby": "active",
+      "smeagle": "active",
       "dashboard": "active",
       "llama_miaai35": "inactive",
-      "ollama": "active"
+      "ollama": "inactive"
     }
   },
   "vllm": [],
@@ -160,29 +164,29 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 9.0,
-        "load_1": 1.25,
-        "load_5": 1.5,
-        "load_15": 2.02,
-        "mem_used_gb": 113.15,
+        "cpu_pct": 5.4,
+        "load_1": 1.77,
+        "load_5": 1.66,
+        "load_15": 1.41,
+        "mem_used_gb": 73.39,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 8.54,
-        "mem_pct": 93.0,
-        "swap_used_gb": 6.2,
+        "mem_avail_gb": 48.3,
+        "mem_pct": 60.3,
+        "swap_used_gb": 3.08,
         "swap_total_gb": 16.0,
-        "swap_pct": 38.7,
-        "disk_used_pct": 46.2,
-        "disk_free_tb": 1.87
+        "swap_pct": 19.2,
+        "disk_used_pct": 54.9,
+        "disk_free_tb": 1.57
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.76,
-          "power_avg_w": 10.76,
-          "power_instant_w": 11.67,
-          "temp_c": 40,
-          "util_gpu": 5.0,
+          "power_w": 14.16,
+          "power_avg_w": 14.16,
+          "power_instant_w": 10.86,
+          "temp_c": 46,
+          "util_gpu": 0.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
           "fan_pct": 0,
@@ -200,52 +204,49 @@
         {
           "port": 8888,
           "engine": "vLLM",
-          "status": "ok",
-          "models": [
-            "qwen38-flash-next"
-          ]
+          "status": "down",
+          "models": [],
+          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
         },
         {
           "port": 11434,
           "engine": "Ollama",
-          "status": "ok",
-          "models": [
-            "moondream:latest",
-            "nomic-embed-text-v2-moe:latest",
-            "qwen3-vl:32b"
-          ]
+          "status": "down",
+          "models": [],
+          "error": "HTTPError: HTTP Error 502: Bad Gateway"
         }
       ],
       "workloads": [
+        "agent-cron",
         "llama",
         "ollama",
-        "inference-busy"
+        "pokemon"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-08-26T16:09:08.832780+00:00",
+      "iso_ts": "2026-08-27T10:57:02.827169+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 2.5,
+      "cpu_pct": 3.8,
       "mem": {
-        "used_gb": 111.9,
+        "used_gb": 81.4,
         "total_gb": 121.7,
-        "avail_gb": 9.8,
-        "pct": 91.9
+        "avail_gb": 40.3,
+        "pct": 66.9
       },
       "swap": {
-        "used_gb": 2.9,
+        "used_gb": 0.8,
         "total_gb": 16.0,
-        "pct": 18.4
+        "pct": 5.2
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.43,
-          "temp_c": 39,
+          "power_w": 11.56,
+          "temp_c": 41,
           "util_gpu": 0.0
         }
       ],
@@ -271,23 +272,23 @@
       "top_procs": [
         {
           "name": "sglang::schedul",
-          "mem_gb": 4.0
+          "mem_gb": 34.4
         },
         {
           "name": "python3",
-          "mem_gb": 0.5
+          "mem_gb": 1.4
         },
         {
-          "name": "python3",
-          "mem_gb": 0.5
+          "name": "polkitd",
+          "mem_gb": 0.1
         },
         {
-          "name": "python3",
-          "mem_gb": 0.5
+          "name": "systemd-journal",
+          "mem_gb": 0.1
         },
         {
-          "name": "python3",
-          "mem_gb": 0.4
+          "name": "gnome-shell",
+          "mem_gb": 0.1
         }
       ]
     }
@@ -304,20 +305,16 @@
       {
         "port": 8888,
         "engine": "vLLM",
-        "status": "ok",
-        "models": [
-          "qwen38-flash-next"
-        ]
+        "status": "down",
+        "models": [],
+        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
       },
       {
         "port": 11434,
         "engine": "Ollama",
-        "status": "ok",
-        "models": [
-          "moondream:latest",
-          "nomic-embed-text-v2-moe:latest",
-          "qwen3-vl:32b"
-        ]
+        "status": "down",
+        "models": [],
+        "error": "HTTPError: HTTP Error 502: Bad Gateway"
       }
     ],
     "node2": [
@@ -340,9 +337,10 @@
   },
   "workloads": {
     "node1": [
+      "agent-cron",
       "llama",
       "ollama",
-      "inference-busy"
+      "pokemon"
     ],
     "node2": []
   },
@@ -351,14 +349,14 @@
     {
       "level": "info",
       "category": "gpu",
-      "message": "gnome-remote-desktop using 279 MB VRAM",
+      "message": "gnome-remote-desktop using 242 MB VRAM",
       "action": "Disable remote desktop if not needed to reclaim VRAM"
     },
     {
       "level": "warning",
       "category": "qwen",
-      "message": "Dream Qwen roommate is down on node2 192.168.100.11:8100 (127.0.0.1:8100 on node1 is the wrong probe)",
-      "action": "bash ~/scripts/dgx/spark-stack.sh status   # then heal if n2 :8100 DOWN"
+      "message": "Qwen3.8-Flash is the desired setup but :8888 is down",
+      "action": "bash ~/scripts/dgx/spark-stack.sh flashnext"
     }
   ],
   "alert_count": {
