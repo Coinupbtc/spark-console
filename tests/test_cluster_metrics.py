@@ -29,7 +29,7 @@ class ClusterMetricsTests(unittest.TestCase):
         cluster = {
             "node1": {
                 "endpoints": [{"port": 8889, "status": "ok", "models": ["qwen"]}],
-                "workloads": ["pokemon"],
+                "workloads": ["comfyui"],
             },
             "node2": {
                 "reachable": True,
@@ -50,7 +50,7 @@ class ClusterMetricsTests(unittest.TestCase):
         self.assertEqual(values["node2_active_model"], "mimo")
         self.assertEqual(values["node2_gpu_temp_c"], 62)
         self.assertTrue(values["node2_endpoint_8100_ok"])
-        self.assertIn('"pokemon"', values["workloads_json"])
+        self.assertIn('"comfyui"', values["workloads_json"])
 
     def test_node2_alert_pages_once_and_rearms_after_recovery(self) -> None:
         calls = []
@@ -62,12 +62,13 @@ class ClusterMetricsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             state = Path(directory) / "node2-alerted"
             degraded = {"reachable": False, "error": "forced test failure"}
-            with patch.object(cluster_metrics.subprocess, "run", side_effect=fake_run):
-                self.assertEqual(notify_node2_state(degraded, state), "alerted")
-                self.assertEqual(notify_node2_state(degraded, state), "already-alerted")
-                self.assertEqual(len(calls), 1)
-            self.assertEqual(notify_node2_state({"reachable": True}, state), "healthy")
-            self.assertFalse(state.exists())
+            with patch.dict("os.environ", {"NOTIFY_HOOK": "/bin/true"}):
+                with patch.object(cluster_metrics.subprocess, "run", side_effect=fake_run):
+                    self.assertEqual(notify_node2_state(degraded, state), "alerted")
+                    self.assertEqual(notify_node2_state(degraded, state), "already-alerted")
+                    self.assertEqual(len(calls), 1)
+                self.assertEqual(notify_node2_state({"reachable": True}, state), "healthy")
+                self.assertFalse(state.exists())
 
     def test_csv_header_migration_preserves_legacy_rows(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

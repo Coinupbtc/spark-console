@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 """
 DGX Spark Performance Collector
-Samples GPU, CPU, memory, disk, Ollama, and Hermes gateway state.
+Samples GPU, CPU, memory, disk, Ollama, and Agent gateway state.
 Appends one CSV row per run and overwrites latest_snapshot.json.
 """
 from __future__ import annotations
 
 import json
-import logging
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime, timezone
-
-logger = logging.getLogger("dgx-collector")
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
 
 from cluster_metrics import (
     CLUSTER_CSV_HEADERS,
@@ -33,7 +25,7 @@ from timeseries_schema import SCHEMA_VERSION, append_row
 try:
     import psutil
 except ImportError:
-    logger.error("psutil not installed — run: pip install psutil")
+    print("ERROR: pip install psutil", file=sys.stderr)
     sys.exit(1)
 
 # Tests can isolate writes while exercising the real collector and alert path.
@@ -77,16 +69,7 @@ def _safe_float(v: str | None, default: float = 0.0) -> float:
 
 
 def query_gpu() -> list[dict]:
-    # Prefer 1s average draw — Instantaneous undersamples energy on a 5‑min
-    # cadence. Fall back to power.draw if .average is unavailable.
-    out = subprocess.run(
-        ["nvidia-smi",
-         "--query-gpu=index,name,power.draw.average,power.draw.instant,temperature.gpu,"
-         "utilization.gpu,memory.used,memory.total,fan.speed,pstate",
-         "--format=csv,noheader,nounits"],
-        capture_output=True, text=True, timeout=10,
-    )
-    if out.returncode != 0 or not (out.stdout or "").strip():
+    try:
         out = subprocess.run(
             ["nvidia-smi",
              "--query-gpu=index,name,power.draw,temperature.gpu,"
@@ -94,54 +77,37 @@ def query_gpu() -> list[dict]:
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=10,
         )
-        legacy = True
-    else:
-        legacy = False
+    except (OSError, subprocess.TimeoutExpired):
+        # Portable: a clone without nvidia-smi still serves the dashboard.
+        return []
     gpus = []
     for line in (out.stdout or "").strip().splitlines():
         p = [x.strip() for x in line.split(",")]
-        if legacy:
-            if len(p) < 7:
-                continue
-            gpus.append({
-                "index": _safe_int(p[0]),
-                "name": p[1] or "unknown",
-                "power_w": _safe_float(p[2]),
-                "temp_c": _safe_int(p[3]),
-                "util_gpu": _safe_float(p[4]),
-                "mem_used_mb": _safe_int(p[5]),
-                "mem_total_mb": _safe_int(p[6]),
-                "fan_pct": _safe_int(p[7]) if len(p) > 7 else 0,
-                "pstate": p[8] if len(p) > 8 else "unknown",
-            })
-        else:
-            if len(p) < 8:
-                continue
-            avg = _safe_float(p[2])
-            inst = _safe_float(p[3])
-            # Average is the right energy integrator; fall back to instant if 0/N/A.
-            gpus.append({
-                "index": _safe_int(p[0]),
-                "name": p[1] or "unknown",
-                "power_w": avg if avg > 0 else inst,
-                "power_avg_w": avg,
-                "power_instant_w": inst,
-                "temp_c": _safe_int(p[4]),
-                "util_gpu": _safe_float(p[5]),
-                "mem_used_mb": _safe_int(p[6]),
-                "mem_total_mb": _safe_int(p[7]),
-                "fan_pct": _safe_int(p[8]) if len(p) > 8 else 0,
-                "pstate": p[9] if len(p) > 9 else "unknown",
-            })
+        if len(p) < 7:
+            continue
+        gpus.append({
+            "index": _safe_int(p[0]),
+            "name": p[1] or "unknown",
+            "power_w": _safe_float(p[2]),
+            "temp_c": _safe_int(p[3]),
+            "util_gpu": _safe_float(p[4]),
+            "mem_used_mb": _safe_int(p[5]),
+            "mem_total_mb": _safe_int(p[6]),
+            "fan_pct": _safe_int(p[7]) if len(p) > 7 else 0,
+            "pstate": p[8] if len(p) > 8 else "unknown",
+        })
     return gpus
 
 
 def query_procs() -> list[dict]:
-    out = subprocess.run(
-        ["nvidia-smi", "--query-compute-apps=name,used_memory",
-         "--format=csv,noheader,nounits"],
-        capture_output=True, text=True, timeout=10,
-    )
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=name,used_memory",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
     procs = []
     for line in (out.stdout or "").strip().splitlines():
         p = [x.strip() for x in line.split(",")]
@@ -182,45 +148,31 @@ def query_ollama() -> list[dict]:
     return models
 
 
-def query_hermes() -> dict:
+def query_agent() -> dict:
+    """Generic local-unit snapshot — no named house agents in this tree."""
     out = subprocess.run(
-        ["systemctl", "--user", "is-active",
-         "hermes-gateway-orchestrator.service",
-         "hermes-gateway-light.service",
-         "hermes-gateway-dobby.service",
-         "hermes-gateway-smeagle.service",
-         "dgx-performance-dashboard.service",
-         "llama-miaai35.service",
-         "ollama.service"],
+        ["systemctl", "--user", "is-active", "ollama.service"],
         capture_output=True, text=True, timeout=5,
     )
     lines = (out.stdout or "").strip().splitlines()
-    return {
-        "orchestrator": lines[0] if len(lines) > 0 else "unknown",
-        "light": lines[1] if len(lines) > 1 else "unknown",
-        "dobby": lines[2] if len(lines) > 2 else "unknown",
-        "smeagle": lines[3] if len(lines) > 3 else "unknown",
-        "dashboard": lines[4] if len(lines) > 4 else "unknown",
-        "llama_miaai35": lines[5] if len(lines) > 5 else "unknown",
-        "ollama": lines[6] if len(lines) > 6 else "unknown",
-    }
+    return {"ollama": lines[0] if lines else "unknown"}
 
 
 def query_endpoints() -> list[dict]:
-    """Local inference endpoints that explain high unified-memory use.
+    """Local inference endpoints on this node (loopback only by default).
 
-    Helper/cluster modes bind loopback :8889/:8888. Dual-Spark video (MiniMax
-    H3 etc.) often binds the CX7 fabric IP :8800 — not 127.0.0.1 — so Needs you
-    must probe that too or every healthy video load looks like a RAM emergency.
+    Set SPARK_FABRIC_IP to also probe :8800 on a second NIC. There is no
+    baked-in LAN address — an unset var means loopback only.
     """
     import urllib.request
-    fabric = os.environ.get("SPARK_FABRIC_IP", "192.168.100.10").strip() or "192.168.100.10"
     eps = []
     targets = [
         (8889, "http://127.0.0.1:8889/v1/models", "llama.cpp"),
         (8888, "http://127.0.0.1:8888/v1/models", "vLLM"),
-        (8800, f"http://{fabric}:8800/v1/models", "vLLM-fabric"),
     ]
+    fabric = (os.environ.get("SPARK_FABRIC_IP") or "").strip()
+    if fabric:
+        targets.append((8800, f"http://{fabric}:8800/v1/models", "vLLM"))
     for port, url, engine in targets:
         try:
             with urllib.request.urlopen(url, timeout=2) as r:
@@ -229,7 +181,6 @@ def query_endpoints() -> list[dict]:
                 mid = (m.get("id") or "?").rstrip("/").split("/")[-1]
                 eps.append({"id": mid, "port": port,
                             "engine": engine, "status": "ok"})
-            # Reachable with an empty model list still means an engine is up
             if not (data.get("data") or []):
                 eps.append({"id": "?", "port": port, "engine": engine, "status": "ok"})
         except Exception:
@@ -239,7 +190,7 @@ def query_endpoints() -> list[dict]:
 
 # GPU compute names that are desktop chrome, not a loaded model
 _DESKTOP_GPU_PROCS = ("gnome-remote-desktop", "xorg", "xwayland", "gnome-shell")
-# cmdline/name fragments that mean "owner intentionally parked a big model"
+# cmdline/name fragments that mean a big model is intentionally resident
 _ENGINE_NAME_HINTS = ("vllm", "llama-server", "llama.cpp", "ray::", "sglang", "deepseek")
 
 
@@ -247,8 +198,7 @@ def resident_engine(endpoints: list[dict] | None,
                     procs: list[dict] | None) -> dict | None:
     """Return a short descriptor when high RAM/swap is an expected model cost.
 
-    Needs you should only page unexplained pressure — not 'your MiniMax is
-    loaded and using the unified pool like you asked'.
+    Needs-you should page unexplained pressure, not a model the owner loaded.
     """
     for e in endpoints or []:
         if e.get("status") == "ok":
@@ -264,7 +214,6 @@ def resident_engine(endpoints: list[dict] | None,
             continue
         mb = int(p.get("mem_mb") or 0)
         hinted = any(h in low for h in _ENGINE_NAME_HINTS)
-        # ~8 GB+ on GPU (or any named engine worker) = the model is the RAM story
         if hinted or mb >= 8192:
             short = name.rsplit("/", 1)[-1][:48] or "gpu-worker"
             return {"engine": short, "port": "gpu", "id": f"{mb}MB"}
@@ -303,11 +252,8 @@ def diagnose(
 ) -> list[dict]:
     alerts: list[dict] = []
 
-    # A resident inference engine is SUPPOSED to fill the 121GB unified pool —
-    # DS4F TP=2 parks ~118G; MiniMax H3 video parks ~100G on the GPU. Flagging
-    # 85% as critical meant every healthy load paged "stop the model".
-    # When an engine is serving, high RAM is explained: only >=97% (where swap
-    # thrash actually hurts) is critical. With no engine up, 85% is unexplained.
+    # A resident inference engine is supposed to fill unified memory. Page
+    # unexplained pressure; do not tell the owner to kill the model they loaded.
     engine = resident_engine(endpoints, procs)
     crit_pct = 97 if engine else 85
 
@@ -316,11 +262,10 @@ def diagnose(
             port = engine.get("port")
             port_bit = "" if port in (None, "gpu") else f" :{port}"
             where = f" (inference resident: {engine['engine']}{port_bit})"
-            action = ("Swap-thrash range. Free RAM only if you want this mode down — "
-                      "see ~/scripts/dgx/spark-mode.sh status / CURRENT.md")
+            action = "Swap-thrash range. Unload a model only if you want this mode down."
         else:
             where = " with no inference engine resident"
-            action = "Unexplained — check `ollama ps`, nvfp4-status.sh, and large procs"
+            action = "Unexplained — check `ollama ps` and large processes"
         alerts.append({
             "level": "critical",
             "category": "memory",
@@ -332,12 +277,9 @@ def diagnose(
             "level": "warning",
             "category": "memory",
             "message": f"RAM at {sys_m['mem_pct']}% — {sys_m['mem_avail_gb']} GB available",
-            "action": "Review vLLM (nvfp4-status.sh) and `ollama ps`",
+            "action": "Review loaded models (`ollama ps`) if this is unexpected",
         })
 
-    # Swap spill while a big model is loaded is normal on this box — not actionable.
-    # Only page swap when nothing explains the pressure, or the swap partition is
-    # nearly full (real thrash risk).
     swap_gb = float(sys_m.get("swap_used_gb") or 0)
     swap_pct = float(sys_m.get("swap_pct") or 0)
     if engine:
@@ -346,7 +288,7 @@ def diagnose(
                 "level": "warning",
                 "category": "swap",
                 "message": f"Swap {swap_gb} GB ({swap_pct}%) — thrash risk with model loaded",
-                "action": "Only if the box feels stuck: free another workload, not the model you chose",
+                "action": "Free another workload if the box feels stuck",
             })
     elif swap_gb >= 2:
         alerts.append({
@@ -403,21 +345,13 @@ def diagnose(
         })
 
     if inventory:
-        hermes_dash = (inventory.get("hermes") or {}).get("dashboard")
-        if hermes_dash == "inactive":
-            alerts.append({
-                "level": "warning",
-                "category": "dashboard",
-                "message": "Performance dashboard service is not running",
-                "action": "systemctl --user restart dgx-performance-dashboard.service",
-            })
         active = inventory.get("active_vllm") or []
         if len(active) > 1:
             alerts.append({
                 "level": "critical",
                 "category": "vllm",
                 "message": f"Multiple vLLM servers active ({len(active)}) — OOM risk on 121GB Spark",
-                "action": "switch-model stop  # then start one model only",
+                "action": "Unload extra vLLM processes so only one model is resident",
             })
         for m in inventory.get("models") or []:
             if m.get("status") == "loading":
@@ -441,9 +375,9 @@ def collect() -> dict | None:
     gpus = query_gpu()
     procs = query_procs()
     ollama = query_ollama()
-    hermes = query_hermes()
+    agent = query_agent()
     inv = query_inventory()
-    inv["hermes"] = hermes
+    inv["agent"] = agent
     endpoints = query_endpoints()
     alerts = diagnose(sys_m, gpus, ollama, procs, inv, endpoints)
     cluster = collect_cluster(sys_m, gpus)
@@ -467,7 +401,8 @@ def collect() -> dict | None:
         "gpus": gpus,
         "processes": procs,
         "ollama": ollama,
-        "hermes": hermes,
+        "agent": agent,
+        "endpoints": endpoints,
         "models": inv,
         "vllm": inv.get("active_vllm") or [],
         "nodes": cluster,
@@ -506,47 +441,35 @@ def collect() -> dict | None:
     }
     append_row(CSV_FILE, CSV_HEADERS, row)
 
-    # Historical electricity: fold this snapshot into the energy sample log so
-    # 24h/30d $ costs are integrated watts×time, not live projections.
-    try:
-        import energy_cost
-        n2 = cluster.get("node2") or {}
-        n2_gpu = (n2.get("gpus") or [{}])[0] if n2.get("reachable") else {}
-        energy_cost.record_sample({
-            "node1": snap.get("total_power_watts") or gpu.get("power_w"),
-            "node2": n2_gpu.get("power_w") if n2.get("reachable") else None,
-        })  # respect 30s throttle — dashboard is the dense writer; we fill gaps
-    except Exception:
-        pass
-
     with open(JSON_SNAP, "w") as f:
         json.dump(snap, f, indent=2)
 
-    logger.info("[%s] sparkmax performance snapshot", ts)
-    logger.info("  CPU %s%% | RAM %s%% (%sG free) | GPU %s%% %sW",
-                sys_m['cpu_pct'], sys_m['mem_pct'], sys_m['mem_avail_gb'],
-                avg_util, snap['total_power_watts'])
+    print(f"[{ts}] spark-node performance snapshot")
+    print(f"  CPU {sys_m['cpu_pct']}% | RAM {sys_m['mem_pct']}% ({sys_m['mem_avail_gb']}G free) | "
+          f"GPU {avg_util}% {snap['total_power_watts']}W")
     node2 = cluster["node2"]
     if node2["reachable"]:
         node2_gpu = (node2["gpus"] or [{}])[0]
-        logger.info("  Node2 CPU %s%% | RAM %sG free | GPU %s%% %sW %sC",
-                     node2.get('cpu_pct', 0),
-                     node2.get('mem', {}).get('avail_gb', 0),
-                     node2_gpu.get('util_gpu', 0),
-                     node2_gpu.get('power_w', 0),
-                     node2_gpu.get('temp_c', "?"))
+        print(
+            f"  Node2 CPU {node2.get('cpu_pct', 0)}% | "
+            f"RAM {node2.get('mem', {}).get('avail_gb', 0)}G free | "
+            f"GPU {node2_gpu.get('util_gpu', 0)}% {node2_gpu.get('power_w', 0)}W"
+        )
+    elif "not configured" in str(node2.get("error") or ""):
+        # Single-node is the default shape, not a degradation worth warning about.
+        print("  Node2: not configured (single-node mode)")
     else:
-        logger.warning("  [WARNING] Node2 degraded: %s", node2.get('error', 'unreachable'))
+        print(f"  [WARNING] Node2 degraded: {node2.get('error', 'unreachable')}")
     if inv.get("active_vllm"):
         for m in inv["active_vllm"]:
-            logger.info("  vLLM: %s :%s (%s)", m['label'], m['port'], m['status'])
+            print(f"  vLLM: {m['label']} :{m['port']} ({m['status']})")
     if ollama:
         for m in ollama:
             flag = " STUCK" if m.get("stuck") else ""
-            logger.info("  Ollama: %s %s%s", m['name'], m['size'], flag)
+            print(f"  Ollama: {m['name']} {m['size']}{flag}")
     if alerts:
         for a in alerts:
-            logger.info("  [%s] %s", a['level'].upper(), a['message'])
+            print(f"  [{a['level'].upper()}] {a['message']}")
     return snap
 
 
