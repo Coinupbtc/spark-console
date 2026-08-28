@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-27T02:13:09.340041+00:00",
+  "updated_at": "2026-08-27T22:38:00.418894+00:00",
   "services": {
     "blender-mcp": {
       "label": "Blender MCP bridge",
@@ -387,6 +387,24 @@
       "port": 8888,
       "show_projects_tile": true,
       "registered_at": "2026-08-27T02:13:09.339934+00:00"
+    },
+    "spark-mcp": {
+      "label": "Spark MCP (Tailscale /mcp)",
+      "detail": "loopback Streamable HTTP",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "HTTPS https://sparkmax-10ef.tail6cfceb.ts.net/mcp bearer token in ~/.config/spark-mcp/token",
+      "source": "extra",
+      "unit": "spark-mcp.service",
+      "probe": [
+        "http://127.0.0.1:8099/",
+        2.0
+      ],
+      "port": 8099,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-27T22:38:00.418797+00:00"
     }
   }
 }

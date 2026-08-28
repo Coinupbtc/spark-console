@@ -483,6 +483,15 @@ def diagnose(
                     "message": "Qwen3.8-Flash is the desired setup but :8888 is down",
                     "action": "bash ~/scripts/dgx/spark-stack.sh flashnext",
                 })
+        elif desired == "glm53keys":
+            n1q = _up("http://127.0.0.1:8888/v1/models")
+            if not n1q:
+                alerts.append({
+                    "level": "warning",
+                    "category": "glm",
+                    "message": "GLM-5.3-Flash is the desired setup but :8888 is down",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh glm53keys",
+                })
         elif desired == "prime":
             if not n2 and not proxy:
                 alerts.append({

@@ -1,0 +1,246 @@
+[2026-08-27T23:15:49-05:00] === node2 requested ===
+[2026-08-27T23:15:50-05:00] === node1 requested ===
+/etc/sudoers.d/99-apply-system-packages: parsed OK
+[2026-08-27T23:15:50-05:00] sudoers installed /etc/sudoers.d/99-apply-system-packages
+[2026-08-27T23:15:50-05:00] === apt dist-upgrade on sparkymaxxx-12ef as uid=0 ===
+Hit:1 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa  InRelease
+Hit:2 https://brave-browser-apt-release.s3.brave.com stable InRelease
+Hit:3 https://workbench.download.nvidia.com/stable/linux/debian default InRelease
+Hit:4 https://repo.download.nvidia.com/baseos/ubuntu/noble/arm64 noble InRelease
+Get:5 https://pkgs.tailscale.com/stable/ubuntu noble InRelease
+Hit:6 http://ports.ubuntu.com/ubuntu-ports noble InRelease
+Hit:7 https://developer.download.nvidia.com/hpc-sdk/ubuntu/arm64  InRelease
+Hit:8 http://ports.ubuntu.com/ubuntu-ports noble-updates InRelease
+Hit:9 https://repo.download.nvidia.com/baseos/ubuntu/noble/arm64 noble-updates InRelease
+Hit:10 http://ports.ubuntu.com/ubuntu-ports noble-backports InRelease
+Hit:11 http://ports.ubuntu.com/ubuntu-ports noble-security InRelease
+Hit:12 https://repo.download.nvidia.com/spark/ubuntu/arm64 noble-updates InRelease
+Hit:13 https://esm.ubuntu.com/apps/ubuntu noble-apps-security InRelease
+Hit:14 https://esm.ubuntu.com/apps/ubuntu noble-apps-updates InRelease
+Hit:15 https://esm.ubuntu.com/infra/ubuntu noble-infra-security InRelease
+Hit:16 https://esm.ubuntu.com/infra/ubuntu noble-infra-updates InRelease
+Hit:17 https://snapshot.ppa.launchpadcontent.net/canonical-nvidia/nvidia-desktop-edge/ubuntu noble InRelease
+Hit:18 https://snapshot.ppa.launchpadcontent.net/canonical-nvidia/vulkan-packages-nv-desktop/ubuntu noble InRelease
+Fetched 6,649 B in 2s (3,840 B/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Calculating upgrade...
+The following packages were automatically installed and are no longer required:
+  linux-headers-6.17.0-1026-nvidia linux-image-6.17.0-1026-nvidia
+  linux-modules-6.17.0-1026-nvidia
+  linux-modules-nvidia-580-open-6.17.0-1026-nvidia
+  linux-modules-nvidia-fs-6.17.0-1026-nvidia
+  linux-nvidia-6.11-tools-6.11.0-1014 linux-nvidia-6.17-headers-6.17.0-1026
+  linux-nvidia-6.17-tools-6.17.0-1026 linux-tools-6.17.0-1026-nvidia
+  nvidia-firmware-580-580.159.03
+Use 'sudo apt autoremove' to remove them.
+The following upgrades have been deferred due to phasing:
+  libpython3.12-minimal libpython3.12-stdlib libpython3.12t64 python3.12
+  python3.12-minimal python3.12-venv
+The following packages will be upgraded:
+  brave-browser byobu curl heif-gdk-pixbuf heif-thumbnailer libcurl3t64-gnutls
+  libcurl4t64 libheif-plugin-aomdec libheif-plugin-aomenc
+  libheif-plugin-libde265 libheif1 libp11-kit0 libpam-modules
+  libpam-modules-bin libpam-runtime libpam0g libperl5.38t64 libproc2-0
+  libssl3t64 openjdk-8-jre openjdk-8-jre-headless openssl p11-kit
+  p11-kit-modules perl perl-base perl-modules-5.38 procps vim vim-common
+  vim-runtime vim-tiny xxd
+33 upgraded, 0 newly installed, 0 to remove and 6 not upgraded.
+Need to get 196 MB of archives.
+After this operation, 16.7 MB of additional disk space will be used.
+Get:1 https://brave-browser-apt-release.s3.brave.com stable/main arm64 brave-browser arm64 1.94.117 [139 MB]
+Get:2 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libperl5.38t64 arm64 5.38.2-3.2ubuntu0.4 [4,785 kB]
+Get:3 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 perl arm64 5.38.2-3.2ubuntu0.4 [231 kB]
+Get:4 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 perl-base arm64 5.38.2-3.2ubuntu0.4 [1,781 kB]
+Get:5 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 perl-modules-5.38 all 5.38.2-3.2ubuntu0.4 [3,110 kB]
+Get:6 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpam0g arm64 1.5.3-5ubuntu5.7 [68.4 kB]
+Get:7 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpam-modules-bin arm64 1.5.3-5ubuntu5.7 [50.4 kB]
+Get:8 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpam-modules arm64 1.5.3-5ubuntu5.7 [286 kB]
+Get:9 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libcurl3t64-gnutls arm64 8.5.0-2ubuntu10.13 [330 kB]
+Get:10 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 curl arm64 8.5.0-2ubuntu10.13 [222 kB]
+Get:11 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libssl3t64 arm64 3.0.13-0ubuntu3.15 [1,837 kB]
+Get:12 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libcurl4t64 arm64 8.5.0-2ubuntu10.13 [336 kB]
+Get:13 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libpam-runtime all 1.5.3-5ubuntu5.7 [40.8 kB]
+Get:14 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 p11-kit-modules arm64 0.25.3-4ubuntu2.2 [309 kB]
+Get:15 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libp11-kit0 arm64 0.25.3-4ubuntu2.2 [276 kB]
+Get:16 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libproc2-0 arm64 2:4.0.4-4ubuntu3.3 [58.5 kB]
+Get:17 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 procps arm64 2:4.0.4-4ubuntu3.3 [707 kB]
+Get:18 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 openssl arm64 3.0.13-0ubuntu3.15 [985 kB]
+Get:19 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim arm64 2:9.1.0016-1ubuntu7.20 [1,815 kB]
+Get:20 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim-common all 2:9.1.0016-1ubuntu7.20 [389 kB]
+Get:21 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim-tiny arm64 2:9.1.0016-1ubuntu7.20 [774 kB]
+Get:22 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 vim-runtime all 2:9.1.0016-1ubuntu7.20 [7,273 kB]
+Get:23 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 xxd arm64 2:9.1.0016-1ubuntu7.20 [66.2 kB]
+Get:24 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 byobu all 6.11-0ubuntu1.1 [104 kB]
+Get:25 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libheif-plugin-libde265 arm64 1.17.6-1ubuntu4.8 [8,020 B]
+Get:26 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libheif-plugin-aomenc arm64 1.17.6-1ubuntu4.8 [13.7 kB]
+Get:27 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 heif-gdk-pixbuf arm64 1.17.6-1ubuntu4.8 [6,940 B]
+Get:28 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 heif-thumbnailer arm64 1.17.6-1ubuntu4.8 [12.7 kB]
+Get:29 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libheif1 arm64 1.17.6-1ubuntu4.8 [260 kB]
+Get:30 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 libheif-plugin-aomdec arm64 1.17.6-1ubuntu4.8 [11.3 kB]
+Get:31 http://ports.ubuntu.com/ubuntu-ports noble-updates/universe arm64 openjdk-8-jre arm64 8u502-ga~us1-0ubuntu1~24.04 [73.9 kB]
+Get:32 http://ports.ubuntu.com/ubuntu-ports noble-updates/universe arm64 openjdk-8-jre-headless arm64 8u502-ga~us1-0ubuntu1~24.04 [30.4 MB]
+Get:33 http://ports.ubuntu.com/ubuntu-ports noble-updates/main arm64 p11-kit arm64 0.25.3-4ubuntu2.2 [145 kB]
+Preconfiguring packages ...
+Fetched 196 MB in 3s (65.1 MB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../libperl5.38t64_5.38.2-3.2ubuntu0.4_arm64.deb ...
+Unpacking libperl5.38t64:arm64 (5.38.2-3.2ubuntu0.4) over (5.38.2-3.2ubuntu0.3) ...
+Preparing to unpack .../perl_5.38.2-3.2ubuntu0.4_arm64.deb ...
+Unpacking perl (5.38.2-3.2ubuntu0.4) over (5.38.2-3.2ubuntu0.3) ...
+Preparing to unpack .../perl-base_5.38.2-3.2ubuntu0.4_arm64.deb ...
+Unpacking perl-base (5.38.2-3.2ubuntu0.4) over (5.38.2-3.2ubuntu0.3) ...
+Setting up perl-base (5.38.2-3.2ubuntu0.4) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../perl-modules-5.38_5.38.2-3.2ubuntu0.4_all.deb ...
+Unpacking perl-modules-5.38 (5.38.2-3.2ubuntu0.4) over (5.38.2-3.2ubuntu0.3) ...
+Preparing to unpack .../libpam0g_1.5.3-5ubuntu5.7_arm64.deb ...
+Unpacking libpam0g:arm64 (1.5.3-5ubuntu5.7) over (1.5.3-5ubuntu5.6) ...
+Setting up libpam0g:arm64 (1.5.3-5ubuntu5.7) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../libpam-modules-bin_1.5.3-5ubuntu5.7_arm64.deb ...
+Unpacking libpam-modules-bin (1.5.3-5ubuntu5.7) over (1.5.3-5ubuntu5.6) ...
+Setting up libpam-modules-bin (1.5.3-5ubuntu5.7) ...
+pam_namespace.service is a disabled or a static unit not running, not starting it.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../libpam-modules_1.5.3-5ubuntu5.7_arm64.deb ...
+Unpacking libpam-modules:arm64 (1.5.3-5ubuntu5.7) over (1.5.3-5ubuntu5.6) ...
+Setting up libpam-modules:arm64 (1.5.3-5ubuntu5.7) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../libcurl3t64-gnutls_8.5.0-2ubuntu10.13_arm64.deb ...
+Unpacking libcurl3t64-gnutls:arm64 (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.12) ...
+Preparing to unpack .../curl_8.5.0-2ubuntu10.13_arm64.deb ...
+Unpacking curl (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.12) ...
+Preparing to unpack .../libssl3t64_3.0.13-0ubuntu3.15_arm64.deb ...
+Unpacking libssl3t64:arm64 (3.0.13-0ubuntu3.15) over (3.0.13-0ubuntu3.12) ...
+Setting up libssl3t64:arm64 (3.0.13-0ubuntu3.15) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../libcurl4t64_8.5.0-2ubuntu10.13_arm64.deb ...
+Unpacking libcurl4t64:arm64 (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.12) ...
+Preparing to unpack .../brave-browser_1.94.117_arm64.deb ...
+Unpacking brave-browser (1.94.117) over (1.93.138) ...
+Preparing to unpack .../libpam-runtime_1.5.3-5ubuntu5.7_all.deb ...
+Unpacking libpam-runtime (1.5.3-5ubuntu5.7) over (1.5.3-5ubuntu5.6) ...
+Setting up libpam-runtime (1.5.3-5ubuntu5.7) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../p11-kit-modules_0.25.3-4ubuntu2.2_arm64.deb ...
+Unpacking p11-kit-modules:arm64 (0.25.3-4ubuntu2.2) over (0.25.3-4ubuntu2.1) ...
+Preparing to unpack .../libp11-kit0_0.25.3-4ubuntu2.2_arm64.deb ...
+Unpacking libp11-kit0:arm64 (0.25.3-4ubuntu2.2) over (0.25.3-4ubuntu2.1) ...
+Setting up libp11-kit0:arm64 (0.25.3-4ubuntu2.2) ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 396204 files and directories currently installed.)
+Preparing to unpack .../00-libproc2-0_2%3a4.0.4-4ubuntu3.3_arm64.deb ...
+Unpacking libproc2-0:arm64 (2:4.0.4-4ubuntu3.3) over (2:4.0.4-4ubuntu3.2) ...
+Preparing to unpack .../01-procps_2%3a4.0.4-4ubuntu3.3_arm64.deb ...
+Unpacking procps (2:4.0.4-4ubuntu3.3) over (2:4.0.4-4ubuntu3.2) ...
+Preparing to unpack .../02-openssl_3.0.13-0ubuntu3.15_arm64.deb ...
+Unpacking openssl (3.0.13-0ubuntu3.15) over (3.0.13-0ubuntu3.12) ...
+Preparing to unpack .../03-vim_2%3a9.1.0016-1ubuntu7.20_arm64.deb ...
+Unpacking vim (2:9.1.0016-1ubuntu7.20) over (2:9.1.0016-1ubuntu7.19) ...
+Preparing to unpack .../04-vim-common_2%3a9.1.0016-1ubuntu7.20_all.deb ...
+Unpacking vim-common (2:9.1.0016-1ubuntu7.20) over (2:9.1.0016-1ubuntu7.19) ...
+Preparing to unpack .../05-vim-tiny_2%3a9.1.0016-1ubuntu7.20_arm64.deb ...
+Unpacking vim-tiny (2:9.1.0016-1ubuntu7.20) over (2:9.1.0016-1ubuntu7.19) ...
+Preparing to unpack .../06-vim-runtime_2%3a9.1.0016-1ubuntu7.20_all.deb ...
+Unpacking vim-runtime (2:9.1.0016-1ubuntu7.20) over (2:9.1.0016-1ubuntu7.19) ...
+Preparing to unpack .../07-xxd_2%3a9.1.0016-1ubuntu7.20_arm64.deb ...
+Unpacking xxd (2:9.1.0016-1ubuntu7.20) over (2:9.1.0016-1ubuntu7.19) ...
+Preparing to unpack .../08-byobu_6.11-0ubuntu1.1_all.deb ...
+Unpacking byobu (6.11-0ubuntu1.1) over (6.11-0ubuntu1) ...
+Preparing to unpack .../09-libheif-plugin-libde265_1.17.6-1ubuntu4.8_arm64.deb ...
+Unpacking libheif-plugin-libde265:arm64 (1.17.6-1ubuntu4.8) over (1.17.6-1ubuntu4.7) ...
+Preparing to unpack .../10-libheif-plugin-aomenc_1.17.6-1ubuntu4.8_arm64.deb ...
+Unpacking libheif-plugin-aomenc:arm64 (1.17.6-1ubuntu4.8) over (1.17.6-1ubuntu4.7) ...
+Preparing to unpack .../11-heif-gdk-pixbuf_1.17.6-1ubuntu4.8_arm64.deb ...
+Unpacking heif-gdk-pixbuf:arm64 (1.17.6-1ubuntu4.8) over (1.17.6-1ubuntu4.7) ...
+Preparing to unpack .../12-heif-thumbnailer_1.17.6-1ubuntu4.8_arm64.deb ...
+Unpacking heif-thumbnailer (1.17.6-1ubuntu4.8) over (1.17.6-1ubuntu4.7) ...
+Preparing to unpack .../13-libheif1_1.17.6-1ubuntu4.8_arm64.deb ...
+Unpacking libheif1:arm64 (1.17.6-1ubuntu4.8) over (1.17.6-1ubuntu4.7) ...
+Preparing to unpack .../14-libheif-plugin-aomdec_1.17.6-1ubuntu4.8_arm64.deb ...
+Unpacking libheif-plugin-aomdec:arm64 (1.17.6-1ubuntu4.8) over (1.17.6-1ubuntu4.7) ...
+Preparing to unpack .../15-openjdk-8-jre_8u502-ga~us1-0ubuntu1~24.04_arm64.deb ...
+Unpacking openjdk-8-jre:arm64 (8u502-ga~us1-0ubuntu1~24.04) over (8u492-ga~us2-0ubuntu1~24.04.1) ...
+Preparing to unpack .../16-openjdk-8-jre-headless_8u502-ga~us1-0ubuntu1~24.04_arm64.deb ...
+Unpacking openjdk-8-jre-headless:arm64 (8u502-ga~us1-0ubuntu1~24.04) over (8u492-ga~us2-0ubuntu1~24.04.1) ...
+Preparing to unpack .../17-p11-kit_0.25.3-4ubuntu2.2_arm64.deb ...
+Unpacking p11-kit (0.25.3-4ubuntu2.2) over (0.25.3-4ubuntu2.1) ...
+Setting up byobu (6.11-0ubuntu1.1) ...
+Setting up libcurl4t64:arm64 (8.5.0-2ubuntu10.13) ...
+Setting up libcurl3t64-gnutls:arm64 (8.5.0-2ubuntu10.13) ...
+Setting up xxd (2:9.1.0016-1ubuntu7.20) ...
+Setting up p11-kit-modules:arm64 (0.25.3-4ubuntu2.2) ...
+Setting up vim-common (2:9.1.0016-1ubuntu7.20) ...
+Setting up perl-modules-5.38 (5.38.2-3.2ubuntu0.4) ...
+Setting up libproc2-0:arm64 (2:4.0.4-4ubuntu3.3) ...
+Setting up openjdk-8-jre-headless:arm64 (8u502-ga~us1-0ubuntu1~24.04) ...
+Installing new version of config file /etc/java-8-openjdk/security/java.security ...
+Setting up brave-browser (1.94.117) ...
+Setting up procps (2:4.0.4-4ubuntu3.3) ...
+Setting up curl (8.5.0-2ubuntu10.13) ...
+Setting up libperl5.38t64:arm64 (5.38.2-3.2ubuntu0.4) ...
+Setting up p11-kit (0.25.3-4ubuntu2.2) ...
+Setting up vim-runtime (2:9.1.0016-1ubuntu7.20) ...
+Setting up openssl (3.0.13-0ubuntu3.15) ...
+Setting up vim (2:9.1.0016-1ubuntu7.20) ...
+Setting up vim-tiny (2:9.1.0016-1ubuntu7.20) ...
+Setting up perl (5.38.2-3.2ubuntu0.4) ...
+Setting up libheif-plugin-aomdec:arm64 (1.17.6-1ubuntu4.8) ...
+Setting up libheif1:arm64 (1.17.6-1ubuntu4.8) ...
+Setting up heif-gdk-pixbuf:arm64 (1.17.6-1ubuntu4.8) ...
+Setting up heif-thumbnailer (1.17.6-1ubuntu4.8) ...
+Setting up libheif-plugin-libde265:arm64 (1.17.6-1ubuntu4.8) ...
+Setting up libheif-plugin-aomenc:arm64 (1.17.6-1ubuntu4.8) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.8) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+Processing triggers for libgdk-pixbuf-2.0-0:arm64 (2.42.10+dfsg-3ubuntu3.3) ...
+Processing triggers for desktop-file-utils (0.27-2build1) ...
+Processing triggers for hicolor-icon-theme (0.17-2) ...
+Processing triggers for gnome-menus (3.36.0-1.1ubuntu3) ...
+Processing triggers for ca-certificates-java (20240118) ...
+done.
+Setting up openjdk-8-jre:arm64 (8u502-ga~us1-0ubuntu1~24.04) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.8) ...
+
+Running kernel seems to be up-to-date.
+
+The processor microcode seems to be up-to-date.
+
+Services to be restarted:
+ systemctl restart cron.service
+ systemctl restart cups-browsed.service
+ systemctl restart cups.service
+ systemctl restart fwupd.service
+ systemctl restart gnome-remote-desktop.service
+ systemctl restart lldpd.service
+ systemctl restart packagekit.service
+ systemctl restart plymouth.service
+ systemctl restart ssh.service
+ systemctl restart systemd-journald.service
+ /etc/needrestart/restart.d/systemd-manager
+ systemctl restart systemd-networkd.service
+ systemctl restart systemd-resolved.service
+ systemctl restart systemd-timesyncd.service
+ systemctl restart systemd-udevd.service
+ systemctl restart udisks2.service
+ systemctl restart upower.service
+
+Service restarts being deferred:
+ systemctl restart NetworkManager.service
+ systemctl restart dgx-dashboard-admin.service
+ systemctl restart gdm.service
+ systemctl restart systemd-logind.service
+ systemctl restart wpa_supplicant.service
+
+No containers need to be restarted.
+
+User sessions running outdated binaries:
+ coinupbtc @ session #23331: sshd[3165679]
+ coinupbtc @ session #23995: sshd[3398211]
+ coinupbtc @ user manager service: systemd[2149]
+ gdm @ user manager service: systemd[2819]
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+[2026-08-27T23:16:21-05:00] remaining upgradable: 0

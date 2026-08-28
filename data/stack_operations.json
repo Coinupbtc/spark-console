@@ -194,6 +194,19 @@
       "finished_at": "2026-08-25T11:23:50.377913+00:00",
       "returncode": 1,
       "log_tail": "wired /home/coinupbtc/.hermes/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/dobby/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/light/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/orchestrator/config.yaml \u2192 dream-baton http://127.0.0.1:8877/v1\nwired /home/coinupbtc/.hermes/profiles/smeagle/config.yaml \u2192 llama-qwen38-gguf http://192.168.100.11:8100/v1\npreferred deepseek-dspark\nwired profiles: dobby, light, orchestrator, smeagle\nTraceback (most recent call last):\n  File \"<stdin>\", line 2, in <module>\n  File \"/home/coinupbtc/.hermes/hermes-agent/hermes_cli/kanban_db.py\", line 8920\n    <<<<<<< ours\n    ^^\nSyntaxError: invalid syntax\n[spark-stack 2026-08-25T06:23:35-05:00] ERROR: hermes-gateway-import-smoke FAILED \u2014 not restarting gateways\n[spark-stack 2026-08-25T06:23:35-05:00] WARN: dream engines/wire written but Telegram gateways did not come up\nhit1 3.020s\nhit2 1.001s\nhit3 0.333s\nqwen-warm hit1 6.859s model=Qwen3.8-27B\nqwen-warm hit2 0.886s model=Qwen3.8-27B\nqwen-warm hit3 0.704s model=Qwen3.8-27B\n[spark-stack 2026-08-25T06:23:50-05:00] resume setup-keyed watchdogs for dream: 0731-keep-warm.timer dream-qwen-watchdog.timer mem-pressure-heal.timer comfyui-idle.timer\ndiscord-send: ok channel=ledger chunks=1\nalertbot-send: telegram skipped (channel=ledger critical=0)"
+    },
+    "82d8aeea52ec": {
+      "id": "82d8aeea52ec",
+      "type": "stack",
+      "key": "flashnext",
+      "status": "completed",
+      "message": "Qwen3.8-Flash is live.",
+      "pid": 2349399,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/stack_op_82d8aeea52ec.log",
+      "started_at": "2026-08-28T03:04:38.857263+00:00",
+      "finished_at": "2026-08-28T03:14:14.710034+00:00",
+      "returncode": 0,
+      "log_tail": "alertbot-send: telegram skipped (channel=ledger critical=0)\n=== spark-stack status 2026-08-27T22:14:14-05:00 ===\ndetected: flashnext\ndesired: flashnext\nphase: idle\nmessage: Qwen3.8-Flash-Next-NVFP4 TP2 :8888 LIVE\nupdated: 2026-08-28T03:14:14.067579+00:00\n8888 models qwen38-flash-next\nn2 8888     \nn2 :8100    DOWN  # Qwen roommate is 192.168.100.11:8100 \u2014 NEVER 127.0.0.1:8100\nbaton :8877 DOWN\nhelper :8889 DOWN\nh3 :8800    DOWN\nmusic :8801 DOWN\nqwen eyes   no  # n2 :8100 modalities.vision (Dream)\ntwins n1    UP  # SGLang DSpark :8888\ntwins n2    DOWN\nflash-next  UP  # TP2 FP8 :8888\n4B n1       DOWN (proxy DOWN)  # Prime sidecar\n4B n2       DOWN\n4B flag     disabled\ngateways    orch=active smeagle=active (smeagle Telegram platform is off; chat is orch \u2192 baton)\n               total        used        free      shared  buff/cache   available\nMem:             121         105           1          34          50          16"
     }
   }
 }

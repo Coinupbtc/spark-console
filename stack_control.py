@@ -1,4 +1,4 @@
-"""Named Spark stack switcher for the console (prime / dream / twins / flashnext / video / music).
+"""Named Spark stack switcher for the console (prime / dream / twins / flashnext / glm53keys / video / music).
 
 The heavy lifting lives in ~/scripts/dgx/spark-stack.sh — this module is the
 allowlisted API: detect what's up, spawn one switch, poll the log.
@@ -58,6 +58,14 @@ PRESETS: dict[str, dict] = {
         "eta": "10–20 min",
         "stops": "DS4F 0731, Dream Qwen, Twins, baton, Music3, H3, 4B sidecar",
         "starts": "qwen38-flash-next :8888 TP2",
+    },
+    "glm53keys": {
+        "label": "GLM-5.3",
+        "short": "Tony DFlash2 · fp8 KV · 262k",
+        "detail": "Tony GLM-5.3-Flash NVFP4 + DFlash2 on both Sparks (vLLM TP2, fp8 KV, 262k). Parks Flash-Next and Dream. Chat stays local on :8888. Cold load ~15–30 min.",
+        "eta": "15–30 min",
+        "stops": "DS4F 0731, Dream Qwen, Flash-Next, Twins, baton, Music3, H3, 4B sidecar",
+        "starts": "glm53_nvfp4_tp2 :8888 glm-5.3-flash-nvfp4 DFlash2",
     },
     "video": {
         "label": "Videos",
@@ -266,16 +274,19 @@ def classify(probes: dict[str, bool]) -> str:
     dream = probes.get("dream", False)
     twins = probes.get("twins", False)
     flashnext = probes.get("flashnext", False)
+    glm53keys = probes.get("glm53keys", False)
     helper = probes.get("helper", False)
     h3 = probes.get("h3", False)
     music = probes.get("music", False)
-    if h3 and (ds4f or qwen38 or dream or twins or flashnext):
+    if h3 and (ds4f or qwen38 or dream or twins or flashnext or glm53keys):
         return "mixed"
     if h3:
         return "video"
     if qwen38:
         # Retired exclusive chip — leftover NVFP4 is not a preset.
         return "mixed"
+    if glm53keys:
+        return "glm53keys"
     if flashnext:
         return "flashnext"
     if twins:
@@ -312,13 +323,14 @@ def _probes_now() -> dict[str, bool]:
     ids = _model_ids("http://127.0.0.1:8888/v1/models")
     found["qwen38"] = any("qwen38-27b-unsloth-nvfp4" in i for i in ids)
     found["flashnext"] = any("qwen38-flash-next" in i for i in ids)
+    found["glm53keys"] = any("glm-5.3-flash" in i for i in ids)
     found["ds4f"] = any("deepseek" in i for i in ids) and not found["qwen38"]
     n2_ids = _model_ids("http://192.168.100.11:8100/v1/models")
     n2_8888 = _model_ids("http://192.168.100.11:8888/v1/models")
     found["dream"] = bool(found["ds4f"] and any("qwen3.8-27b" in i.lower() for i in n2_ids))
-    gguf_n1 = any("qwen3.8-27b" in i.lower() or i == "qwen3.8-27b" for i in ids) and not found["qwen38"] and not found["flashnext"]
+    gguf_n1 = any("qwen3.8-27b" in i.lower() or i == "qwen3.8-27b" for i in ids) and not found["qwen38"] and not found["flashnext"] and not found["glm53keys"]
     gguf_n2 = any("qwen3.8-27b" in i.lower() for i in n2_8888)
-    found["twins"] = bool(gguf_n1 and gguf_n2 and not found["ds4f"] and not found["flashnext"])
+    found["twins"] = bool(gguf_n1 and gguf_n2 and not found["ds4f"] and not found["flashnext"] and not found["glm53keys"])
     # Do not OR n1/n2 into one "vision" bit — Dream is n1, Prime is n2.
     found["vision"] = bool(found["vision_proxy"])
     # Keep qwen_n2 + baton in probes so the console never confuses

@@ -1112,7 +1112,7 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
   <div class="card" id="stack-control">
-    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Twins · Qwen3.8-Flash · Videos · Music</span></h3>
+    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Twins · Qwen3.8-Flash · GLM-5.3 · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
   </div>
@@ -2747,6 +2747,7 @@ function stackNote(s){
   if(s.detected==="dream") return "Both Sparks: 0731 TP2 348k. Node2: Qwen 27B VL 116k engine (prompt ~95k + 20k out; baton clamps). No 4B. Baton :8877.";
   if(s.detected==="twins") return "Qwen Twins: Mia SGLang DSpark NVFP4 on both Sparks :8888. DS4F parked. Orch=n1, smeagle=n2.";
   if(s.detected==="flashnext") return "Qwen3.8-Flash: Flash-Next FP8 TP2 on :8888 (131k). Dream/0731 parked. Chat is local.";
+  if(s.detected==="glm53keys") return "GLM-5.3-Flash: Tony DFlash2 TP2 on :8888 (fp8 KV, 262k). Dream/Flash-Next parked. Chat is local.";
   if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
@@ -2784,6 +2785,7 @@ function askStack(key){
     $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
     const refresh={
       flashnext:"Re-apply Qwen3.8-Flash only. SGLang TP2 FP8 on :8888. DS4F stays parked.",
+      glm53keys:"Re-apply GLM-5.3 only. Tony DFlash2 vLLM TP2 on :8888. Flash-Next stays parked.",
       twins:"Re-apply Qwen Twins only. Mia SGLang NVFP4 on both Sparks :8888. DS4F stays parked.",
       dream:"Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.",
       prime:"Re-apply Prime only. DS4F TP2 + 4B vision sidecar. Chat stays on :8888.",

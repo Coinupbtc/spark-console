@@ -83,6 +83,23 @@ class ClassifyTests(unittest.TestCase):
             "flashnext",
         )
 
+    def test_glm53keys_before_flashnext(self) -> None:
+        self.assertEqual(
+            stack_control.classify(
+                {
+                    "ds4f": False,
+                    "glm53keys": True,
+                    "flashnext": False,
+                    "twins": False,
+                    "dream": False,
+                    "helper": False,
+                    "h3": False,
+                    "music": False,
+                }
+            ),
+            "glm53keys",
+        )
+
     def test_none(self) -> None:
         self.assertEqual(
             stack_control.classify({"ds4f": False, "helper": False, "h3": False, "music": False}),
@@ -94,7 +111,7 @@ class PresetTests(unittest.TestCase):
     def test_named_setups(self) -> None:
         self.assertEqual(
             list(stack_control.PRESETS),
-            ["prime", "dream", "twins", "flashnext", "video", "music"],
+            ["prime", "dream", "twins", "flashnext", "glm53keys", "video", "music"],
         )
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
@@ -107,6 +124,8 @@ class PresetTests(unittest.TestCase):
         self.assertIn("sglang", stack_control.PRESETS["twins"]["starts"])
         self.assertIn("qwen38-flash-next", stack_control.PRESETS["flashnext"]["starts"])
         self.assertEqual(stack_control.PRESETS["flashnext"]["label"], "Qwen3.8-Flash")
+        self.assertEqual(stack_control.PRESETS["glm53keys"]["label"], "GLM-5.3")
+        self.assertIn("glm-5.3-flash-nvfp4", stack_control.PRESETS["glm53keys"]["starts"])
 
     def test_unknown_key_refused(self) -> None:
         result = stack_control.switch_stack("nemotron")

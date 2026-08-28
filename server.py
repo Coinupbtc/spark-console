@@ -133,7 +133,7 @@ class SwitchRequest(BaseModel):
 
 
 class StackSwitchRequest(BaseModel):
-    key: str  # prime | dream | twins | flashnext | video | music
+    key: str  # prime | dream | twins | flashnext | glm53keys | video | music
 
 
 class UpdateApplyRequest(BaseModel):

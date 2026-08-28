@@ -1,21 +1,21 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-08-27T10:53:59.245333+00:00",
+  "cached_at": "2026-08-28T10:47:13.932311+00:00",
   "behind_total": 5,
   "blocked": 2,
   "active_operation": null,
   "last_operation": {
-    "id": "7eca939856da",
+    "id": "bd9ee5ab308e",
     "type": "update",
-    "key": "ds4f",
-    "status": "completed",
-    "message": "DS4F recipe (both Sparks) updated.",
-    "pid": 1685170,
-    "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_7eca939856da.log",
-    "started_at": "2026-08-25T23:54:34.457371+00:00",
-    "finished_at": "2026-08-25T23:54:36.885542+00:00",
-    "returncode": 0,
-    "log_tail": "[dspark-ff-pull] DIVERGED ahead=8 behind=14 @ fb1e0c7 \u2014 merging origin/main (keeps local commits, no restart)\nAuto-merging docker-compose.dspark.yml\nMerge made by the 'ort' strategy.\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk already present: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] merged fb1e0c7 -> 5ad7148 (+14 from GitHub, kept 8 local)\nmerged fb1e0c7 -> 5ad7148 (+14)\n[dspark-ff-pull] CCCL-only dirty compose \u2014 backing up, resetting, ff-only, re-applying hunk\nUpdating c1fc732..70a7cc4\nFast-forward\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk applied: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] pulled c1fc732 -> 70a7cc4 (+14)\npulled c1fc732 -> 70a7cc4 (+14)"
+    "key": "hermes",
+    "status": "failed",
+    "message": "Hermes Agent update failed (exit 1).",
+    "pid": 2546142,
+    "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_bd9ee5ab308e.log",
+    "started_at": "2026-08-28T04:17:19.642040+00:00",
+    "finished_at": "2026-08-28T04:20:14.526359+00:00",
+    "returncode": 1,
+    "log_tail": "    ../hermes_cli/web_dist/assets/CronPage-D-b_75E9.js                     43.54 kB \u2502 gzip:  14.02 kB\n    ../hermes_cli/web_dist/assets/SkillsPage-BZjFR20B.js                   44.09 kB \u2502 gzip:  12.48 kB\n    ../hermes_cli/web_dist/assets/SessionsPage-CbO8ZMuf.js                 46.17 kB \u2502 gzip:  14.11 kB\n    ../hermes_cli/web_dist/assets/ChatPage-CyffAYWo.js                     49.32 kB \u2502 gzip:  16.75 kB\n    ../hermes_cli/web_dist/assets/vendor-B7eZBWFZ.js                       50.06 kB \u2502 gzip:  17.82 kB\n    ../hermes_cli/web_dist/assets/index-BaYhWFOe.js                        64.02 kB \u2502 gzip:  21.76 kB\n    ../hermes_cli/web_dist/assets/react-vendor-BoVnYuL4.js                226.99 kB \u2502 gzip:  72.78 kB\n    ../hermes_cli/web_dist/assets/ui-D6CeFIrh.js                          290.01 kB \u2502 gzip:  94.81 kB\n    ../hermes_cli/web_dist/assets/xterm-CXxU4Y2B.js                       474.38 kB \u2502 gzip: 122.64 kB\n    ../hermes_cli/web_dist/assets/i18n-XZPHmDjw.js                        477.80 kB \u2502 gzip: 140.85 kB\n    \n    \u001b[32m\u2713 built in 1m 36s\u001b[39m\n  \u2713 Web UI built\n\n\u2192 Checking configuration for new options...\n  \u2713 Configuration is up to date\n\u2713 Already up to date! [main @ 99c3cad85]\n\n\u26a0 A previous `hermes update` pulled new code but did not restart running gateways.\n  Gateways may still be serving pre-update modules (mixed sys.modules).\n\u2192 Running the pending fleet restart...\n\u2192 Restarting gateways left on pre-update code...\n\u26a0 Gateway PID 2374014 still running after 5.0s \u2014 restart may fail\n\n\u26a0 Update incomplete \u2014 some units were not restarted:\n    - hermes-gateway-orchestrator\n  Skipped units may still be running pre-update code (mixed\n  sys.modules). Restart them manually, then verify:\n    hermes gateway status\n    systemctl --user restart <unit>   # user-scope\n    sudo systemctl restart <unit>     # system-scope\n  \u26a0 Fleet restart incomplete. Recover with: hermes gateway restart"
   },
   "targets": [
     {
@@ -64,16 +64,16 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "1 upstream, 3 local reapply \u2014 will reset then re-apply patches",
+      "reason": "1 upstream, 998 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "f7f8ad942",
-      "remote": "c693c772b",
+      "head": "f9933bfc3",
+      "remote": "ae8c97603",
       "behind": 1,
-      "ahead": 3,
+      "ahead": 998,
       "dirty": true,
       "dirty_files": [
-        "apps/desktop/src/plugins/accent/plugin.js",
-        "apps/desktop/src/plugins/kanban/plugin.js"
+        "cli.py",
+        "hermes_cli/kanban_db.py"
       ],
       "state": "dirty",
       "error": null
@@ -86,12 +86,12 @@
       "eta": "under 1 min",
       "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
       "can_apply": false,
-      "reason": "already current (9 local commits)",
+      "reason": "already current (10 local commits)",
       "exists": true,
-      "head": "5ad7148",
-      "remote": "70a7cc4",
+      "head": "309720f",
+      "remote": "03d4776",
       "behind": 0,
-      "ahead": 9,
+      "ahead": 10,
       "dirty": false,
       "dirty_files": [],
       "state": "current",
@@ -247,7 +247,7 @@
       "label": "Hermes Agent",
       "state": "dirty",
       "behind": 1,
-      "reason": "1 upstream, 3 local reapply \u2014 will reset then re-apply patches"
+      "reason": "1 upstream, 998 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",

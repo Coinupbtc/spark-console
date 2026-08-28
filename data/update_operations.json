@@ -142,6 +142,45 @@
       "finished_at": "2026-08-25T23:54:36.885542+00:00",
       "returncode": 0,
       "log_tail": "[dspark-ff-pull] DIVERGED ahead=8 behind=14 @ fb1e0c7 \u2014 merging origin/main (keeps local commits, no restart)\nAuto-merging docker-compose.dspark.yml\nMerge made by the 'ort' strategy.\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk already present: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] merged fb1e0c7 -> 5ad7148 (+14 from GitHub, kept 8 local)\nmerged fb1e0c7 -> 5ad7148 (+14)\n[dspark-ff-pull] CCCL-only dirty compose \u2014 backing up, resetting, ff-only, re-applying hunk\nUpdating c1fc732..70a7cc4\nFast-forward\n .env.dspark.example               |  29 +++++++\n CHANGELOG.md                      |   8 ++\n docker-compose.dspark.yml         |  38 +++++++++\n docs/ENVS.md                      |   5 ++\n scripts/boot-shape-warmup.sh      | 107 ++++++++++++++++++++++++-\n scripts/test-boot-shape-warmup.sh | 160 +++++++++++++++++++++++++++++++-------\n start-deepseek-v4-flash-dspark.sh |  13 ++++\n 7 files changed, 330 insertions(+), 30 deletions(-)\ncccl hunk applied: /home/coinupbtc/Documents/projects/DeepSeek-v4-Flash-DSpark-2x-DGX-Spark/docker-compose.dspark.yml\n[dspark-ff-pull] pulled c1fc732 -> 70a7cc4 (+14)\npulled c1fc732 -> 70a7cc4 (+14)"
+    },
+    "48ccc0fc6f28": {
+      "id": "48ccc0fc6f28",
+      "type": "update",
+      "key": "apt-node1",
+      "status": "completed",
+      "message": "Update System Package Node1 updated.",
+      "pid": 2466311,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_48ccc0fc6f28.log",
+      "started_at": "2026-08-28T03:43:32.032732+00:00",
+      "finished_at": "2026-08-28T03:44:04.582360+00:00",
+      "returncode": 0,
+      "log_tail": " systemctl restart fail2ban.service\n systemctl restart fwupd.service\n systemctl restart lldpd.service\n systemctl restart nmbd.service\n systemctl restart packagekit.service\n systemctl restart smbd.service\n systemctl restart ssh.service\n systemctl restart systemd-journald.service\n /etc/needrestart/restart.d/systemd-manager\n systemctl restart systemd-networkd.service\n systemctl restart systemd-resolved.service\n systemctl restart systemd-timesyncd.service\n systemctl restart systemd-udevd.service\n systemctl restart tor@default.service\n systemctl restart udisks2.service\n systemctl restart upower.service\n\nService restarts being deferred:\n systemctl restart NetworkManager.service\n systemctl restart apt-daily.service\n systemctl restart dgx-dashboard-admin.service\n systemctl restart gdm.service\n systemctl restart systemd-logind.service\n systemctl restart wpa_supplicant.service\n\nNo containers need to be restarted.\n\nUser sessions running outdated binaries:\n coinupbtc @ user manager service: brave[2339564,2339577,2339579,2339581,2339627], brave-browser-s[2339557], chrome-sandbox[2339578], gnome-keyring-d[3681608], gvfsd[1606265], python[5422], systemd[2262]\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n[2026-08-27T22:44:04-05:00] remaining upgradable: 0"
+    },
+    "6a16d7a69298": {
+      "id": "6a16d7a69298",
+      "type": "update",
+      "key": "apt-node2",
+      "status": "completed",
+      "message": "Update System Package Node2 updated.",
+      "pid": 2541905,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_6a16d7a69298.log",
+      "started_at": "2026-08-28T04:15:49.419205+00:00",
+      "finished_at": "2026-08-28T04:16:21.948154+00:00",
+      "returncode": 0,
+      "log_tail": " systemctl restart fwupd.service\n systemctl restart gnome-remote-desktop.service\n systemctl restart lldpd.service\n systemctl restart packagekit.service\n systemctl restart plymouth.service\n systemctl restart ssh.service\n systemctl restart systemd-journald.service\n /etc/needrestart/restart.d/systemd-manager\n systemctl restart systemd-networkd.service\n systemctl restart systemd-resolved.service\n systemctl restart systemd-timesyncd.service\n systemctl restart systemd-udevd.service\n systemctl restart udisks2.service\n systemctl restart upower.service\n\nService restarts being deferred:\n systemctl restart NetworkManager.service\n systemctl restart dgx-dashboard-admin.service\n systemctl restart gdm.service\n systemctl restart systemd-logind.service\n systemctl restart wpa_supplicant.service\n\nNo containers need to be restarted.\n\nUser sessions running outdated binaries:\n coinupbtc @ session #23331: sshd[3165679]\n coinupbtc @ session #23995: sshd[3398211]\n coinupbtc @ user manager service: systemd[2149]\n gdm @ user manager service: systemd[2819]\n\nNo VM guests are running outdated hypervisor (qemu) binaries on this host.\n[2026-08-27T23:16:21-05:00] remaining upgradable: 0"
+    },
+    "bd9ee5ab308e": {
+      "id": "bd9ee5ab308e",
+      "type": "update",
+      "key": "hermes",
+      "status": "failed",
+      "message": "Hermes Agent update failed (exit 1).",
+      "pid": 2546142,
+      "log_file": "/home/coinupbtc/Documents/projects/dgx-spark-gpu-monitor/data/update_op_bd9ee5ab308e.log",
+      "started_at": "2026-08-28T04:17:19.642040+00:00",
+      "finished_at": "2026-08-28T04:20:14.526359+00:00",
+      "returncode": 1,
+      "log_tail": "    ../hermes_cli/web_dist/assets/CronPage-D-b_75E9.js                     43.54 kB \u2502 gzip:  14.02 kB\n    ../hermes_cli/web_dist/assets/SkillsPage-BZjFR20B.js                   44.09 kB \u2502 gzip:  12.48 kB\n    ../hermes_cli/web_dist/assets/SessionsPage-CbO8ZMuf.js                 46.17 kB \u2502 gzip:  14.11 kB\n    ../hermes_cli/web_dist/assets/ChatPage-CyffAYWo.js                     49.32 kB \u2502 gzip:  16.75 kB\n    ../hermes_cli/web_dist/assets/vendor-B7eZBWFZ.js                       50.06 kB \u2502 gzip:  17.82 kB\n    ../hermes_cli/web_dist/assets/index-BaYhWFOe.js                        64.02 kB \u2502 gzip:  21.76 kB\n    ../hermes_cli/web_dist/assets/react-vendor-BoVnYuL4.js                226.99 kB \u2502 gzip:  72.78 kB\n    ../hermes_cli/web_dist/assets/ui-D6CeFIrh.js                          290.01 kB \u2502 gzip:  94.81 kB\n    ../hermes_cli/web_dist/assets/xterm-CXxU4Y2B.js                       474.38 kB \u2502 gzip: 122.64 kB\n    ../hermes_cli/web_dist/assets/i18n-XZPHmDjw.js                        477.80 kB \u2502 gzip: 140.85 kB\n    \n    \u001b[32m\u2713 built in 1m 36s\u001b[39m\n  \u2713 Web UI built\n\n\u2192 Checking configuration for new options...\n  \u2713 Configuration is up to date\n\u2713 Already up to date! [main @ 99c3cad85]\n\n\u26a0 A previous `hermes update` pulled new code but did not restart running gateways.\n  Gateways may still be serving pre-update modules (mixed sys.modules).\n\u2192 Running the pending fleet restart...\n\u2192 Restarting gateways left on pre-update code...\n\u26a0 Gateway PID 2374014 still running after 5.0s \u2014 restart may fail\n\n\u26a0 Update incomplete \u2014 some units were not restarted:\n    - hermes-gateway-orchestrator\n  Skipped units may still be running pre-update code (mixed\n  sys.modules). Restart them manually, then verify:\n    hermes gateway status\n    systemctl --user restart <unit>   # user-scope\n    sudo systemctl restart <unit>     # system-scope\n  \u26a0 Fleet restart incomplete. Recover with: hermes gateway restart"
     }
   }
 }
