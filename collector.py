@@ -69,13 +69,17 @@ def _safe_float(v: str | None, default: float = 0.0) -> float:
 
 
 def query_gpu() -> list[dict]:
-    out = subprocess.run(
-        ["nvidia-smi",
-         "--query-gpu=index,name,power.draw,temperature.gpu,"
-         "utilization.gpu,memory.used,memory.total,fan.speed,pstate",
-         "--format=csv,noheader,nounits"],
-        capture_output=True, text=True, timeout=10,
-    )
+    try:
+        out = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=index,name,power.draw,temperature.gpu,"
+             "utilization.gpu,memory.used,memory.total,fan.speed,pstate",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        # Portable: a clone without nvidia-smi still serves the dashboard.
+        return []
     gpus = []
     for line in (out.stdout or "").strip().splitlines():
         p = [x.strip() for x in line.split(",")]
@@ -96,11 +100,14 @@ def query_gpu() -> list[dict]:
 
 
 def query_procs() -> list[dict]:
-    out = subprocess.run(
-        ["nvidia-smi", "--query-compute-apps=name,used_memory",
-         "--format=csv,noheader,nounits"],
-        capture_output=True, text=True, timeout=10,
-    )
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=name,used_memory",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
     procs = []
     for line in (out.stdout or "").strip().splitlines():
         p = [x.strip() for x in line.split(",")]
