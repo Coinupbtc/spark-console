@@ -1,17 +1,19 @@
 # Spark Console
 
-![Screenshot](docs/screenshots/hero.png)
+> **This leftover `master` branch is not the published Spark Console.**
+> Use **[`main`](https://github.com/Coinupbtc/spark-console/tree/main)**. Occupancy data and house control have been stripped here so checking out `master` cannot leak the lab.
 
+![Screenshot](docs/screenshots/hero.png)
 
 ![CI](https://github.com/Coinupbtc/spark-console/actions/workflows/ci.yml/badge.svg)
 
-
-
-Local **GPU + fleet dashboard** for NVIDIA DGX Spark (Grace Blackwell, unified memory) — and any Linux box with an NVIDIA GPU.
+Local **GPU + fleet dashboard** for NVIDIA DGX Spark (Grace Blackwell, unified memory) — and any Linux box with an NVIDIA GPU. Pulse, fleet cards, a read-only services board. Nothing phones home.
 
 Default UI: **http://127.0.0.1:8085/**
 
-This public tree is the **portable core**: collectors, the UI, and a read-only service board. It runs standalone with no homelab-specific modules.
+This public tree is the **portable core**: collectors, the UI, and a read-only service board. It runs standalone. The hero screenshot is a **live dual-Spark run** on the author’s box (your clone shows *your* hosts and units, not that fleet).
+
+Published default is **`main`**. Ignore leftover **`master`** if GitHub still lists it — that branch is not this dashboard.
 
 ## At a glance
 
@@ -101,6 +103,7 @@ Unset, the console is simply a single-node dashboard — no errors, no alerts.
 | `SPARK_CONSOLE_SERVICES` | `./services.json` | Service board config path |
 | `SPARK_CONSOLE_SYSTEMD_SCOPE` | `--user` | Use `--system` for system units |
 | `NOTIFY_HOOK` | — | Executable taking `--plain <msg>`, paged when node2 degrades |
+| `SPARK_FABRIC_IP` | — | If set, also probe `:8800` on that address (no baked-in LAN IP) |
 | `DGX_DATA_DIR` | `./data` | Where snapshots and the CSV live |
 
 ## Security
@@ -129,8 +132,9 @@ If you must serve a real hostname, add it explicitly:
 CONSOLE_ALLOWED_HOSTS=spark.lan ./start.sh
 ```
 
-This tree exposes **no** start/stop, model-switch, or run-a-script routes; the
-control plane that does is not published.
+This tree has **no** start/stop, restart, model-switch, kill, or launch HTTP
+routes. Pulse, fleet cards, and the service board are read-only. `POST /api/todos`
+is a local scratch list; `POST /api/refresh` re-runs the collector.
 
 ## Tests
 

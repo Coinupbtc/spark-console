@@ -1,9 +1,15 @@
 .venv/
 __pycache__/
+data/
 *.pyc
 .env
+*.bak*
 .DS_Store
 .env.*
 !.env.example
 venv/
 node_modules/
+dogfood-output/
+
+# your own board — start from services.example.json
+services.json
