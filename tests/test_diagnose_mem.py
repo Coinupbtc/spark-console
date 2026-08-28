@@ -34,7 +34,7 @@ class DiagnoseMemTests(unittest.TestCase):
         self.assertIn("no inference engine", mem[0]["message"])
 
     def test_endpoint_ok_explains_ram(self):
-        eps = [{"status": "ok", "engine": "vLLM-fabric", "port": 8800, "id": "MiniMax"}]
+        eps = [{"status": "ok", "engine": "vLLM", "port": 8000, "id": "example"}]
         alerts = diagnose(_sys(mem_pct=93.0), [], [], [], None, eps)
         self.assertFalse(any(a["category"] == "memory" for a in alerts))
         self.assertFalse(any(a["category"] == "swap" for a in alerts))

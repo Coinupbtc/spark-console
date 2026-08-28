@@ -13,7 +13,6 @@ import psutil
 from remote_node import query_node2
 
 
-ALERTBOT = Path.home() / ".hermes/scripts/alertbot-send.sh"
 NODE2_ALERT_STATE = Path(
     os.getenv(
         "DGX_NODE2_ALERT_STATE",
@@ -38,12 +37,8 @@ CLUSTER_CSV_HEADERS = [
 ]
 
 _WORKLOAD_PATTERNS = {
-    "pokemon": ("daily_scan", "pokemon-arb"),
-    "crypto": ("run_cycle", "crypto-machine"),
     "comfyui": ("comfyui",),
     "download": ("huggingface-cli download", "hf download", "aria2c", "wget "),
-    "bakeoff": ("bakeoff.py",),
-    "agent-cron": ("cron run",),
     "llama": ("llama-server",),
     "vllm": ("vllm",),
     "ollama": ("ollama",),
@@ -85,21 +80,13 @@ def query_local_workloads() -> list[str]:
         for label, patterns in _WORKLOAD_PATTERNS.items():
             if any(pattern in text for pattern in patterns):
                 labels.add(label)
-    try:
-        jobs_path = Path.home() / ".hermes/profiles/orchestrator/cron/jobs.json"
-        jobs = json.loads(jobs_path.read_text()).get("jobs") or []
-        if any(job.get("fire_claim") or job.get("state") == "running" for job in jobs):
-            labels.add("agent-cron")
-    except (OSError, TypeError, ValueError):
-        # Process labels remain useful when the scheduler ledger is unavailable.
-        pass
     return sorted(labels)
 
 
 def normalize_node2(raw: dict) -> dict:
     """Keep the durable node2 payload compact and schema-stable."""
     node = {
-        "name": raw.get("name", "sparkymaxxx-12ef"),
+        "name": raw.get("name") or raw.get("hostname") or "node2",
         "role": "node2",
         "iso_ts": raw.get("iso_ts"),
         "reachable": bool(raw.get("reachable")),
@@ -146,15 +133,17 @@ def notify_node2_state(node2: dict, state_path: Path = NODE2_ALERT_STATE) -> str
         return "already-alerted"
 
     detail = str(node2.get("error") or "node2 unreachable")[:300]
-    message = f"DGX baseline degraded: node2 collection failed. {detail}"
-    result = subprocess.run(
-        [str(ALERTBOT), "--plain", message],
-        capture_output=True,
-        text=True,
-        timeout=20,
-    )
-    if result.returncode != 0:
-        raise RuntimeError((result.stderr or result.stdout or "alertbot failed").strip())
+    message = f"Spark Console: node2 collection failed. {detail}"
+    hook = (os.environ.get("NOTIFY_HOOK") or "").strip()
+    if hook:
+        result = subprocess.run(
+            [hook, "--plain", message],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        if result.returncode != 0:
+            raise RuntimeError((result.stderr or result.stdout or "notify hook failed").strip())
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(message + "\n")
     return "alerted"
@@ -165,9 +154,13 @@ def cluster_csv_values(cluster: dict) -> dict:
     node1 = cluster["node1"]
     node2 = cluster["node2"]
     node1_8889 = next((endpoint for endpoint in node1["endpoints"] if endpoint["port"] == 8889), {})
-    node2_8100 = next((endpoint for endpoint in node2["endpoints"] if endpoint["port"] == 8100), {})
+    node2_eps = node2.get("endpoints") or []
+    node2_8100 = next((endpoint for endpoint in node2_eps if endpoint.get("port") == 8100), {})
     node2_gpu = (node2.get("gpus") or [{}])[0]
-    deep_model = next((model for model in node2["models"] if model.get("port") == 8100), {})
+    models = node2.get("models") or []
+    serving = next((model for model in models if model.get("port") == 8100), None) or (
+        models[0] if models else {}
+    )
     workloads = {
         "node1": node1.get("workloads") or [],
         "node2": node2.get("workloads") or [],
@@ -183,9 +176,8 @@ def cluster_csv_values(cluster: dict) -> dict:
         "node2_swap_pct": node2.get("swap", {}).get("pct", ""),
         "node2_gpu_util": node2_gpu.get("util_gpu", ""),
         "node2_gpu_power_w": node2_gpu.get("power_w", ""),
-        # Persist node2 GPU temp so cooling A/B (case/fan) can use both nodes.
         "node2_gpu_temp_c": node2_gpu.get("temp_c", ""),
-        "node2_active_model": deep_model.get("id", ""),
+        "node2_active_model": serving.get("id", ""),
         "node2_endpoint_8100_ok": node2_8100.get("status") == "ok",
         "workloads_json": json.dumps(workloads, separators=(",", ":")),
     }
