@@ -29,7 +29,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CATALOG = Path(os.environ.get("SPARK_CONSOLE_SERVICES", HERE / "services.json"))
 
-# Same shape the private control-plane uses, so the UI needs no special-casing.
+# Same shape a writable board would use, so the UI needs no special-casing.
 _ID_RE = re.compile(r"^[a-z][a-z0-9_-]{1,48}$")
 _SCOPE = os.environ.get("SPARK_CONSOLE_SYSTEMD_SCOPE", "--user")
 PROBE_TIMEOUT = float(os.environ.get("SPARK_CONSOLE_PROBE_TIMEOUT", "2"))
@@ -113,7 +113,7 @@ def load_catalog() -> dict[str, dict]:
             probe_url = f"http://127.0.0.1:{int(port)}/"
         if not unit and not probe_url:
             continue
-        # Optional public/UI URL when probe is loopback-only or Tailscale-served
+        # Optional public/UI URL when probe is loopback-only
         open_url = str(item.get("open_url") or "").strip()
         if open_url and not (open_url.startswith("http://") or open_url.startswith("https://")):
             open_url = ""

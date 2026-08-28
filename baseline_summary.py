@@ -80,7 +80,7 @@ def _workload_overlaps(rows: list[dict]) -> dict[str, int]:
         labels = set(payload.get("node1") or []) | set(payload.get("node2") or [])
         if "inference-busy" in labels:
             labels.add("inference")
-        labels &= {"inference", "pokemon", "comfyui", "download", "agent-cron"}
+        labels &= {"inference", "comfyui", "download", "llama", "vllm", "ollama"}
         for left, right in itertools.combinations(sorted(labels), 2):
             counts[f"{left}+{right}"] += 1
     return dict(sorted(counts.items()))
