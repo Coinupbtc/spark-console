@@ -125,7 +125,7 @@ class PresetTests(unittest.TestCase):
         self.assertIn("qwen38-flash-next", stack_control.PRESETS["flashnext"]["starts"])
         self.assertEqual(stack_control.PRESETS["flashnext"]["label"], "Qwen3.8-Flash")
         self.assertEqual(stack_control.PRESETS["glm53keys"]["label"], "GLM-5.3")
-        self.assertIn("glm-5.3-flash-nvfp4", stack_control.PRESETS["glm53keys"]["starts"])
+        self.assertIn("GLM-5.3-Flash-EXL3", stack_control.PRESETS["glm53keys"]["starts"])
 
     def test_unknown_key_refused(self) -> None:
         result = stack_control.switch_stack("nemotron")

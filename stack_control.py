@@ -61,11 +61,11 @@ PRESETS: dict[str, dict] = {
     },
     "glm53keys": {
         "label": "GLM-5.3",
-        "short": "Tony DFlash2 · fp8 KV · 262k",
-        "detail": "Tony GLM-5.3-Flash NVFP4 + DFlash2 on both Sparks (vLLM TP2, fp8 KV, 262k). Parks Flash-Next and Dream. Chat stays local on :8888. Cold load ~15–30 min.",
+        "short": "Mia EXL3 · DFlash2 · 900k",
+        "detail": "Mia GLM-5.3-Flash EXL3 4bpw + DFlash2 on both Sparks (vLLM TP2, fp8 KV, 900k). Parks Flash-Next and Dream. Chat stays local on :8888. First boot downloads ~164 GiB.",
         "eta": "15–30 min",
         "stops": "DS4F 0731, Dream Qwen, Flash-Next, Twins, baton, Music3, H3, 4B sidecar",
-        "starts": "glm53_nvfp4_tp2 :8888 glm-5.3-flash-nvfp4 DFlash2",
+        "starts": "glm53-exl3-head :8888 GLM-5.3-Flash-EXL3 DFlash2",
     },
     "video": {
         "label": "Videos",
