@@ -1,6 +1,6 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-08-29T10:30:28.215153+00:00",
+  "cached_at": "2026-08-30T10:42:37.298068+00:00",
   "behind_total": 5,
   "blocked": 2,
   "active_operation": null,
@@ -64,17 +64,15 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "1 upstream, 999 local reapply \u2014 will reset then re-apply patches",
+      "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "7dcc61f65",
-      "remote": "aff5125f8",
+      "head": "18d9f2b19",
+      "remote": "26350357d",
       "behind": 1,
-      "ahead": 999,
-      "dirty": true,
-      "dirty_files": [
-        "hermes_cli/commands.py"
-      ],
-      "state": "dirty",
+      "ahead": 1000,
+      "dirty": false,
+      "dirty_files": [],
+      "state": "diverged",
       "error": null
     },
     {
@@ -244,9 +242,9 @@
     {
       "key": "hermes",
       "label": "Hermes Agent",
-      "state": "dirty",
+      "state": "diverged",
       "behind": 1,
-      "reason": "1 upstream, 999 local reapply \u2014 will reset then re-apply patches"
+      "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",
