@@ -53,11 +53,11 @@ PRESETS: dict[str, dict] = {
     },
     "flashnext": {
         "label": "Qwen3.8-Flash",
-        "short": "Flash-Next FP8 TP2 · 131k",
-        "detail": "Qwen3.8-Flash-Next-FP8 on both Sparks (SGLang TP2/EP2). Parks Dream/0731. Chat stays local on :8888. First cold load ~10–20 min.",
+        "short": "Flash-Next vLLM TP2 · 1M",
+        "detail": "Qwen3.8-Flash-Next-NVFP4 on both Sparks (vLLM TP2+EP+MTP3, YaRN 1M, bf16 KV). Parks Dream/0731. Chat stays local on :8888. First cold load ~10–20 min.",
         "eta": "10–20 min",
         "stops": "DS4F 0731, Dream Qwen, Twins, baton, Music3, H3, 4B sidecar",
-        "starts": "qwen38-flash-next :8888 TP2",
+        "starts": "vllm-fn :8888 TP2 (qwen38-flash-next)",
     },
     "glm53keys": {
         "label": "GLM-5.3",
@@ -322,7 +322,7 @@ def _probes_now() -> dict[str, bool]:
             found[fut[f]] = bool(f.result())
     ids = _model_ids("http://127.0.0.1:8888/v1/models")
     found["qwen38"] = any("qwen38-27b-unsloth-nvfp4" in i for i in ids)
-    found["flashnext"] = any("qwen38-flash-next" in i for i in ids)
+    found["flashnext"] = any("qwen38-flash-next" in i or "qwen3.8-flash-next" in i for i in ids)
     found["glm53keys"] = any("glm-5.3-flash" in i for i in ids)
     found["ds4f"] = any("deepseek" in i for i in ids) and not found["qwen38"]
     n2_ids = _model_ids("http://192.168.100.11:8100/v1/models")

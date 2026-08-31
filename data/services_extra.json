@@ -1,30 +1,24 @@
 {
- "version": 1,
- "updated_at": "2026-08-30T00:13:52.782068+00:00",
- "services": [
-  "blender-mcp",
-  "cardarb-mobile",
-  "jobscan-applyd",
-  "start9-hermes-proxy",
-  "gitea-tunnel",
-  "start9-syncthing-tunnel",
-  "showrunner",
-  "apollo-descent",
-  "blackjack3d",
-  "paintball-fps",
-  "pokemon-kart",
-  "voxel-pagoda",
-  "nerdqaxe",
-  "avatar-pip",
-  "zombie-breach",
-  "dream-baton",
-  "spotify-visualizer",
-  "milk-viz",
-  "sketchpad",
-  "phone-blackjack",
-  "flash-next-watchdog",
-  "spark-mcp",
-  "crypto-dashboard",
-  "paperdesk"
- ]
+  "version": 1,
+  "updated_at": "2026-08-31T01:37:24.344278+00:00",
+  "services": {
+    "paper-desk": {
+      "label": "Paper Desk",
+      "detail": ":8088",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "paper-desk.service",
+      "probe": [
+        "http://127.0.0.1:8088/",
+        2.0
+      ],
+      "port": 8088,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-31T01:37:24.344219+00:00"
+    }
+  }
 }

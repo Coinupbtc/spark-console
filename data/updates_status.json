@@ -1,6 +1,6 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-08-30T10:42:37.298068+00:00",
+  "cached_at": "2026-08-31T10:59:35.428867+00:00",
   "behind_total": 5,
   "blocked": 2,
   "active_operation": null,
@@ -67,7 +67,7 @@
       "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
       "head": "18d9f2b19",
-      "remote": "26350357d",
+      "remote": "1f99a4b2f",
       "behind": 1,
       "ahead": 1000,
       "dirty": false,
