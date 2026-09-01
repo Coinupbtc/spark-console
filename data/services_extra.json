@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-31T01:37:24.344278+00:00",
+  "updated_at": "2026-08-31T20:29:22.445669+00:00",
   "services": {
     "paper-desk": {
       "label": "Paper Desk",
@@ -19,6 +19,24 @@
       "port": 8088,
       "show_projects_tile": true,
       "registered_at": "2026-08-31T01:37:24.344219+00:00"
+    },
+    "tank-duel": {
+      "label": "Tank Duel",
+      "detail": ":8073 phone artillery 1v1",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "iPhone via Tailscale: http://sparkmax:8073",
+      "source": "extra",
+      "unit": "tank-duel.service",
+      "probe": [
+        "http://127.0.0.1:8073/",
+        2.0
+      ],
+      "port": 8073,
+      "show_projects_tile": true,
+      "registered_at": "2026-08-31T20:29:22.445615+00:00"
     }
   }
 }

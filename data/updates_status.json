@@ -1,6 +1,6 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-08-31T10:59:35.428867+00:00",
+  "cached_at": "2026-09-01T10:43:00.833928+00:00",
   "behind_total": 5,
   "blocked": 2,
   "active_operation": null,
@@ -67,12 +67,14 @@
       "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
       "head": "18d9f2b19",
-      "remote": "1f99a4b2f",
+      "remote": "21b2095d0",
       "behind": 1,
       "ahead": 1000,
-      "dirty": false,
-      "dirty_files": [],
-      "state": "diverged",
+      "dirty": true,
+      "dirty_files": [
+        "gateway/memory_status.py"
+      ],
+      "state": "dirty",
       "error": null
     },
     {
@@ -83,12 +85,12 @@
       "eta": "under 1 min",
       "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
       "can_apply": false,
-      "reason": "already current (11 local commits)",
+      "reason": "already current (12 local commits)",
       "exists": true,
-      "head": "0fbff0c",
-      "remote": "0107cef",
+      "head": "b986100",
+      "remote": "de230b4",
       "behind": 0,
-      "ahead": 11,
+      "ahead": 12,
       "dirty": false,
       "dirty_files": [],
       "state": "current",
@@ -242,7 +244,7 @@
     {
       "key": "hermes",
       "label": "Hermes Agent",
-      "state": "diverged",
+      "state": "dirty",
       "behind": 1,
       "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches"
     },
