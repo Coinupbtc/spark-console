@@ -1,6 +1,6 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-09-01T10:43:00.833928+00:00",
+  "cached_at": "2026-09-02T10:58:23.787364+00:00",
   "behind_total": 5,
   "blocked": 2,
   "active_operation": null,
@@ -64,17 +64,15 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches",
+      "reason": "1 upstream, 1001 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "18d9f2b19",
-      "remote": "21b2095d0",
+      "head": "d91deb5a0",
+      "remote": "fdb2e10a8",
       "behind": 1,
-      "ahead": 1000,
-      "dirty": true,
-      "dirty_files": [
-        "gateway/memory_status.py"
-      ],
-      "state": "dirty",
+      "ahead": 1001,
+      "dirty": false,
+      "dirty_files": [],
+      "state": "diverged",
       "error": null
     },
     {
@@ -85,12 +83,12 @@
       "eta": "under 1 min",
       "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
       "can_apply": false,
-      "reason": "already current (12 local commits)",
+      "reason": "already current (13 local commits)",
       "exists": true,
-      "head": "b986100",
-      "remote": "de230b4",
+      "head": "6391a34",
+      "remote": "d97c808",
       "behind": 0,
-      "ahead": 12,
+      "ahead": 13,
       "dirty": false,
       "dirty_files": [],
       "state": "current",
@@ -244,9 +242,9 @@
     {
       "key": "hermes",
       "label": "Hermes Agent",
-      "state": "dirty",
+      "state": "diverged",
       "behind": 1,
-      "reason": "1 upstream, 1000 local reapply \u2014 will reset then re-apply patches"
+      "reason": "1 upstream, 1001 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",

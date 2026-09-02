@@ -1,24 +1,23 @@
 {
   "version": 1,
-  "updated_at": "2026-08-31T20:29:22.445669+00:00",
+  "updated_at": "2026-09-01T14:41:39.584729+00:00",
   "services": {
     "paper-desk": {
-      "label": "Paper Desk",
+      "label": "Paper Desk (MAIN $100 + FAST $50)",
       "detail": ":8088",
       "group": "apps",
-      "kind": "systemd",
+      "kind": "probe-only",
       "critical": false,
-      "no_stop": false,
+      "no_stop": true,
       "hint": "",
       "source": "extra",
-      "unit": "paper-desk.service",
       "probe": [
         "http://127.0.0.1:8088/",
         2.0
       ],
       "port": 8088,
       "show_projects_tile": true,
-      "registered_at": "2026-08-31T01:37:24.344219+00:00"
+      "registered_at": "2026-09-01T14:41:39.584675+00:00"
     },
     "tank-duel": {
       "label": "Tank Duel",

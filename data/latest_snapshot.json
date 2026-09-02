@@ -1,38 +1,38 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-09-01 10:57:01",
-  "iso_ts": "2026-09-01T10:57:01.880185+00:00",
+  "timestamp_utc": "2026-09-02 10:56:57",
+  "iso_ts": "2026-09-02T10:56:57.083642+00:00",
   "hour": 10,
-  "dow": 1,
+  "dow": 2,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 0.9,
-    "load_1": 0.33,
-    "load_5": 0.53,
-    "load_15": 0.61,
-    "mem_used_gb": 117.84,
+    "cpu_pct": 22.5,
+    "load_1": 3.39,
+    "load_5": 2.7,
+    "load_15": 1.98,
+    "mem_used_gb": 119.2,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 3.85,
-    "mem_pct": 96.8,
-    "swap_used_gb": 10.0,
+    "mem_avail_gb": 2.49,
+    "mem_pct": 98.0,
+    "swap_used_gb": 10.58,
     "swap_total_gb": 16.0,
-    "swap_pct": 62.5,
+    "swap_pct": 66.1,
     "disk_used_pct": 64.4,
     "disk_free_tb": 1.24
   },
   "num_gpus": 1,
-  "avg_util_pct": 0.0,
-  "total_power_watts": 10.05,
-  "avg_temp_c": 39.0,
+  "avg_util_pct": 96.0,
+  "total_power_watts": 53.89,
+  "avg_temp_c": 65.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.05,
-      "power_avg_w": 10.05,
-      "power_instant_w": 10.15,
-      "temp_c": 39,
-      "util_gpu": 0.0,
+      "power_w": 53.89,
+      "power_avg_w": 53.89,
+      "power_instant_w": 51.93,
+      "temp_c": 65,
+      "util_gpu": 96.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -42,7 +42,7 @@
   "processes": [
     {
       "name": "VLLM::Worker_TP0",
-      "mem_mb": 109313
+      "mem_mb": 110539
     }
   ],
   "ollama": [],
@@ -152,17 +152,17 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 0.9,
-        "load_1": 0.33,
-        "load_5": 0.53,
-        "load_15": 0.61,
-        "mem_used_gb": 117.84,
+        "cpu_pct": 22.5,
+        "load_1": 3.39,
+        "load_5": 2.7,
+        "load_15": 1.98,
+        "mem_used_gb": 119.2,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 3.85,
-        "mem_pct": 96.8,
-        "swap_used_gb": 10.0,
+        "mem_avail_gb": 2.49,
+        "mem_pct": 98.0,
+        "swap_used_gb": 10.58,
         "swap_total_gb": 16.0,
-        "swap_pct": 62.5,
+        "swap_pct": 66.1,
         "disk_used_pct": 64.4,
         "disk_free_tb": 1.24
       },
@@ -170,11 +170,11 @@
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.05,
-          "power_avg_w": 10.05,
-          "power_instant_w": 10.15,
-          "temp_c": 39,
-          "util_gpu": 0.0,
+          "power_w": 53.89,
+          "power_avg_w": 53.89,
+          "power_instant_w": 51.93,
+          "temp_c": 65,
+          "util_gpu": 96.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
           "fan_pct": 0,
@@ -202,41 +202,43 @@
           "engine": "Ollama",
           "status": "down",
           "models": [],
-          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+          "error": "HTTPError: HTTP Error 502: Bad Gateway"
         }
       ],
       "workloads": [
         "agent-cron",
-        "llama",
+        "crypto",
+        "ollama",
         "pokemon",
-        "vllm"
+        "vllm",
+        "inference-busy"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-09-01T10:57:02.812884+00:00",
+      "iso_ts": "2026-09-02T10:56:58.224061+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 0.8,
+      "cpu_pct": 6.1,
       "mem": {
-        "used_gb": 118.3,
+        "used_gb": 118.4,
         "total_gb": 121.7,
-        "avail_gb": 3.4,
-        "pct": 97.2
+        "avail_gb": 3.3,
+        "pct": 97.3
       },
       "swap": {
-        "used_gb": 4.9,
+        "used_gb": 5.9,
         "total_gb": 16.0,
-        "pct": 30.6
+        "pct": 37.0
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.17,
-          "temp_c": 38,
-          "util_gpu": 0.0
+          "power_w": 44.31,
+          "temp_c": 67,
+          "util_gpu": 96.0
         }
       ],
       "models": [],
@@ -263,7 +265,7 @@
       "top_procs": [
         {
           "name": "VLLM::Worker_TP",
-          "mem_gb": 2.4
+          "mem_gb": 1.1
         },
         {
           "name": "polkitd",
@@ -274,12 +276,12 @@
           "mem_gb": 0.2
         },
         {
-          "name": "systemd-journal",
+          "name": "gnome-shell",
           "mem_gb": 0.1
         },
         {
-          "name": "gnome-shell",
-          "mem_gb": 0.1
+          "name": "systemd-journal",
+          "mem_gb": 0.0
         }
       ]
     }
@@ -306,7 +308,7 @@
         "engine": "Ollama",
         "status": "down",
         "models": [],
-        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
+        "error": "HTTPError: HTTP Error 502: Bad Gateway"
       }
     ],
     "node2": [
@@ -330,18 +332,27 @@
   "workloads": {
     "node1": [
       "agent-cron",
-      "llama",
+      "crypto",
+      "ollama",
       "pokemon",
-      "vllm"
+      "vllm",
+      "inference-busy"
     ],
     "node2": [
       "vllm"
     ]
   },
   "node2_alert_state": "healthy",
-  "alerts": [],
+  "alerts": [
+    {
+      "level": "critical",
+      "category": "memory",
+      "message": "RAM at 98.0% \u2014 only 2.49 GB free (inference resident: vLLM :8888)",
+      "action": "Swap-thrash range. Free RAM only if you want this mode down \u2014 see ~/scripts/dgx/spark-mode.sh status / CURRENT.md"
+    }
+  ],
   "alert_count": {
-    "critical": 0,
+    "critical": 1,
     "warning": 0,
     "info": 0
   }
