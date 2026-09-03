@@ -57,6 +57,16 @@ for u in ssh cron tailscaled docker; do echo "$u $(systemctl is-active $u 2>/dev
 st=$(systemctl is-active syncthing 2>/dev/null || true)
 [ "$st" = active ] || st=$(systemctl is-active syncthing@coffee-house 2>/dev/null || echo unknown)
 echo "syncthing $st"
+echo @APPS
+# Phone PRIMARY apps. crypto is Spark-primary as of 2026-09-01 — Pi copy must stay down.
+for spec in jobscan:8090 cardarb:8060 betintel:8001 embeds:11435 crypto:8787; do
+  name=${spec%%:*}; port=${spec##*:}
+  if ss -tln 2>/dev/null | grep -qE ":${port}[[:space:]]"; then
+    echo "$name $port up"
+  else
+    echo "$name $port down"
+  fi
+done
 echo @MIRROR
 if [ -d /home/coffee-house/spark-mirror ]; then
   find /home/coffee-house/spark-mirror -type f -printf '%T@\n' 2>/dev/null | sort -n | tail -1
@@ -160,6 +170,12 @@ echo @END
 # nextcloud added to KEEP intent 2026-07-26 but not required for critical pages.
 START9_CORE = ("bitcoind", "electrs", "nextcloud",
                "gitea", "syncthing", "searxng", "vaultwarden", "mempool")
+# Intended running set (wiki start9-maintain). Extra LXC is post-0.4.0 leftover.
+START9_KEEP = START9_CORE + (
+    "filebrowser", "ntfy", "tor", "ollama", "open-webui", "gitea-runner",
+    "monerod", "btcpayserver", "canary", "start9-pages",
+    "changedetection", "paperless-ngx", "tailscale",
+)
 
 
 def _ssh(alias: str, script: str, timeout: int = SSH_TIMEOUT) -> tuple[bool, str, str]:
@@ -420,6 +436,13 @@ def query_pi() -> dict:
                 pass
         base["tailscale_ip"] = _first(s, "TAILSCALE")
 
+        apps = []
+        for line in s.get("APPS", []):
+            p = line.split()
+            if len(p) >= 3:
+                apps.append({"name": p[0], "port": p[1], "state": p[2]})
+        base["apps"] = apps
+
         # ---- headroom: this box is a mirror+watchdog appliance, so the interesting
         # number is how much of it is unused, not how much is used.
         try:
@@ -452,6 +475,14 @@ def query_pi() -> dict:
             elif svc["name"] == "syncthing" and svc["state"] != "active":
                 issues.append({"level": "warning",
                                "message": f"Pi syncthing is {svc['state']} — vault replica stalled"})
+        for app in apps:
+            # Spark owns crypto dash (2026-09-01). Pi copy is a dual-run lie.
+            if app["name"] == "crypto" and app["state"] == "up":
+                issues.append({"level": "warning",
+                               "message": "Pi still serving crypto :8787 — Spark is PRIMARY, stop pi-dual-crypto-dash"})
+            elif app["name"] != "crypto" and app["state"] != "up":
+                issues.append({"level": "warning",
+                               "message": f"Pi PRIMARY {app['name']} :{app['port']} is down"})
         wdog = base.get("watchdog")
         if wdog and wdog["age_m"] > 25:
             issues.append({"level": "warning",
@@ -549,7 +580,8 @@ def query_start9() -> dict:
                 cid = parts[2].strip() if len(parts) > 2 else ""
                 status = f"LXC {cid}" if up else "stopped"
                 svc_list.append({"name": name, "status": status, "up": up,
-                                 "core": name in START9_CORE, "lxc_id": cid or None})
+                                 "core": name in START9_CORE, "keep": name in START9_KEEP,
+                                 "lxc_id": cid or None})
             if not total and svc_list:
                 total = len(svc_list)
                 running = sum(1 for x in svc_list if x["up"])
@@ -565,7 +597,7 @@ def query_start9() -> dict:
                 short = name.replace(".embassy", "").strip()
                 up = status.strip().lower().startswith("up")
                 svc_list.append({"name": short, "status": status.strip(), "up": up,
-                                 "core": short in START9_CORE})
+                                 "core": short in START9_CORE, "keep": short in START9_KEEP})
         svc_list.sort(key=lambda x: (not x["core"], not x["up"], x["name"]))
         base["containers"] = {"running": running, "total": total, "runtime": "lxc"}
         # lxc_services is canonical; podman_services kept so fleet_links/console
@@ -573,6 +605,8 @@ def query_start9() -> dict:
         base["lxc_services"] = svc_list
         base["podman_services"] = svc_list
         base["core_down"] = [x["name"] for x in svc_list if x["core"] and not x["up"]]
+        base["keep_up"] = sum(1 for x in svc_list if x.get("keep") and x.get("up"))
+        base["extra_up"] = [x["name"] for x in svc_list if x.get("up") and not x.get("keep")]
         missing = [c for c in START9_CORE if not any(x["name"] == c for x in svc_list)]
         base["core_missing"] = missing
 
@@ -596,6 +630,14 @@ def query_start9() -> dict:
                            "message": f"Start9 startd {base['startd']} — services will not run"})
         if running == 0:
             issues.append({"level": "critical", "message": "Start9: no containers running"})
+        elif len(base.get("extra_up") or []) >= 8:
+            extras = ", ".join((base.get("extra_up") or [])[:8])
+            issues.append({
+                "level": "info",
+                "message": (f"Start9 {running} LXC up · KEEP {base.get('keep_up', 0)}/"
+                            f"{len(START9_KEEP)} · extras include {extras} "
+                            f"(re-apply start9-apply-keep.sh to pause Lightning/media leftovers)"),
+            })
         elif total and running < total:
             # KEEP pause intentionally leaves many installed packages stopped.
             # Only warn when even the core set is incomplete — not on lean installs.

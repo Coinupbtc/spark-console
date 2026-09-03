@@ -84,33 +84,8 @@ TARGETS: dict[str, dict] = {
         "eta": "under 1 min",
         "warn": "ff-only.",
     },
-    "puzzle": {
-        "label": "Puzzle 75B recipe",
-        "short": "Mia",
-        "path": HOME / "Documents/projects/Nemotron-Labs-3-Puzzle-75B-DGX-Spark",
-        "ref": "main",
-        "kind": "git",
-        "eta": "under 1 min",
-        "warn": "ff-only.",
-    },
-    "laguna": {
-        "label": "Laguna-S 2.1",
-        "short": "Mia",
-        "path": HOME / "Laguna-S-2.1-DGX-Spark-RTX-6000-PRO",
-        "ref": "main",
-        "kind": "git",
-        "eta": "under 1 min",
-        "warn": "ff-only. Dirty start.sh is skipped.",
-    },
-    "mimo": {
-        "label": "MiMo dual-spark",
-        "short": "Mia",
-        "path": HOME / "MiMo-V2.5-vLLM-Dual-DGX-Sparks",
-        "ref": "main",
-        "kind": "git",
-        "eta": "under 1 min",
-        "warn": "ff-only.",
-    },
+    # puzzle / laguna / mimo: leftover trial recipes (~400K git, no weights).
+    # Dropped 2026-09-02 so Console + nightly jobs stop paging unused trees.
     "qwen35": {
         "label": "Qwen 3.6 35B recipe",
         "short": "helper weights recipe",

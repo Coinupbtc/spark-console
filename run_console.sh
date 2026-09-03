@@ -28,7 +28,7 @@ cd "$ROOT"
 export HOST="$BIND"
 export PORT="$PORT"
 # TrustedHostMiddleware must accept the phone's Host header (tailnet IP or
-# MagicDNS FQDN) in addition to loopback. Loopback stays allowed so agents +
-# the console watchdog (curl 127.0.0.1:8085) keep working after the rebind.
-export CONSOLE_ALLOWED_HOSTS="${CONSOLE_ALLOWED_HOSTS:-$BIND,sparkmax-10ef.tail6cfceb.ts.net}"
+# MagicDNS FQDN) in addition to loopback. server.py dual-binds 127.0.0.1 so
+# agents + SSH tunnels + the watchdog can curl loopback without hitting LAN.
+export CONSOLE_ALLOWED_HOSTS="${CONSOLE_ALLOWED_HOSTS:-$BIND,sparkmax-10ef.tail6cfceb.ts.net,localhost,127.0.0.1}"
 exec "$ROOT/.venv/bin/python" "$ROOT/server.py"

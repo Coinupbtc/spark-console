@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-01T14:41:39.584729+00:00",
+  "updated_at": "2026-09-02T22:46:14.952005+00:00",
   "services": {
     "paper-desk": {
       "label": "Paper Desk (MAIN $100 + FAST $50)",
@@ -36,6 +36,41 @@
       "port": 8073,
       "show_projects_tile": true,
       "registered_at": "2026-08-31T20:29:22.445615+00:00"
+    },
+    "nerdqaxe-proxy": {
+      "label": "NerdQAxe miner control (fast UI)",
+      "detail": ":8767",
+      "group": "apps",
+      "kind": "systemd",
+      "critical": false,
+      "no_stop": false,
+      "hint": "",
+      "source": "extra",
+      "unit": "nerdqaxe-proxy.service",
+      "probe": [
+        "http://127.0.0.1:8767/",
+        2.0
+      ],
+      "port": 8767,
+      "show_projects_tile": true,
+      "registered_at": "2026-09-02T22:46:14.918753+00:00"
+    },
+    "resume-site": {
+      "label": "Resume pack (localhost)",
+      "detail": ":8764 loopback",
+      "group": "apps",
+      "kind": "probe-only",
+      "critical": false,
+      "no_stop": true,
+      "hint": "",
+      "source": "extra",
+      "probe": [
+        "http://127.0.0.1:8764/",
+        2.0
+      ],
+      "port": 8764,
+      "show_projects_tile": true,
+      "registered_at": "2026-09-02T22:46:14.951877+00:00"
     }
   }
 }

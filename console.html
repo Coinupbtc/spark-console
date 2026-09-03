@@ -286,7 +286,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .view.on{display:grid}
 
 /* ─────────────── PULSE ─────────────── */
-#v-pulse{grid-template-rows:auto auto minmax(160px,1fr)}
+#v-pulse{grid-template-rows:auto auto auto minmax(160px,1fr)}
 
 /* hero verdict — first story on Pulse */
 .hero{display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:var(--r);
@@ -434,6 +434,25 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .host.side .spark{height:28px;margin-top:4px}
 
 #v-pulse .attn{min-height:0}
+
+/* Live setup + how to use this board — first thing a stranger should read */
+.now{display:grid;gap:10px;padding:14px 16px;border-radius:var(--r);
+  border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+.now-setup{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
+.now-setup .live-name{font:650 16px/1.2 var(--sans);letter-spacing:-.02em}
+.now-setup .live-model{font:12px/1.3 var(--mono);color:var(--ink-2)}
+.now-setup .live-chat{font:12.5px/1.35 var(--sans);color:var(--ink-2)}
+.now-how{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.now-how div{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);
+  border:1px solid var(--line);min-height:44px}
+.now-how b{display:block;font:650 12px/1.2 var(--sans);margin-bottom:2px}
+.now-how span{font:11.5px/1.35 var(--sans);color:var(--ink-3)}
+.fleet-lead{grid-column:1/-1;margin:0;padding:12px 16px;border-radius:var(--r);
+  border:1px solid var(--line);background:var(--surface);font:13.5px/1.45 var(--sans);color:var(--ink-2)}
+.fleet-lead b{color:var(--ink)}
+@media (max-width:760px){
+  .now-how{grid-template-columns:1fr 1fr}
+}
 
 /* projects */
 .prj{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:12px;
@@ -627,6 +646,8 @@ tr:last-child td{border-bottom:0}
 .svc:hover{border-color:var(--line-2);transform:translateY(-1px)}
 .svc.waste{border-color:rgba(250,178,25,.42)}
 .svc.off{opacity:.7}
+.svc.parked{opacity:.85;border-style:dashed}
+.svc.parked .used{color:var(--ink-3)}
 .svc .name{display:flex;align-items:center;font-size:12.5px;font-weight:650;min-width:0}
 .svc .name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .svc .meta{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -709,7 +730,7 @@ tr:last-child td{border-bottom:0}
 
 /* responsive */
 @media (max-width:1280px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #v-pulse{grid-template-rows:auto auto minmax(140px,1fr)}}
+  #v-pulse{grid-template-rows:auto auto auto minmax(140px,1fr)}}
 @media (max-width:1100px){#v-fleet{grid-template-columns:minmax(0,1fr)}
   .charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:761px){
@@ -807,7 +828,7 @@ header .err:not(:empty){
 .scroll{overflow:visible;max-height:none;padding:0 14px 12px}
 
 /* ── PULSE ── */
-#v-pulse{grid-template-rows:auto auto auto}
+#v-pulse{grid-template-rows:auto auto auto auto}
 /* Phone: verdict + tap list first; host gauges after. Desktop keeps hosts in the middle. */
 #v-pulse .attn{order:1;background:var(--surface);border-radius:22px;border:1px solid var(--line)}
 #v-pulse .hosts{order:2}
@@ -1071,6 +1092,10 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
     <div class="msg"><b id="hero-title">Checking the fleet…</b><span id="hero-sub">connecting</span></div>
     <div class="stats" id="hero-stats"></div>
   </div>
+  <div class="now" id="now-strip">
+    <div class="now-setup" id="now-setup">Connecting…</div>
+    <div class="now-how" id="now-how"></div>
+  </div>
   <div class="hosts" id="hosts"></div>
 
   <div class="card attn">
@@ -1081,6 +1106,7 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 
 <!-- ═══════════════ FLEET — machines first; bill last, folded ═══════════════ -->
 <section class="view" id="v-fleet">
+  <p class="fleet-lead" id="fleet-lead">Four machines. Sparks hold the model. Pi holds phone apps. Start9 holds Bitcoin and vault sync.</p>
   <details class="fold elec" id="elec-panel">
     <summary>Power bill <span class="cnt" id="elec-sum">rate · idle</span></summary>
     <div class="fold-body">
@@ -1112,7 +1138,7 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
   <div class="card" id="stack-control">
-    <h3>Setup <span class="cnt" id="stack-cnt">Prime · Dream · Twins · Qwen3.8-Flash · GLM-5.3 · Videos · Music</span></h3>
+    <h3>Setup <span class="cnt" id="stack-cnt">One live at a time · GLM · Dream · Twins · Flash · Videos · Music</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
   </div>
@@ -1655,14 +1681,37 @@ function renderHero(hosts,items,d){
       :(serve?`Serving ${serve}`:"Nothing on the fleet needs you right now");}
   const up=hosts.filter(h=>!h.offline).length;
   const svc=(((d.services||{}).services)||[]);
+  const liveIds=new Set(((d.roster||{}).live_ids)||["hermes-orchestrator","hermes-dobby"]);
+  const gw=svc.filter(s=>liveIds.has(s.id));
   const auto=(d.automation||{}).counts||{},bk=(d.backups||{}).counts||{};
   const stat=(v,l,c)=>`<div class="stat"><b class="${c||""}">${v}</b><span>${l}</span></div>`;
+  const gwUp=gw.filter(s=>s.active).length;
   $("hero-stats").innerHTML=
     stat(`${up}/${hosts.length}`,"hosts up",up<hosts.length?"crit":"")+
-    stat(`${svc.filter(s=>s.active).length}/${svc.length}`,"services")+
+    stat(`${gwUp}/${gw.length||2}`,"gateways",gwUp<(gw.length||2)?"crit":"")+
     (auto.failing?stat(`${auto.failing}`,"jobs failing","crit")
                  :stat(`${auto.total??0}`,"jobs"))+
     stat(`${bk.ok??0}/${bk.total??0}`,"backups",(bk.fail||bk.warn)?"warn":"");
+  renderNow(d);
+}
+function renderNow(d){
+  const setupEl=$("now-setup"), howEl=$("now-how");
+  if(!setupEl||!howEl)return;
+  const st=((d.stack||{}).presets||[]).find(p=>p.active);
+  const r=d.roster||{};
+  const serve=servingBits(d).map(e=>shortModel(e.id)+(e.port?` :${e.port}`:"")).join(" · ");
+  const live=(r.live||[]).join(" + ")||"orchestrator + dobby";
+  const parked=(r.parked||[]).join(" · ");
+  const name=st?st.label:(serve||"No heavy setup");
+  const model=st?st.short:(serve||"pick a setup on Control");
+  setupEl.innerHTML=`<span class="live-name">${esc(name)}</span>
+    <span class="live-model">${esc(model)}</span>
+    <span class="live-chat">Chat: Telegram orch · workers: ${esc(live)}${parked?` · parked ${esc(parked)}`:""}</span>`;
+  howEl.innerHTML=`
+    <div><b>Pulse</b><span>Is the house OK? This page.</span></div>
+    <div><b>Fleet</b><span>Spark, Pi, Start9, miners.</span></div>
+    <div><b>Control</b><span>Switch the one live setup. Do not start parked bots on GLM.</span></div>
+    <div><b>Jobs</b><span>Broken crons only. Quiet means the schedule is fine.</span></div>`;
 }
 
 /* ══════════════════════ merged attention feed ══════════════════════
@@ -1703,7 +1752,8 @@ function attentionItems(d,hosts){
     const behind=u.behind||0;
     const blocked=u.state==="dirty"||u.state==="diverged";
     out.push({
-      sev:blocked?"warn":behind?"info":"info",
+      // Git dirt lives on Control → Updates. Pulse is "is the house OK?"
+      sev:"info",
       src:"updates",
       msg:blocked
         ?`${u.label} is ${u.state}${behind?` · ${behind} behind`:""}`
@@ -2598,7 +2648,11 @@ function piHtml(p){
     ${mrow("mem",m.pct||0,`${m.used_gb??"?"} / ${m.total_gb??"?"} G`)}
     ${mrow("disk",d.pct||0,`${d.used_gb??"?"}/${d.total_gb??"?"} G · ${d.free_gb??"?"} G free`)}
     ${tempRow(p.temp_c,"pi",`throttle ${esc(p.throttled||"?")}`)}
-    <div class="subhead">Role<span class="cnt">${esc(p.tailscale_ip||"")}</span></div>
+    <div class="subhead">PRIMARY apps<span class="cnt">${esc(p.tailscale_ip||"")}</span></div>
+    <div class="ctrs">${(p.apps||[]).map(a=>
+      `<div class="ctr ${a.state==="up"?"":"down"}">${st(a.state==="up"?"ok":(a.name==="crypto"?"stale":"warn"))}
+        <span>${esc(a.name)} :${esc(a.port)}</span></div>`).join("")
+      ||'<div class="empty">no app probes</div>'}</div>
     <div class="kv"><span class="k">Stack watchdog (*/10m)</span>
       <span class="v ${wd.age_m>25?"warn":"good"}">${esc(wd.last_ago||"unknown")}</span></div>
     <div class="kv"><span class="k">Last watchdog line</span>
@@ -2611,7 +2665,7 @@ function piHtml(p){
     <div class="kv"><span class="k">Headroom</span>
       <span class="v">${esc(hr.cpu_idle_pct??"?")}% cpu · ${esc(hr.mem_free_gb??"?")} G ram
         · ${esc(hr.disk_free_gb??"?")} G disk</span></div>
-    <div class="subhead">Services<span class="cnt">${(p.services||[]).length}</span></div>
+    <div class="subhead">OS services<span class="cnt">${(p.services||[]).length}</span></div>
     <div class="ctrs">${(p.services||[]).map(s=>
       `<div class="ctr ${s.state==="active"?"":"down"}">${st(s.state==="active"?"ok":"stale")}
         <span>${esc(s.name)}</span></div>`).join("")||'<div class="empty">none</div>'}</div></div>`;
@@ -2638,12 +2692,15 @@ function start9Html(s){
       ${s.os_git?`<span class="faint">${esc(s.os_git)}</span>`:""}</span></div>
     <div class="kv"><span class="k">Tier-3 backup marker</span>
       <span class="v">${esc(bk.ago||"unknown")}</span></div>
-    <div class="subhead">LXC packages<span class="cnt">${c.running??"?"} / ${c.total??"?"} up
-      · ${esc(c.runtime||"lxc")}</span></div>
-    <div class="ctrs">${svcs.map(x=>
+    <div class="subhead">KEEP<span class="cnt">${s.keep_up??"?"} / ${esc(String((svcs.filter(x=>x.keep).length)||"~20"))} · extra ${ (s.extra_up||[]).length }</span></div>
+    <div class="ctrs">${svcs.filter(x=>x.keep||x.core).map(x=>
       `<div class="ctr ${x.up?"":"down"}" title="${esc(x.name)} — ${esc(x.status)}">
         ${st(x.up?"ok":"bad")}<span>${esc(x.name)}</span></div>`).join("")
-      ||'<div class="empty">none</div>'}</div></div>`;
+      ||'<div class="empty">none</div>'}</div>
+    ${(s.extra_up||[]).length?`<div class="subhead">Extra running<span class="cnt">not KEEP — pause with start9-apply-keep.sh</span></div>
+    <div class="ctrs">${(s.extra_up||[]).map(n=>
+      `<div class="ctr" title="extra">${st("stale")}<span>${esc(n)}</span></div>`).join("")}</div>`:""}
+    </div>`;
 }
 function minerHtml(m){
   if(!m||!m.reachable){
@@ -2689,7 +2746,7 @@ function renderFleet(d){
   // Keep #elec-panel (rate editor) — only rebuild the node cards.
   const root=$("v-fleet");
   if(!root)return;
-  [...root.children].forEach(c=>{if(c.id!=="elec-panel")c.remove();});
+  [...root.children].forEach(c=>{if(c.id!=="elec-panel" && c.id!=="fleet-lead")c.remove();});
   const mlist=(d.miners&&d.miners.miners)||[];
   const farm=d.miners&&d.miners.parasite;
   const farmUrl=d.miners&&d.miners.parasite_url;
@@ -2701,8 +2758,10 @@ function renderFleet(d){
   const miners=mlist.length
     ? `<div id="miners-panel"><h2 class="sec">Bitcoin miners · Tantalizing</h2>${farmLine}${mlist.map(minerHtml).join("")}</div>`
     : "";
-  root.insertAdjacentHTML("afterbegin",
-    node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9)+miners);
+  const lead=$("fleet-lead");
+  const html=node1Html(d.node1||{})+node2Html(d.node2)+piHtml(d.pi)+start9Html(d.start9)+miners;
+  if(lead) lead.insertAdjacentHTML("afterend", html);
+  else root.insertAdjacentHTML("afterbegin", html);
   if(TAB==="fleet")drawAll();     /* innerHTML wipes the canvases — redraw now */
 }
 
@@ -2747,7 +2806,7 @@ function stackNote(s){
   if(s.detected==="dream") return "Both Sparks: 0731 TP2 348k. Node2: Qwen 27B VL 116k engine (prompt ~95k + 20k out; baton clamps). No 4B. Baton :8877.";
   if(s.detected==="twins") return "Qwen Twins: Mia SGLang DSpark NVFP4 on both Sparks :8888. DS4F parked. Orch=n1, smeagle=n2.";
   if(s.detected==="flashnext") return "Qwen3.8-Flash: Flash-Next FP8 TP2 on :8888 (131k). Dream/0731 parked. Chat is local.";
-  if(s.detected==="glm53keys") return "GLM-5.3-Flash: Mia EXL3 DFlash2 TP2 on :8888 (fp8 KV, 900k). Dream/Flash-Next parked. Chat is local.";
+  if(s.detected==="glm53keys") return "GLM-5.3-Flash EXL3 DFlash2 TP2 on :8888 (1.05M KV). Chat is orch + dobby. light / smeagle / freegle parked. Dream/Flash-Next parked.";
   if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
   if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
   return s.message||"";
@@ -2785,7 +2844,7 @@ function askStack(key){
     $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
     const refresh={
       flashnext:"Re-apply Qwen3.8-Flash only. SGLang TP2 FP8 on :8888. DS4F stays parked.",
-      glm53keys:"Re-apply GLM-5.3 only. Mia EXL3 DFlash2 vLLM TP2 on :8888 900k. Flash-Next stays parked.",
+      glm53keys:"Re-apply GLM-5.3 only. Mia EXL3 DFlash2 vLLM TP2 on :8888 1.05M. orch+dobby live; light/smeagle parked.",
       twins:"Re-apply Qwen Twins only. Mia SGLang NVFP4 on both Sparks :8888. DS4F stays parked.",
       dream:"Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.",
       prime:"Re-apply Prime only. DS4F TP2 + 4B vision sidecar. Chat stays on :8888.",
@@ -3185,8 +3244,9 @@ function svcGroup(el){
   SVC_GROUP=el.dataset.g;renderControl();
 }
 function svcTile(s,busy,linkFor){
-  const state=s.active?"ok":(s.state==="failed"||s.unit_missing?"bad":"stale");
-  const canStop=!s.no_stop&&s.active&&!s.unit_missing,canStart=!s.active&&!s.unit_missing;
+  const parked=!!s.parked;
+  const state=parked?"stale":(s.active?"ok":(s.state==="failed"||s.unit_missing?"bad":"stale"));
+  const canStop=!s.no_stop&&s.active&&!s.unit_missing,canStart=!s.active&&!s.unit_missing&&!parked;
   let sel="";
   if(s.id==="node2-deep"&&s.models&&s.models.length){
     const cur=s.model_key||s.default_model||s.models[0];
@@ -3194,9 +3254,11 @@ function svcTile(s,busy,linkFor){
       `<option value="${esc(m)}" ${m===cur?"selected":""}>${esc(m)}</option>`).join("")}</select>`;
   }
   const idle=s.idle||"unknown";
-  const used=s.active
-    ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
-    :(s.unit_missing?"no unit":"stopped");
+  const used=parked
+    ?"parked on this setup"
+    :(s.active
+      ?`last use ${esc(s.last_used_ago||"?")}${idle==="waste"?" · stop?":idle==="idle"?" · idle":""}`
+      :(s.unit_missing?"no unit":"stopped"));
   const extra=s.serving?esc(s.serving):esc((s.extra||"").replace(/^up · ok$/,"up"));
   const L=linkFor[s.id];
   const url=(L&&(L.url||(L.port!=null?`http://${location.hostname}:${L.port}${L.path||"/"}`:null)))
@@ -3206,12 +3268,14 @@ function svcTile(s,busy,linkFor){
   if(canStart){
     primary=`<button class="btn go" ${busy?"disabled":""}
       onclick="svcAction('${esc(s.id)}','start')">Start</button>`;
+  }else if(parked){
+    primary=`<button class="btn" disabled title="${esc(s.hint||"Unpark via Dream or Twins")}">Parked</button>`;
   }else if(s.active&&url&&!s.no_open){
     primary=`<a class="btn open" href="${esc(url)}" target="_blank" rel="noopener"
       title="${esc(url)}">Open ↗</a>`;
   }
   const g=s.group||"other";
-  return `<div class="svc ${esc(g)}${s.active?"":" off"}${idle==="waste"?" waste":""}" title="${esc(s.hint||s.detail||"")}">
+  return `<div class="svc ${esc(g)}${s.active?"":" off"}${parked?" parked":""}${idle==="waste"?" waste":""}" title="${esc(s.hint||s.detail||"")}">
     <div class="name">${st(state)}<span>${esc(s.label)}</span></div>
     <div class="meta">${esc(s.detail)}${extra?" · "+extra:""}</div>
     <div class="used ${idle==="waste"?"waste":""}">${used}</div>
@@ -3222,13 +3286,15 @@ function svcTile(s,busy,linkFor){
 function renderControl(){
   const b=DATA.services||{},list=b.services||[],op=b.active_operation;
   const q=($("svc-q").value||"").toLowerCase();
-  const waste=(b.waste_ids||[]).length,up=list.filter(s=>s.active).length;
+  const waste=(b.waste_ids||[]).length;
+  const expected=list.filter(s=>!s.parked);
+  const up=expected.filter(s=>s.active).length;
   setBadge("control",waste,true);
   $("svc-op").textContent=op&&op.status==="running"?`⏳ ${op.type} ${op.key}: ${op.message||"running…"}`
     :op&&op.status==="failed"?`✕ ${op.type} ${op.key} failed`
-    :waste?`${waste} running with no recent use`:`${up}/${list.length} up`;
+    :waste?`${waste} running with no recent use`:`${up}/${expected.length} live · ${list.filter(s=>s.parked).length} parked`;
   const cnt=$("svc-cnt");
-  if(cnt)cnt.textContent=`${up}/${list.length} up`;
+  if(cnt)cnt.textContent=`${up}/${expected.length} live`;
   const busy=!!(op&&op.status==="running");
 
   const linkFor={};
@@ -3247,10 +3313,14 @@ function renderControl(){
       if(!rows.length)return "";
       const m=GROUP_META[g]||GROUP_META.other;
       const nUp=rows.filter(s=>s.active).length;
+      const nPark=rows.filter(s=>s.parked).length;
+      const setupLive=g==="inference"&&servingBits(DATA).length;
+      const cntTxt=setupLive&&!nUp?"setup live on :8888"
+        :`${nUp} live${nPark?` · ${nPark} parked`:""}`;
       return `<div class="bay ${g}">
         <div class="bay-h"><i></i><b>${m.label}</b>
           <span class="hint">${esc(m.hint)}</span>
-          <span class="cnt">${nUp}/${rows.length} up</span></div>
+          <span class="cnt">${cntTxt}</span></div>
         <div class="tiles">${rows.map(s=>svcTile(s,busy,linkFor)).join("")}</div>
       </div>`;
     }).join("");

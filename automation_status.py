@@ -162,6 +162,10 @@ def hermes_jobs() -> list[dict]:
                 state = "fail"
             else:
                 state = "unknown"
+            err = (job.get("last_error") or job.get("last_delivery_error") or "")[:160]
+            # Spend/drift guards record last_status=error but the skip is intentional.
+            if state == "fail" and re.search(r"drift_skip|unintended spend", err, re.I):
+                state = "skipped"
             jobs.append({
                 "layer": "hermes",
                 "id": job.get("id", "")[:12],
@@ -175,7 +179,7 @@ def hermes_jobs() -> list[dict]:
                 "detail": ("no-agent script" if job.get("no_agent") else "agent")
                           + (f" · {job['script']}" if job.get("script") else "")
                           + (f" → {job['deliver']}" if job.get("deliver") else ""),
-                "error": (job.get("last_error") or job.get("last_delivery_error") or "")[:160],
+                "error": err,
             })
     jobs.sort(key=lambda j: (j["next_ts"] is None, j["next_ts"] or 0))
     return jobs
@@ -239,6 +243,10 @@ def _optional_app_parked(job_name: str) -> bool:
     name = (job_name or "").lower()
     if name.startswith("betintel-") or name.startswith("betintel."):
         return _unit_cleanly_inactive("betintel-backend.service")
+    if name.startswith("cardarb-mobile") or name.startswith("llama-server"):
+        return True
+    if name.startswith("xdg-desktop-portal"):
+        return True
     return False
 
 

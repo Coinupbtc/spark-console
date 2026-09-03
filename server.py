@@ -76,6 +76,7 @@ import energy_cost  # noqa: E402
 import stack_control  # noqa: E402
 import updates_control  # noqa: E402
 import lora_control  # noqa: E402
+import roster  # noqa: E402
 
 app = FastAPI(title="DGX Spark Performance Dashboard")
 
@@ -508,7 +509,17 @@ def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
     # stop the app. That is Jobs-tab noise, not "Needs you" critical.
     def optional_noise(name: str) -> bool:
         # Prefix match covers betintel-watchdog.service / .timer job names
-        return (name or "").lower().startswith("betintel-")
+        n = (name or "").lower()
+        if n.startswith("betintel-"):
+            return True
+        # Offloaded / parked leftovers that still appear in --failed after a boot race
+        if n.startswith("cardarb-mobile"):
+            return True
+        if n.startswith("llama-server"):
+            return True
+        if n.startswith("xdg-desktop-portal"):
+            return True
+        return False
 
     for a in (node1.get("alerts") or []):
         add(a.get("level", "info"), "node1", a.get("message", ""))
@@ -544,6 +555,11 @@ def _fleet_alerts(node1: dict, node2: dict, pi: dict, start9: dict,
             add("warning", "automation",
                 f"{job['name']} ({job['layer']}) stale fail — {err[:100]} "
                 f"(inference up now; clears next run)"[:150])
+            continue
+        # Spend/drift guards skip on purpose — not a crashed cron.
+        if re.search(r"\[drift_skip\]|unintended spend|Skipped to prevent", err, re.I):
+            add("info", "automation",
+                f"{job['name']} skipped (spend/drift guard) — {err[:90]}"[:150])
             continue
         add("critical", "automation", f"{job['name']} ({job['layer']}) failed — {job['error']}"[:150])
     for unit in (automation.get("failed_units") or []):
@@ -1205,6 +1221,7 @@ def api_overview():
         "actions": quick_actions.list_actions(),
         "launch": desktop_launch.list_apps(),
         "stack": stack_control.detect_stack(),
+        "roster": roster.from_state(),
         "updates": updates_control.status(refresh=False),
         "lora": lora_control.status(),
         "alerts": _fleet_alerts(snap, node2, pi, start9, automation, backups, project_list, miners),
@@ -1445,8 +1462,25 @@ def api_refresh():
 
 
 if __name__ == "__main__":
+    import socket
     import uvicorn
+
     port = int(os.environ.get("PORT", 8085))
     host = os.environ.get("HOST", "127.0.0.1")
-    print(f"DGX Spark Performance Dashboard → http://{host}:{port}")
-    uvicorn.run(app, host=host, port=port)
+    # Tailnet bind (phone) PLUS loopback (agents, SSH -L, watchdog). Never 0.0.0.0 —
+    # that would put the control plane on the open LAN. run_console.sh still refuses
+    # to start without a Tailscale IPv4; this just restores the loopback socket the
+    # comments already promised.
+    hosts = [host]
+    if host not in ("127.0.0.1", "localhost", "0.0.0.0", "::", "::1"):
+        hosts.append("127.0.0.1")
+    sockets = []
+    for h in hosts:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((h, port))
+        sock.listen(2048)
+        sockets.append(sock)
+        print(f"DGX Spark Performance Dashboard → http://{h}:{port}")
+    config = uvicorn.Config(app, host=host, port=port, log_level="info")
+    uvicorn.Server(config).run(sockets=sockets)

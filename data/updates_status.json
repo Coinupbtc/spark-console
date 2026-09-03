@@ -1,8 +1,8 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-09-02T10:58:23.787364+00:00",
-  "behind_total": 5,
-  "blocked": 2,
+  "cached_at": "2026-09-03T10:44:02.769542+00:00",
+  "behind_total": 1,
+  "blocked": 1,
   "active_operation": null,
   "last_operation": {
     "id": "bd9ee5ab308e",
@@ -64,15 +64,18 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "1 upstream, 1001 local reapply \u2014 will reset then re-apply patches",
+      "reason": "1 upstream, 2 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "d91deb5a0",
-      "remote": "fdb2e10a8",
+      "head": "941842c11",
+      "remote": "c3e9b28a4",
       "behind": 1,
-      "ahead": 1001,
-      "dirty": false,
-      "dirty_files": [],
-      "state": "diverged",
+      "ahead": 2,
+      "dirty": true,
+      "dirty_files": [
+        "gateway/slash_commands.py",
+        "hermes_cli/kanban_db.py"
+      ],
+      "state": "dirty",
       "error": null
     },
     {
@@ -83,12 +86,12 @@
       "eta": "under 1 min",
       "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
       "can_apply": false,
-      "reason": "already current (13 local commits)",
+      "reason": "already current (14 local commits)",
       "exists": true,
-      "head": "6391a34",
-      "remote": "d97c808",
+      "head": "fc18b69",
+      "remote": "c444d70",
       "behind": 0,
-      "ahead": 13,
+      "ahead": 14,
       "dirty": false,
       "dirty_files": [],
       "state": "current",
@@ -127,68 +130,6 @@
       "exists": true,
       "head": "7bd148f",
       "remote": "7bd148f",
-      "behind": 0,
-      "ahead": 0,
-      "dirty": false,
-      "dirty_files": [],
-      "state": "current",
-      "error": null
-    },
-    {
-      "key": "puzzle",
-      "label": "Puzzle 75B recipe",
-      "short": "Mia",
-      "kind": "git",
-      "eta": "under 1 min",
-      "warn": "ff-only.",
-      "can_apply": false,
-      "reason": "dirty tracked files \u2014 skipped so local patches stay",
-      "exists": true,
-      "head": "c77d266",
-      "remote": "c77d266",
-      "behind": 0,
-      "ahead": 0,
-      "dirty": true,
-      "dirty_files": [
-        "README.md",
-        "start.sh"
-      ],
-      "state": "dirty",
-      "error": null
-    },
-    {
-      "key": "laguna",
-      "label": "Laguna-S 2.1",
-      "short": "Mia",
-      "kind": "git",
-      "eta": "under 1 min",
-      "warn": "ff-only. Dirty start.sh is skipped.",
-      "can_apply": false,
-      "reason": "dirty tracked files \u2014 skipped so local patches stay",
-      "exists": true,
-      "head": "0ac62ba",
-      "remote": "750a52e",
-      "behind": 4,
-      "ahead": 0,
-      "dirty": true,
-      "dirty_files": [
-        "start.sh"
-      ],
-      "state": "dirty",
-      "error": null
-    },
-    {
-      "key": "mimo",
-      "label": "MiMo dual-spark",
-      "short": "Mia",
-      "kind": "git",
-      "eta": "under 1 min",
-      "warn": "ff-only.",
-      "can_apply": false,
-      "reason": "already current",
-      "exists": true,
-      "head": "eb9c5fa",
-      "remote": "eb9c5fa",
       "behind": 0,
       "ahead": 0,
       "dirty": false,
@@ -242,29 +183,15 @@
     {
       "key": "hermes",
       "label": "Hermes Agent",
-      "state": "diverged",
+      "state": "dirty",
       "behind": 1,
-      "reason": "1 upstream, 1001 local reapply \u2014 will reset then re-apply patches"
+      "reason": "1 upstream, 2 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",
       "label": "MiniMax H3 2x",
       "state": "dirty",
       "behind": 0,
-      "reason": "dirty tracked files \u2014 skipped so local patches stay"
-    },
-    {
-      "key": "puzzle",
-      "label": "Puzzle 75B recipe",
-      "state": "dirty",
-      "behind": 0,
-      "reason": "dirty tracked files \u2014 skipped so local patches stay"
-    },
-    {
-      "key": "laguna",
-      "label": "Laguna-S 2.1",
-      "state": "dirty",
-      "behind": 4,
       "reason": "dirty tracked files \u2014 skipped so local patches stay"
     },
     {

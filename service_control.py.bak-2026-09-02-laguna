@@ -84,9 +84,9 @@ BUILTIN_SERVICES: dict[str, dict] = {
         "critical": False,
         # Keys must match node2-deep-lane.sh / switch-deep-lane-trial.sh.
         # qwen27 LIVE deep trial 2026-07-28 (quality-lab 97.5 vs Puzzle 68.5). MiniMax deleted 2026-07-24.
-        # puzzle + laguna + mimo dropped from the console 2026-09-02 — unused leftover
-        # trial keys (recipe git only, no weights). Scripts still exist; not a dropdown.
-        "models": ["qwen27", "qwen122"],
+        # puzzle + laguna dropped from the console 2026-09-02 — unused, leftover
+        # trial keys. Scripts still exist; they are not a dropdown.
+        "models": ["qwen27", "mimo", "qwen122"],
         "default_model": "qwen27",  # start-when-stopped fallback; UI prefers live model_key
         "hint": "Deep-lane TRIAL switchable. Start dropdown = key. Full swap (serve+wire TG): switch-deep-lane-trial.sh.",
     },
@@ -1068,7 +1068,7 @@ def service_action(service_id: str, action: str, model: str | None = None) -> di
                 "stop", service_id, "Stopping node2 deep lane",
             )
         if action == "restart":
-            m = model or meta.get("default_model") or _read_node2_active_key() or "qwen27"
+            m = model or meta.get("default_model") or _read_node2_active_key() or "laguna"
             if m not in meta.get("models", [m]):
                 return {"ok": False, "error": f"Unknown model {m}"}
             return _spawn(
@@ -1076,7 +1076,7 @@ def service_action(service_id: str, action: str, model: str | None = None) -> di
                  f"bash '{NODE2_SCRIPT}' stop; bash '{NODE2_SCRIPT}' start {m}"],
                 "restart", service_id, f"Restart node2 deep → {m}",
             )
-        m = model or meta.get("default_model") or _read_node2_active_key() or "qwen27"
+        m = model or meta.get("default_model") or _read_node2_active_key() or "laguna"
         if m not in meta.get("models", [m]):
             return {"ok": False, "error": f"Unknown model {m}. Allowed: {meta.get('models')}"}
         return _spawn(

@@ -71,12 +71,20 @@ def _proj(name: str, status: str, detail: str, ago: str) -> dict:
 
 
 def _hermes_tile() -> dict:
-    units = ["hermes-gateway-orchestrator.service", "hermes-gateway-light.service",
-             "hermes-gateway-dobby.service"]
+    # Exclusive TP2 = orch+dobby. Counting light as missing painted Pulse yellow
+    # while the roster was doing the right thing.
+    try:
+        import roster
+        r = roster.from_state()
+        live = list(r.get("live") or ["orchestrator", "dobby"])
+    except Exception:
+        live = ["orchestrator", "dobby"]
+    units = [f"hermes-gateway-{p}.service" for p in live]
     states = _systemd_active(*units)
     up = sum(1 for x in states if x == "active")
-    status = "ok" if up == 3 else ("warn" if up > 0 else "bad")
-    return _proj("Hermes gateways", status, f"{up}/3 active", "live")
+    want = len(live)
+    status = "ok" if up == want else ("warn" if up > 0 else "bad")
+    return _proj("Hermes gateways", status, f"{up}/{want} live", "live")
 
 
 def _pokemon_tile() -> dict:

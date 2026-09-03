@@ -191,6 +191,7 @@ def query_hermes() -> dict:
          "hermes-gateway-light.service",
          "hermes-gateway-dobby.service",
          "hermes-gateway-smeagle.service",
+         "hermes-gateway-freegle.service",
          "dgx-performance-dashboard.service",
          "llama-miaai35.service",
          "ollama.service"],
@@ -202,9 +203,10 @@ def query_hermes() -> dict:
         "light": lines[1] if len(lines) > 1 else "unknown",
         "dobby": lines[2] if len(lines) > 2 else "unknown",
         "smeagle": lines[3] if len(lines) > 3 else "unknown",
-        "dashboard": lines[4] if len(lines) > 4 else "unknown",
-        "llama_miaai35": lines[5] if len(lines) > 5 else "unknown",
-        "ollama": lines[6] if len(lines) > 6 else "unknown",
+        "freegle": lines[4] if len(lines) > 4 else "unknown",
+        "dashboard": lines[5] if len(lines) > 5 else "unknown",
+        "llama_miaai35": lines[6] if len(lines) > 6 else "unknown",
+        "ollama": lines[7] if len(lines) > 7 else "unknown",
     }
 
 
@@ -305,35 +307,37 @@ def diagnose(
 ) -> list[dict]:
     alerts: list[dict] = []
 
-    # A resident inference engine is SUPPOSED to fill the 121GB unified pool —
-    # DS4F TP=2 parks ~118G; MiniMax H3 video parks ~100G on the GPU. Flagging
-    # 85% as critical meant every healthy load paged "stop the model".
-    # When an engine is serving, high RAM is explained: only >=97% (where swap
-    # thrash actually hurts) is critical. With no engine up, 85% is unexplained.
+    # Exclusive TP2 is supposed to fill ~118/121 GB. Page on remaining headroom,
+    # not percent-of-total (97% used to fire every GLM tick with 3 GB still free).
     engine = resident_engine(endpoints, procs)
-    crit_pct = 97 if engine else 85
+    avail = float(sys_m.get("mem_avail_gb") or 0)
 
-    if sys_m["mem_pct"] >= crit_pct:
-        if engine:
+    # Exclusive TP2 (GLM) is supposed to sit at ~118/121 GB. Percent-of-total
+    # 97% fired every tick while 3 GB was still free. Page on *headroom*, not %.
+    if engine:
+        if avail < 1.5:
             port = engine.get("port")
             port_bit = "" if port in (None, "gpu") else f" :{port}"
-            where = f" (inference resident: {engine['engine']}{port_bit})"
-            action = ("Swap-thrash range. Free RAM only if you want this mode down — "
-                      "see ~/scripts/dgx/spark-mode.sh status / CURRENT.md")
-        else:
-            where = " with no inference engine resident"
-            action = "Unexplained — check `ollama ps`, nvfp4-status.sh, and large procs"
+            alerts.append({
+                "level": "critical",
+                "category": "memory",
+                "message": (f"Only {avail} GB free with {engine['engine']}{port_bit} resident "
+                            f"— swap-thrash range"),
+                "action": ("Free RAM only if you want this mode down — "
+                           "see ~/scripts/dgx/spark-mode.sh status / CURRENT.md"),
+            })
+    elif sys_m["mem_pct"] >= 85:
         alerts.append({
             "level": "critical",
             "category": "memory",
-            "message": f"RAM at {sys_m['mem_pct']}% — only {sys_m['mem_avail_gb']} GB free{where}",
-            "action": action,
+            "message": f"RAM at {sys_m['mem_pct']}% — only {avail} GB free with no inference engine resident",
+            "action": "Unexplained — check `ollama ps`, nvfp4-status.sh, and large procs",
         })
-    elif sys_m["mem_pct"] >= 70 and not engine:
+    elif sys_m["mem_pct"] >= 70:
         alerts.append({
             "level": "warning",
             "category": "memory",
-            "message": f"RAM at {sys_m['mem_pct']}% — {sys_m['mem_avail_gb']} GB available",
+            "message": f"RAM at {sys_m['mem_pct']}% — {avail} GB available",
             "action": "Review vLLM (nvfp4-status.sh) and `ollama ps`",
         })
 
