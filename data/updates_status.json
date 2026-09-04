@@ -1,6 +1,6 @@
 {
   "fetched_at": null,
-  "cached_at": "2026-09-03T10:44:02.769542+00:00",
+  "cached_at": "2026-09-04T10:58:26.083058+00:00",
   "behind_total": 1,
   "blocked": 1,
   "active_operation": null,
@@ -64,16 +64,22 @@
       "eta": "2\u20138 min",
       "warn": "Pulls Nous origin/main, then re-applies /image /video and the kanban sentinel. Restarts gateways. Does not switch inference.",
       "can_apply": true,
-      "reason": "1 upstream, 2 local reapply \u2014 will reset then re-apply patches",
+      "reason": "1 upstream, 1 local reapply \u2014 will reset then re-apply patches",
       "exists": true,
-      "head": "941842c11",
-      "remote": "c3e9b28a4",
+      "head": "c3e9b28a4",
+      "remote": "63279301b",
       "behind": 1,
-      "ahead": 2,
+      "ahead": 1,
       "dirty": true,
       "dirty_files": [
-        "gateway/slash_commands.py",
-        "hermes_cli/kanban_db.py"
+        "agent/auxiliary_client.py",
+        "agent/chat_completion_helpers.py",
+        "agent/context_compressor.py",
+        "agent/conversation_compression.py",
+        "agent/conversation_loop.py",
+        "agent/curator_backup.py",
+        "agent/lsp/workspace.py",
+        "agent/model_metadata.py"
       ],
       "state": "dirty",
       "error": null
@@ -86,12 +92,12 @@
       "eta": "under 1 min",
       "warn": "Checkout only \u2014 does not restart :8888. Behind/diverged: merge origin/main (keeps local commits). Dirty tracked files still skip.",
       "can_apply": false,
-      "reason": "already current (14 local commits)",
+      "reason": "already current (15 local commits)",
       "exists": true,
-      "head": "fc18b69",
-      "remote": "c444d70",
+      "head": "8f3170e",
+      "remote": "bc2ef47",
       "behind": 0,
-      "ahead": 14,
+      "ahead": 15,
       "dirty": false,
       "dirty_files": [],
       "state": "current",
@@ -185,7 +191,7 @@
       "label": "Hermes Agent",
       "state": "dirty",
       "behind": 1,
-      "reason": "1 upstream, 2 local reapply \u2014 will reset then re-apply patches"
+      "reason": "1 upstream, 1 local reapply \u2014 will reset then re-apply patches"
     },
     {
       "key": "h3-2x",
