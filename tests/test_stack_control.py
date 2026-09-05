@@ -126,7 +126,9 @@ class PresetTests(unittest.TestCase):
     def test_both_refused_for_h3(self) -> None:
         result = stack_control.occupy_tp1("h3", "both")
         self.assertFalse(result["ok"])
-        self.assertIn("two copies", result["error"].lower() + result.get("error", ""))
+        self.assertIn("two copies", result["error"].lower())
+
+    def test_unknown_key_refused(self) -> None:
         result = stack_control.switch_stack("nemotron")
         self.assertFalse(result["ok"])
         self.assertIn("Unknown", result["error"])
