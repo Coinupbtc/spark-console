@@ -56,7 +56,7 @@ Runtime data stays in local `data/` (gitignored). Nothing phones home.
 | `cluster_metrics.py` | Two-node metrics + degraded-node alerting |
 | `baseline_summary.py` | Percentiles, availability, longest-run report |
 | `todos_lite.py` | Local scratch list for the console panel |
-| `setup.sh` / `start.sh` / `stop.sh` | One-command lifecycle |
+| `docs/tp-lanes.md` | TP2 exclusive jobs vs TP1 mix (two copies ≠ faster pair) |
 
 ## The service board
 

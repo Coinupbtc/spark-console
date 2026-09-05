@@ -209,7 +209,7 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .serve::before{content:"";width:6px;height:6px;border-radius:1px;background:currentColor;
   box-shadow:0 0 8px currentColor;flex:none;transform:rotate(45deg)}
 
-/* Named setups — Prime / Dream / Qwen Twins / Qwen3.8-Flash / Videos / Music. */
+/* Named setups — TP2 both Sparks / TP1 pick a node. */
 .stack-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stack-chip{appearance:none;display:flex;flex-direction:column;align-items:flex-start;
   gap:2px;min-height:52px;padding:10px 12px;border-radius:12px;cursor:pointer;
@@ -223,7 +223,8 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .stack-chip:disabled{opacity:.45;cursor:not-allowed}
 .stack-chip:not(:disabled):not(.on):active{transform:scale(.98)}
 .stack-note{font:11.5px/1.4 var(--sans);color:var(--ink-3);padding:0 2px 2px;min-height:1.2em}
-.stack-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:0 14px 14px}
+.stack-cards{display:flex;flex-direction:column;gap:4px;padding:0 14px 14px}
+.stack-lane-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 .stack-card{display:flex;flex-direction:column;gap:6px;padding:14px 14px 12px;
   background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;min-width:0}
 .stack-card.on{border-color:rgba(74,222,154,.5);background:rgba(74,222,154,.08)}
@@ -259,6 +260,17 @@ header .clock{font:600 13px var(--mono);color:var(--ink-2);white-space:nowrap;pa
 .stack-dlg p{margin:0 0 16px;font:14px/1.45 var(--sans);color:var(--ink-2)}
 .stack-dlg-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stack-dlg-acts .btn{min-height:48px;font-size:15px}
+.stack-lane{padding:4px 14px 6px;font:650 11px/1.2 var(--sans);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
+.stack-chat{font:13px/1.4 var(--sans);color:var(--ink-2);padding:0 14px 10px}
+.stack-chat b{color:var(--good)}
+.stack-dlg-nodes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.stack-dlg-nodes.triple{grid-template-columns:1fr 1fr}
+.stack-dlg-nodes.triple #stack-dlg-both{grid-column:1/-1}
+.stack-dlg-nodes .btn{min-height:48px;font-size:15px}
+.stack-dlg-nodes .btn.rec{border-color:rgba(74,222,154,.55);background:rgba(74,222,154,.12)}
+.stack-dlg-chat{margin:0 0 12px;font:13px/1.4 var(--sans);color:var(--ink-2)}
+.stack-card .where{font:11px/1.3 var(--mono);color:var(--good)}
 
 /* Updates bay — Hermes + recipe commits */
 #updates-card>h3 .cnt{margin-left:0}
@@ -948,7 +960,8 @@ input[type=text],select{font-size:16px;padding:9px 12px}   /* 16px = no iOS zoom
 .stack-chip{min-height:56px;padding:12px 10px}
 .stack-chip b{font-size:15px}
 .stack-chip span{font-size:11.5px;white-space:normal}
-.stack-cards{grid-template-columns:minmax(0,1fr);padding:0 12px 12px}
+.stack-cards{display:flex;flex-direction:column;gap:6px;padding:0 12px 12px}
+.stack-lane-grid{grid-template-columns:minmax(0,1fr)}
 #stack-cnt{display:none}
 .stack-card .btn{min-height:48px;font-size:16px}
 details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
@@ -964,6 +977,8 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 .stack-dlg{width:100%;border-radius:18px 18px 12px 12px;padding:18px 16px
     calc(12px + env(safe-area-inset-bottom,0px))}
 .stack-dlg-acts .btn{min-height:52px;font-size:16px}
+.stack-dlg-nodes{grid-template-columns:minmax(0,1fr);margin-bottom:10px}
+.stack-dlg-nodes .btn{min-height:52px;font-size:16px}
 .lt .ico{width:40px;height:40px}
 .lgroup{padding:0 12px 4px}
 .ltiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -1138,7 +1153,7 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
 <!-- ═══════════════ CONTROL ═══════════════ -->
 <section class="view" id="v-control">
   <div class="card" id="stack-control">
-    <h3>Setup <span class="cnt" id="stack-cnt">One live at a time · GLM · Dream · Twins · Flash · Videos · Music</span></h3>
+    <h3>Setup <span class="cnt" id="stack-cnt">TP2 both Sparks · TP1 pick a node</span></h3>
     <div class="stack-note" id="stack-note-control"></div>
     <div class="stack-cards" id="stack-cards"></div>
   </div>
@@ -1325,7 +1340,13 @@ details.fold>summary{min-height:48px;font-size:16px;padding:14px 14px}
   <div class="stack-dlg" role="dialog" aria-modal="true" aria-labelledby="stack-dlg-title">
     <h3 id="stack-dlg-title">Switch setup?</h3>
     <p id="stack-dlg-body"></p>
-    <div class="stack-dlg-acts">
+    <p id="stack-dlg-chat" class="stack-dlg-chat" hidden></p>
+    <div id="stack-dlg-nodes" class="stack-dlg-nodes" hidden>
+      <button type="button" class="btn go" id="stack-dlg-n1">Node 1</button>
+      <button type="button" class="btn" id="stack-dlg-n2">Node 2</button>
+      <button type="button" class="btn" id="stack-dlg-both" hidden>Both Sparks · two copies</button>
+    </div>
+    <div class="stack-dlg-acts" id="stack-dlg-acts">
       <button type="button" class="btn" id="stack-dlg-cancel">Cancel</button>
       <button type="button" class="btn go" id="stack-dlg-go">Go</button>
     </div>
@@ -2799,41 +2820,103 @@ function renderServe(d){
 let STACK_POLL=null, CONFIRM=null;
 function stackNote(s){
   const op=s.active_operation;
+  const chat=(s.chat&&s.chat.label)?` Telegram talks to ${s.chat.label}.`:"";
   if(op&&op.status==="running") return op.message||"Switching…";
   if(s.phase==="switching") return s.message||"A setup switch is already running. Wait, then tap again.";
   if(op&&op.status==="failed") return op.message||"Last switch failed";
-  if(s.detected==="mixed") return "Two heavy setups are up at once — pick one.";
-  if(s.detected==="dream") return "Both Sparks: 0731 TP2 348k. Node2: Qwen 27B VL 116k engine (prompt ~95k + 20k out; baton clamps). No 4B. Baton :8877.";
-  if(s.detected==="twins") return "Qwen Twins: Mia SGLang DSpark NVFP4 on both Sparks :8888. DS4F parked. Orch=n1, smeagle=n2.";
-  if(s.detected==="flashnext") return "Qwen3.8-Flash: Flash-Next FP8 TP2 on :8888 (131k). Dream/0731 parked. Chat is local.";
-  if(s.detected==="glm53keys") return "GLM-5.3-Flash EXL3 DFlash2 TP2 on :8888 (1.05M KV). Chat is orch + dobby. light / smeagle / freegle parked. Dream/Flash-Next parked.";
-  if(s.detected==="music") return "35B chat :8889 + Music3 :8801. Dream Qwen :8100 is down. Nous :free is Freegle only.";
-  if(s.detected==="none") return "Nothing heavy is serving. Pick a setup.";
-  return s.message||"";
+  if(s.detected==="mixed") return "Two heavy setups are up at once — pick TP2 (both Sparks) or a TP1 node."+chat;
+  if(s.occupancy&&(s.occupancy.n1||s.occupancy.n2)&&!s.occupancy.tp2){
+    const a=s.occupancy.n1?`Node 1: ${s.occupancy.n1}`:"";
+    const b=s.occupancy.n2?`Node 2: ${s.occupancy.n2}`:"";
+    const same=s.occupancy.n1&&s.occupancy.n1===s.occupancy.n2;
+    const extra=same&&s.occupancy.n1==="music3"
+      ?" Two singers — two songs at once, not a faster one song."
+      :(same&&s.occupancy.n1==="flash1"?" Two Flash TP1 chats — faster pair is the TP2 Flash chip.":"");
+    return [a,b].filter(Boolean).join(" · ")+"."+extra+chat;
+  }
+  if(s.detected==="ds4f") return "DeepSeek-V4-Flash-Vision-Exp TP2 :8888. Native images. No 4B sidecar."+chat;
+  if(s.detected==="flashnext") return "Qwen3.8-Flash TP2 on both Sparks :8888."+chat;
+  if(s.detected==="glm53keys") return "GLM-5.3-Flash EXL3 DFlash2 TP2 on :8888. Chat is orch + dobby."+chat;
+  if(s.detected==="video") return "MiniMax H3 TP2 :8800. Video only."+chat;
+  if(s.detected==="none") return "Nothing heavy is serving. Pick a TP2 (both nodes) or a TP1 on one Spark.";
+  return (s.message||"")+chat;
+}
+function stackCardHtml(p, kind){
+  const live=p.active||p.active_on?`<em>LIVE${p.active_on?" "+p.active_on.toUpperCase():""}</em>`:"";
+  const go=p.active?(kind==="tp1"?"Move":"Refresh"):(kind==="tp1"?"Load":"Switch");
+  const where=p.active_on?`<div class="where">on ${p.active_on==="n1"?"Node 1":"Node 2"}</div>`:"";
+  const meta=kind==="tp2"
+    ?`Both Sparks · ${esc(p.eta||"")}`
+    :`One Spark · ${esc(p.eta||"")}`;
+  return `<div class="stack-card ${p.active||p.active_on?"on":""}">
+    <h4>${esc(p.label)} ${live}</h4>
+    <p>${esc(p.short||p.detail||"")}</p>
+    ${where}
+    <div class="meta">${meta}</div>
+    <button type="button" class="btn go" data-lane="${kind}" data-stack="${esc(p.key)}"
+      ${(!p.can_switch&&kind==="tp2")?"disabled":""}>${go}</button>
+  </div>`;
 }
 function renderStack(s){
   const presets=s.presets||[];
+  const tp1=s.tp1||[];
   const busy=!!(s.active_operation&&s.active_operation.status==="running");
   const note=stackNote(s);
   const noteEl=$("stack-note-control");
   if(noteEl) noteEl.textContent=note;
   const cards=$("stack-cards");
   if(cards){
-    cards.innerHTML=presets.map(p=>{
-      const live=p.active?"<em>LIVE</em>":"";
-      const go=p.active?(busy?"Wait":"Refresh"):(busy?"Wait":"Switch");
-      return `<div class="stack-card ${p.active?"on":""}">
-        <h4>${esc(p.label)} ${live}</h4>
-        <p>${esc(p.short||p.detail)}</p>
-        <div class="meta">Stops ${esc(p.stops)} · ${esc(p.eta)}</div>
-        <button type="button" class="btn go" data-stack="${esc(p.key)}"
-          ${(!p.can_switch||busy)?"disabled":""}>${go}</button>
-      </div>`;
-    }).join("");
+    const tp2html=`<div class="stack-lane">TP2 — both Sparks</div>`+
+      `<div class="stack-lane-grid">`+presets.map(p=>stackCardHtml(p,"tp2")).join("")+`</div>`;
+    const tp1html=`<div class="stack-lane">TP1 — pick Node 1 or Node 2</div>`+
+      (s.chat&&s.chat.label?`<div class="stack-chat">Telegram talks to <b>${esc(s.chat.label)}</b></div>`:"")+
+      `<div class="stack-lane-grid">`+tp1.map(p=>stackCardHtml({...p,can_switch:!busy},"tp1")).join("")+`</div>`;
+    cards.innerHTML=tp2html+tp1html;
     cards.querySelectorAll("[data-stack]").forEach(btn=>{
-      btn.onclick=()=>askStack(btn.dataset.stack);
+      btn.onclick=()=>{
+        if(btn.dataset.lane==="tp1") askOccupy(btn.dataset.stack);
+        else askStack(btn.dataset.stack);
+      };
     });
   }
+}
+async function askOccupy(key){
+  const s=DATA.stack||{};
+  if(s.active_operation&&s.active_operation.status==="running")return;
+  let rec=null;
+  try{
+    const r=await fetch("/api/stack/recommend/"+encodeURIComponent(key),{cache:"no-store"});
+    rec=await r.json();
+  }catch(e){$("err").textContent="recommend failed: "+e.message;return;}
+  if(!rec||!rec.ok){$("err").textContent=(rec&&rec.error)||"cannot recommend";return;}
+  CONFIRM={kind:"occupy",key,rec};
+  $("stack-dlg-title").textContent=`Load ${rec.label} on which Spark?`;
+  $("stack-dlg-body").textContent=rec.reason||rec.short||"";
+  const chatEl=$("stack-dlg-chat");
+  const recNode=rec.recommended||"n1";
+  const n1chat=((rec.nodes||{}).n1||{}).chat_after||"";
+  const n2chat=((rec.nodes||{}).n2||{}).chat_after||"";
+  chatEl.hidden=false;
+  chatEl.textContent=`Recommended ${recNode==="n1"?"Node 1":"Node 2"}. Telegram → ${recNode==="n1"?n1chat:n2chat}.`;
+  const nodes=$("stack-dlg-nodes");
+  nodes.hidden=false;
+  const b1=$("stack-dlg-n1"), b2=$("stack-dlg-n2"), bBoth=$("stack-dlg-both");
+  const v1=(rec.nodes||{}).n1||{}, v2=(rec.nodes||{}).n2||{};
+  b1.disabled=!!v1.disabled; b2.disabled=!!v2.disabled;
+  b1.className="btn go"+(recNode==="n1"?" rec":"");
+  b2.className="btn"+(recNode==="n2"?" rec go":"");
+  b1.textContent=recNode==="n1"?"Node 1 · recommended":"Node 1";
+  b2.textContent=recNode==="n2"?"Node 2 · recommended":"Node 2";
+  const pair=!!rec.replica_pair;
+  nodes.classList.toggle("triple", pair);
+  bBoth.hidden=!pair;
+  if(pair){
+    bBoth.textContent=key==="music3"
+      ?"Both Sparks · two singers (not faster one song)"
+      :"Both Sparks · two copies (not the TP2 chip)";
+  }
+  $("stack-dlg-go").hidden=true;
+  $("stack-modal").hidden=false;
 }
 function askStack(key){
   const s=DATA.stack||{};
@@ -2843,13 +2926,10 @@ function askStack(key){
   if(p.active){
     $("stack-dlg-title").textContent=`Refresh ${p.label}?`;
     const refresh={
-      flashnext:"Re-apply Qwen3.8-Flash only. SGLang TP2 FP8 on :8888. DS4F stays parked.",
-      glm53keys:"Re-apply GLM-5.3 only. Mia EXL3 DFlash2 vLLM TP2 on :8888 1.05M. orch+dobby live; light/smeagle parked.",
-      twins:"Re-apply Qwen Twins only. Mia SGLang NVFP4 on both Sparks :8888. DS4F stays parked.",
-      dream:"Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.",
-      prime:"Re-apply Prime only. DS4F TP2 + 4B vision sidecar. Chat stays on :8888.",
+      flashnext:"Re-apply Qwen3.8-Flash only. vLLM TP2 on :8888. DeepSeek Vision stays parked.",
+      glm53keys:"Re-apply GLM-5.3 only. Mia EXL3 DFlash2 vLLM TP2 on :8888. orch+dobby live; light/smeagle parked.",
+      ds4f:"Re-apply DeepSeek Vision only. Vision-Exp TP2 native image_url on :8888. No 4B sidecar.",
       video:"Re-apply Videos only. MiniMax H3 stays on CX7 RoCEv2; chat wire back to Nous.",
-      music:"Re-apply Music only. Helper 35B + Music3 stay; refresh Hermes wire.",
     };
     $("stack-dlg-body").textContent=refresh[p.key]||`Re-apply ${p.label}. ${p.detail||""}`;
   }else{
@@ -2857,7 +2937,10 @@ function askStack(key){
     $("stack-dlg-body").textContent=
       `Stops ${p.stops}. Starts ${p.starts}. Takes about ${p.eta}. Telegram will ping you when it is ready.`;
   }
-  $("stack-dlg-go").textContent=p.active?"Refresh":"Switch";
+    $("stack-dlg-go").textContent=p.active?"Refresh":"Switch";
+  $("stack-dlg-nodes").hidden=true;
+  $("stack-dlg-chat").hidden=true;
+  $("stack-dlg-go").hidden=false;
   $("stack-modal").hidden=false;
 }
 function closeStackModal(){
@@ -2866,10 +2949,14 @@ function closeStackModal(){
 }
 $("stack-dlg-cancel").onclick=closeStackModal;
 $("stack-modal").addEventListener("click",e=>{if(e.target===$("stack-modal"))closeStackModal();});
+$("stack-dlg-n1").onclick=()=>{const c=CONFIRM; if(c&&c.kind==="occupy") doOccupy(c.key,"n1");};
+$("stack-dlg-n2").onclick=()=>{const c=CONFIRM; if(c&&c.kind==="occupy") doOccupy(c.key,"n2");};
+$("stack-dlg-both").onclick=()=>{const c=CONFIRM; if(c&&c.kind==="occupy") doOccupy(c.key,"both");};
 $("stack-dlg-go").onclick=()=>{
   const c=CONFIRM; if(!c)return;
   if(c.kind==="update") doUpdate(c.key);
   else if(c.kind==="lora") doLora(!!c.stop, c.dual!==false, c.student||"qwen38");
+  else if(c.kind==="occupy") doOccupy(c.key, (c.rec&&c.rec.recommended)||"n1");
   else doStack(c.key);
 };
 document.addEventListener("keydown",e=>{
@@ -2888,6 +2975,19 @@ async function doStack(key){
     if(d.already){$("err").textContent=d.message||"already live";return;}
     pollStackOp((d.operation||{}).id);
   }catch(e){$("err").textContent="switch failed: "+e.message;}
+}
+async function doOccupy(key,node){
+  if(!key||!node)return;
+  closeStackModal();
+  $("err").textContent=`loading ${key} on ${node}…`;
+  try{
+    const r=await fetch("/api/stack/occupy",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key,node})});
+    const d=await r.json();
+    if(!d.ok){$("err").textContent=d.error||"load failed";return;}
+    pollStackOp((d.operation||{}).id);
+  }catch(e){$("err").textContent="load failed: "+e.message;}
 }
 async function pollStackOp(id){
   if(!id)return;
@@ -3022,6 +3122,9 @@ function askLora(dual){
       ? `Stops Dream/0731 if up and stops Qwen :8100, then torchrun DDP QLoRA on the Qwen mix (${stu.train_n||"?"} rows, extract + house, ~${eta}). Triple ship gate after. Does not bring Dream back. Does not load the adapter on :8100.`
       : `Qwen QLoRA on this Spark only (${stu.train_n||"?"} rows, ~${eta}). :8100 can stay. Does not wire the adapter.`);
   $("stack-dlg-go").textContent=dual?(stop?"Stop + both Sparks":"Train both Sparks"):"This Spark only";
+  $("stack-dlg-nodes").hidden=true;
+  $("stack-dlg-chat").hidden=true;
+  $("stack-dlg-go").hidden=false;
   $("stack-modal").hidden=false;
 }
 async function doLora(stop, dual, student){
@@ -3144,6 +3247,9 @@ function askUpdate(key){
   $("stack-dlg-body").textContent=
     `${t.warn} ${t.reason?t.reason+". ":""}Takes about ${t.eta}.`;
   $("stack-dlg-go").textContent=t.key==="ds4f"?"Sync GitHub":(t.kind==="apt"?"Upgrade":"Update");
+  $("stack-dlg-nodes").hidden=true;
+  $("stack-dlg-chat").hidden=true;
+  $("stack-dlg-go").hidden=false;
   $("stack-modal").hidden=false;
 }
 async function loadUpdates(fetchOrigin){

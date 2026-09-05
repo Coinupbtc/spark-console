@@ -8,18 +8,18 @@ import stack_control
 
 
 class ClassifyTests(unittest.TestCase):
-    def test_prime_when_ds4f_up(self) -> None:
+    def test_ds4f_when_deepseek_up(self) -> None:
         self.assertEqual(
             stack_control.classify({"ds4f": True, "helper": False, "h3": False, "music": False}),
-            "prime",
+            "ds4f",
         )
 
-    def test_dream_when_ds4f_and_qwen_gguf(self) -> None:
+    def test_dream_leftover_is_mixed(self) -> None:
         self.assertEqual(
             stack_control.classify(
                 {"ds4f": True, "dream": True, "helper": False, "h3": False, "music": False}
             ),
-            "dream",
+            "mixed",
         )
 
     def test_video_when_h3_up(self) -> None:
@@ -28,14 +28,14 @@ class ClassifyTests(unittest.TestCase):
             "video",
         )
 
-    def test_music_needs_helper_and_music3(self) -> None:
+    def test_music_alone_is_not_a_tp2_chip(self) -> None:
         self.assertEqual(
-            stack_control.classify({"ds4f": False, "helper": True, "h3": False, "music": True}),
-            "music",
+            stack_control.classify({"ds4f": False, "helper": False, "h3": False, "music": True}),
+            "none",
         )
         self.assertEqual(
-            stack_control.classify({"ds4f": False, "helper": True, "h3": False, "music": False}),
-            "none",
+            stack_control.classify({"ds4f": False, "helper": True, "h3": False, "music": True}),
+            "mixed",
         )
 
     def test_retired_qwen38_nvfp4_is_mixed(self) -> None:
@@ -52,7 +52,7 @@ class ClassifyTests(unittest.TestCase):
             "mixed",
         )
 
-    def test_twins_when_gguf_both_8888(self) -> None:
+    def test_twins_leftover_is_mixed(self) -> None:
         self.assertEqual(
             stack_control.classify(
                 {
@@ -64,10 +64,10 @@ class ClassifyTests(unittest.TestCase):
                     "music": False,
                 }
             ),
-            "twins",
+            "mixed",
         )
 
-    def test_flashnext_before_twins(self) -> None:
+    def test_flashnext_before_ds4f(self) -> None:
         self.assertEqual(
             stack_control.classify(
                 {
@@ -111,23 +111,22 @@ class PresetTests(unittest.TestCase):
     def test_named_setups(self) -> None:
         self.assertEqual(
             list(stack_control.PRESETS),
-            ["prime", "dream", "twins", "flashnext", "glm53keys", "video", "music"],
+            ["ds4f", "flashnext", "glm53keys", "video"],
         )
         for meta in stack_control.PRESETS.values():
             for field in ("label", "short", "detail", "eta", "stops", "starts"):
                 self.assertTrue(meta.get(field), f"missing {field}")
-        dream = stack_control.PRESETS["dream"]
-        self.assertIn("116k", dream["short"])
-        self.assertIn("95k", dream["short"])
-        self.assertIn("20k", dream["detail"])
-        self.assertIn("baton", dream["detail"])
-        self.assertIn("sglang", stack_control.PRESETS["twins"]["starts"])
+        self.assertEqual(stack_control.PRESETS["ds4f"]["label"], "DeepSeek Vision")
+        self.assertIn("image_url", stack_control.PRESETS["ds4f"]["detail"])
         self.assertIn("qwen38-flash-next", stack_control.PRESETS["flashnext"]["starts"])
         self.assertEqual(stack_control.PRESETS["flashnext"]["label"], "Qwen3.8-Flash")
         self.assertEqual(stack_control.PRESETS["glm53keys"]["label"], "GLM-5.3")
         self.assertIn("GLM-5.3-Flash-EXL3", stack_control.PRESETS["glm53keys"]["starts"])
 
-    def test_unknown_key_refused(self) -> None:
+    def test_both_refused_for_h3(self) -> None:
+        result = stack_control.occupy_tp1("h3", "both")
+        self.assertFalse(result["ok"])
+        self.assertIn("two copies", result["error"].lower() + result.get("error", ""))
         result = stack_control.switch_stack("nemotron")
         self.assertFalse(result["ok"])
         self.assertIn("Unknown", result["error"])
@@ -136,44 +135,50 @@ class PresetTests(unittest.TestCase):
 class DetectTests(unittest.TestCase):
     def test_detect_uses_probes(self) -> None:
         probes = {
-            "ds4f": False, "helper": True, "h3": False,
-            "music": True, "vision": False,
+            "ds4f": False, "helper": False, "h3": False,
+            "music": False, "vision": False,
         }
         with patch.object(stack_control, "_probes_now", return_value=probes), \
              patch.object(stack_control, "active_operation", return_value=None), \
              patch.object(stack_control, "external_switch_busy", return_value=None), \
-             patch.object(stack_control, "_read_saved_state", return_value={}):
+             patch.object(stack_control, "_read_saved_state", return_value={}), \
+             patch.object(stack_control, "occupancy_view", return_value={
+                 "tp2": None, "n1": None, "n2": None, "chat": "freegle",
+                 "chat_label": "Freegle (Nous :free)", "tp1": [],
+             }):
             stack_control._detect_cache = None
             out = stack_control.detect_stack(force=True)
-        self.assertEqual(out["detected"], "music")
-        music = next(p for p in out["presets"] if p["key"] == "music")
-        self.assertTrue(music["active"])
-        self.assertTrue(music["can_switch"])  # re-apply / refresh
-        prime = next(p for p in out["presets"] if p["key"] == "prime")
-        self.assertTrue(prime["can_switch"])
+        self.assertEqual(out["detected"], "none")
+        self.assertTrue(any(p["key"] == "video" for p in out["presets"]))
+        ds4f = next(p for p in out["presets"] if p["key"] == "ds4f")
+        self.assertTrue(ds4f["can_switch"])
 
     def test_external_lock_disables_chips(self) -> None:
         probes = {
             "ds4f": False, "helper": False, "h3": False,
             "music": False, "vision": False,
         }
-        ext = {"busy": True, "desired": "dream", "message": "switching to Dream"}
+        ext = {"busy": True, "desired": "ds4f", "message": "switching to DeepSeek Vision"}
         with patch.object(stack_control, "_probes_now", return_value=probes), \
              patch.object(stack_control, "active_operation", return_value=None), \
              patch.object(stack_control, "external_switch_busy", return_value=ext), \
-             patch.object(stack_control, "_read_saved_state", return_value={"desired": "dream"}):
+             patch.object(stack_control, "_read_saved_state", return_value={"desired": "ds4f"}), \
+             patch.object(stack_control, "occupancy_view", return_value={
+                 "tp2": None, "n1": None, "n2": None, "chat": "freegle",
+                 "chat_label": "Freegle (Nous :free)", "tp1": [],
+             }):
             stack_control._detect_cache = None
             out = stack_control.detect_stack(force=True)
         self.assertEqual(out["phase"], "switching")
         self.assertFalse(any(p["can_switch"] for p in out["presets"]))
 
     def test_switch_refuses_when_lock_held(self) -> None:
-        ext = {"busy": True, "message": "switching to Dream"}
+        ext = {"busy": True, "message": "switching to DeepSeek Vision"}
         with patch.object(stack_control, "active_operation", return_value=None), \
              patch.object(stack_control, "external_switch_busy", return_value=ext):
-            result = stack_control.switch_stack("music")
+            result = stack_control.switch_stack("video")
         self.assertFalse(result["ok"])
-        self.assertIn("Dream", result["error"])
+        self.assertIn("DeepSeek Vision", result["error"])
 
 
 if __name__ == "__main__":

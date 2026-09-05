@@ -134,7 +134,12 @@ class SwitchRequest(BaseModel):
 
 
 class StackSwitchRequest(BaseModel):
-    key: str  # prime | dream | twins | flashnext | glm53keys | video | music
+    key: str  # TP2: ds4f | flashnext | glm53keys | video
+
+
+class OccupyRequest(BaseModel):
+    key: str  # TP1: flash1 | music3 | h3
+    node: str  # n1 | n2 | both
 
 
 class UpdateApplyRequest(BaseModel):
@@ -1374,8 +1379,16 @@ def api_models_sync_hermes():
 
 @app.get("/api/stack")
 def api_stack():
-    """Which named setup is live (Prime / Videos / Music) plus switch progress."""
+    """TP2 exclusive setups + TP1 mix occupancy + who talks on Telegram."""
     return stack_control.detect_stack()
+
+
+@app.get("/api/stack/recommend/{key}")
+def api_stack_recommend(key: str):
+    rec = stack_control.recommend_tp1(key)
+    if not rec.get("ok"):
+        return JSONResponse(rec, status_code=400)
+    return rec
 
 
 @app.get("/api/stack/operations/{op_id}")
@@ -1389,6 +1402,14 @@ def api_stack_operation(op_id: str):
 @app.post("/api/stack/switch")
 def api_stack_switch(req: StackSwitchRequest):
     result = stack_control.switch_stack(req.key)
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=400)
+    return result
+
+
+@app.post("/api/stack/occupy")
+def api_stack_occupy(req: OccupyRequest):
+    result = stack_control.occupy_tp1(req.key, req.node)
     if not result.get("ok"):
         return JSONResponse(result, status_code=400)
     return result

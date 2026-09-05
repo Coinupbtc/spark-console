@@ -496,13 +496,14 @@ def diagnose(
                     "message": "GLM-5.3-Flash is the desired setup but :8888 is down",
                     "action": "bash ~/scripts/dgx/spark-stack.sh glm53keys",
                 })
-        elif desired == "prime":
-            if not n2 and not proxy:
+        elif desired in ("ds4f", "prime"):
+            n1q = _up("http://127.0.0.1:8888/v1/models")
+            if not n1q:
                 alerts.append({
                     "level": "warning",
-                    "category": "vision",
-                    "message": "Prime pictures (node2 4B) are down",
-                    "action": "bash ~/scripts/dgx/spark-stack.sh prime  # refresh Prime vision only",
+                    "category": "ds4f",
+                    "message": "DeepSeek Vision is the desired setup but :8888 is down",
+                    "action": "bash ~/scripts/dgx/spark-stack.sh ds4f",
                 })
         elif desired in ("qwen38", "setup"):
             pass  # retired chips — no vision alerts
