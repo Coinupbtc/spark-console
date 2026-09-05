@@ -69,11 +69,11 @@ PRESETS: dict[str, dict] = {
     },
     "video": {
         "label": "Videos",
-        "short": "MiniMax H3 TP2",
-        "detail": "MiniMax H3 on both Sparks for video. Telegram chat moves to Nous until you leave this setup.",
+        "short": "MiniMax H3 TP2 RoCE",
+        "detail": "MiniMax H3 on both Sparks over CX7 RoCEv2 (GID 3, matched 1500 MTU, unlimited memlock). Same-quality 20-step 768×448 measured 55.5s vs 90.5s Socket. Telegram chat moves to Nous until you leave this setup.",
         "eta": "10–15 min",
         "stops": "DS4F, Music3, vision sidecar",
-        "starts": "H3 :8800 · chat → Nous",
+        "starts": "H3 :8800 RoCE IB · chat → Nous",
     },
     "music": {
         "label": "Music",

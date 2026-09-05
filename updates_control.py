@@ -68,12 +68,12 @@ TARGETS: dict[str, dict] = {
     },
     "h3-2x": {
         "label": "MiniMax H3 2x",
-        "short": "video recipe",
+        "short": "video recipe · RoCE IB",
         "path": HOME / "Documents/projects/MiniMax-H3-2x-DGX-Spark",
         "ref": "main",
         "kind": "git",
         "eta": "under 1 min",
-        "warn": "ff-only. Does not start Videos setup.",
+        "warn": "ff-only from the public fork. Does not start Videos setup. Live Videos uses CX7 RoCEv2 (GID 3, MTU 1500, memlock unlimited).",
     },
     "h3-1x": {
         "label": "MiniMax H3 1x",

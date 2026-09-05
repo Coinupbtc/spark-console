@@ -1,38 +1,38 @@
 {
   "schema_version": 2,
-  "timestamp_utc": "2026-09-04 10:58:44",
-  "iso_ts": "2026-09-04T10:58:44.151620+00:00",
+  "timestamp_utc": "2026-09-05 10:59:31",
+  "iso_ts": "2026-09-05T10:59:31.702920+00:00",
   "hour": 10,
-  "dow": 4,
+  "dow": 5,
   "hostname": "sparkmax-10ef",
   "system": {
-    "cpu_pct": 2.1,
-    "load_1": 0.64,
-    "load_5": 0.66,
-    "load_15": 0.73,
-    "mem_used_gb": 114.38,
+    "cpu_pct": 22.0,
+    "load_1": 2.91,
+    "load_5": 2.74,
+    "load_15": 2.19,
+    "mem_used_gb": 107.29,
     "mem_total_gb": 121.69,
-    "mem_avail_gb": 7.31,
-    "mem_pct": 94.0,
-    "swap_used_gb": 9.09,
+    "mem_avail_gb": 14.4,
+    "mem_pct": 88.2,
+    "swap_used_gb": 6.69,
     "swap_total_gb": 16.0,
-    "swap_pct": 56.8,
-    "disk_used_pct": 69.5,
-    "disk_free_tb": 1.06
+    "swap_pct": 41.8,
+    "disk_used_pct": 75.0,
+    "disk_free_tb": 0.87
   },
   "num_gpus": 1,
-  "avg_util_pct": 0.0,
-  "total_power_watts": 10.08,
-  "avg_temp_c": 39.0,
+  "avg_util_pct": 96.0,
+  "total_power_watts": 64.36,
+  "avg_temp_c": 70.0,
   "gpus": [
     {
       "index": 0,
       "name": "NVIDIA GB10",
-      "power_w": 10.08,
-      "power_avg_w": 10.08,
-      "power_instant_w": 10.23,
-      "temp_c": 39,
-      "util_gpu": 0.0,
+      "power_w": 64.36,
+      "power_avg_w": 64.36,
+      "power_instant_w": 42.4,
+      "temp_c": 70,
+      "util_gpu": 96.0,
       "mem_used_mb": 0,
       "mem_total_mb": 0,
       "fan_pct": 0,
@@ -41,8 +41,8 @@
   ],
   "processes": [
     {
-      "name": "VLLM::Worker_TP0_EP0",
-      "mem_mb": 105345
+      "name": "ray::RayDiffusionWorker.execute",
+      "mem_mb": 96253
     }
   ],
   "ollama": [],
@@ -51,7 +51,7 @@
     "light": "inactive",
     "dobby": "active",
     "smeagle": "inactive",
-    "freegle": "inactive",
+    "freegle": "active",
     "dashboard": "active",
     "llama_miaai35": "inactive",
     "ollama": "inactive"
@@ -141,7 +141,7 @@
       "light": "inactive",
       "dobby": "active",
       "smeagle": "inactive",
-      "freegle": "inactive",
+      "freegle": "active",
       "dashboard": "active",
       "llama_miaai35": "inactive",
       "ollama": "inactive"
@@ -154,29 +154,29 @@
       "role": "node1",
       "reachable": true,
       "system": {
-        "cpu_pct": 2.1,
-        "load_1": 0.64,
-        "load_5": 0.66,
-        "load_15": 0.73,
-        "mem_used_gb": 114.38,
+        "cpu_pct": 22.0,
+        "load_1": 2.91,
+        "load_5": 2.74,
+        "load_15": 2.19,
+        "mem_used_gb": 107.29,
         "mem_total_gb": 121.69,
-        "mem_avail_gb": 7.31,
-        "mem_pct": 94.0,
-        "swap_used_gb": 9.09,
+        "mem_avail_gb": 14.4,
+        "mem_pct": 88.2,
+        "swap_used_gb": 6.69,
         "swap_total_gb": 16.0,
-        "swap_pct": 56.8,
-        "disk_used_pct": 69.5,
-        "disk_free_tb": 1.06
+        "swap_pct": 41.8,
+        "disk_used_pct": 75.0,
+        "disk_free_tb": 0.87
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 10.08,
-          "power_avg_w": 10.08,
-          "power_instant_w": 10.23,
-          "temp_c": 39,
-          "util_gpu": 0.0,
+          "power_w": 64.36,
+          "power_avg_w": 64.36,
+          "power_instant_w": 42.4,
+          "temp_c": 70,
+          "util_gpu": 96.0,
           "mem_used_mb": 0,
           "mem_total_mb": 0,
           "fan_pct": 0,
@@ -194,10 +194,9 @@
         {
           "port": 8888,
           "engine": "vLLM",
-          "status": "ok",
-          "models": [
-            "qwen38-flash-next"
-          ]
+          "status": "down",
+          "models": [],
+          "error": "URLError: <urlopen error [Errno 111] Connection refused>"
         },
         {
           "port": 11434,
@@ -210,37 +209,37 @@
       "workloads": [
         "agent-cron",
         "crypto",
-        "llama",
         "ollama",
         "pokemon",
-        "vllm"
+        "vllm",
+        "inference-busy"
       ]
     },
     "node2": {
       "name": "sparkymaxxx-12ef",
       "role": "node2",
-      "iso_ts": "2026-09-04T10:58:44.985757+00:00",
+      "iso_ts": "2026-09-05T10:59:32.878230+00:00",
       "reachable": true,
       "error": null,
-      "cpu_pct": 0.9,
+      "cpu_pct": 12.3,
       "mem": {
-        "used_gb": 113.9,
+        "used_gb": 56.3,
         "total_gb": 121.7,
-        "avail_gb": 7.8,
-        "pct": 93.6
+        "avail_gb": 65.4,
+        "pct": 46.3
       },
       "swap": {
-        "used_gb": 4.1,
+        "used_gb": 1.3,
         "total_gb": 16.0,
-        "pct": 25.8
+        "pct": 8.4
       },
       "gpus": [
         {
           "index": 0,
           "name": "NVIDIA GB10",
-          "power_w": 11.19,
-          "temp_c": 39,
-          "util_gpu": 0.0
+          "power_w": 65.36,
+          "temp_c": 70,
+          "util_gpu": 96.0
         }
       ],
       "models": [],
@@ -261,28 +260,26 @@
           "status": "down"
         }
       ],
-      "workloads": [
-        "vllm"
-      ],
+      "workloads": [],
       "top_procs": [
         {
-          "name": "VLLM::Worker_TP",
-          "mem_gb": 2.5
+          "name": "ray::RayDiffusi",
+          "mem_gb": 4.6
         },
         {
           "name": "polkitd",
-          "mem_gb": 0.6
+          "mem_gb": 0.7
         },
         {
           "name": "bluetoothd",
           "mem_gb": 0.3
         },
         {
-          "name": "vllm",
-          "mem_gb": 0.1
+          "name": "ray",
+          "mem_gb": 0.2
         },
         {
-          "name": "gnome-shell",
+          "name": "ray::DashboardA",
           "mem_gb": 0.1
         }
       ]
@@ -300,10 +297,9 @@
       {
         "port": 8888,
         "engine": "vLLM",
-        "status": "ok",
-        "models": [
-          "qwen38-flash-next"
-        ]
+        "status": "down",
+        "models": [],
+        "error": "URLError: <urlopen error [Errno 111] Connection refused>"
       },
       {
         "port": 11434,
@@ -335,14 +331,12 @@
     "node1": [
       "agent-cron",
       "crypto",
-      "llama",
       "ollama",
       "pokemon",
-      "vllm"
+      "vllm",
+      "inference-busy"
     ],
-    "node2": [
-      "vllm"
-    ]
+    "node2": []
   },
   "node2_alert_state": "healthy",
   "alerts": [],

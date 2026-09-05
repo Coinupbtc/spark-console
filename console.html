@@ -2848,7 +2848,7 @@ function askStack(key){
       twins:"Re-apply Qwen Twins only. Mia SGLang NVFP4 on both Sparks :8888. DS4F stays parked.",
       dream:"Re-apply Dream only. 0731 TP2 348k both Sparks + n2 Qwen 116k (95k in / 20k out). Does not start the 4B sidecar.",
       prime:"Re-apply Prime only. DS4F TP2 + 4B vision sidecar. Chat stays on :8888.",
-      video:"Re-apply Videos only. MiniMax H3 stays; chat wire back to Nous.",
+      video:"Re-apply Videos only. MiniMax H3 stays on CX7 RoCEv2; chat wire back to Nous.",
       music:"Re-apply Music only. Helper 35B + Music3 stay; refresh Hermes wire.",
     };
     $("stack-dlg-body").textContent=refresh[p.key]||`Re-apply ${p.label}. ${p.detail||""}`;
